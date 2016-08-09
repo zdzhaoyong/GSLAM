@@ -57,21 +57,23 @@ INCLUDEPATH += $$PIL_TOP/src
 LIBS+=-L$$PIL_TOP/libs \
 -lpi_base -lpi_hardware -lpi_gui
 
+HEADERS += \
+    GSLAM/core/GSLAM.h \
+    GSLAM/core/types/GImage.h \
+    GSLAM/orbslam/ORBSLAM.h \
+    GSLAM/orbslam/MapFrameORB.h \
+    GSLAM/orbslam/MapPointORB.h \
+    GSLAM/test/System.h \
+    GSLAM/core/types/VideoFrame.h
+
 # Input
-SOURCES += GSLAM/test/main.cpp \
-    GSLAM/core/types/MonoMapFrame.cpp \
+SOURCES += \
     GSLAM/core/GSLAM.cpp \
     GSLAM/core/types/GImage.cpp\
     GSLAM/orbslam/ORBSLAM.cpp \
     GSLAM/orbslam/MapFrameORB.cpp \
     GSLAM/orbslam/MapPointORB.cpp \
-    GSLAM/test/System.cpp
+    GSLAM/test/System.cpp \
+    GSLAM/test/main.cpp \
+    GSLAM/test/TestGImage.cpp
 
-HEADERS += \
-    GSLAM/core/types/MonoMapFrame.h \
-    GSLAM/core/GSLAM.h \
-    GSLAM/core/types/GImage.h
-    GSLAM/orbslam/ORBSLAM.h \
-    GSLAM/orbslam/MapFrameORB.h \
-    GSLAM/orbslam/MapPointORB.h \
-    GSLAM/test/System.h

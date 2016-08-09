@@ -2,41 +2,41 @@
 
 namespace GSLAM{
 
-MapPoint::MapPoint(const PointID& id_,const Point3Type& position)
-    :_id(id_),pt(position)
+MapPoint::MapPoint(const PointID& id,const Point3Type& position)
+    :_id(id),_pt(position)
 {
 }
 
 Point3Type   MapPoint::getPose()
 {
-    pi::ReadMutex lock(mutexPt);
-    return pt;
+    pi::ReadMutex lock(_mutexPt);
+    return _pt;
 }
 
-void MapPoint::setPose(const Point3Type& pt_)
+void MapPoint::setPose(const Point3Type& pt)
 {
-    pi::WriteMutex lock(mutexPt);
-    pt=pt_;
+    pi::WriteMutex lock(_mutexPt);
+    _pt=pt;
 }
 
-MapFrame::MapFrame(const FrameID& id_)
-    :_id(id_)
+MapFrame::MapFrame(const FrameID& id,const double& timestamp)
+    :_id(id),_timestamp(timestamp)
 {
 }
 
 SE3 MapFrame::getPose()
 {
-    pi::ReadMutex lock(mutexPose);
-    return c2w;
+    pi::ReadMutex lock(_mutexPose);
+    return _c2w;
 }
 
 void MapFrame::setPose(const SE3& pose)
 {
-    pi::WriteMutex lock(mutexPose);
-    c2w=pose;
+    pi::WriteMutex lock(_mutexPose);
+    _c2w=pose;
 }
 
-Map::Map():ptId(1),frId(1)
+Map::Map():_ptId(1),_frId(1)
 {
 
 }
@@ -47,13 +47,13 @@ SLAM::SLAM()
 
 bool SLAM::setMap(const MapPtr& map)
 {
-    curMap=map;
+    _curMap=map;
 }
 
 MapPtr SLAM::getMap()
 {
-    pi::ReadMutex lock(mutexMap);
-    return curMap;
+    pi::ReadMutex lock(_mutexMap);
+    return _curMap;
 }
 
 }

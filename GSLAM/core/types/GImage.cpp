@@ -1,32 +1,48 @@
-//#include "GImage.h"
+#include "GImage.h"
+#include "string.h"
 
-//namespace GSLAM{
+namespace GSLAM{
 
-//class GImageImpl
-//{
 
-//};
+GImage::GImage()
+    :cols(0),rows(0),flags(0),data(NULL),refCount(NULL)
+{
 
-//GImage::GImage()
-//    :cols(0),rows(0),flags(0)
-//{
+}
 
-//}
+GImage::GImage(int width,int height,int type,uchar* src)
+    :cols(width),rows(height),flags(type),data(NULL),refCount(NULL)
+{
+    int byteNum=total()*elemSize();
+    data=new uchar[byteNum];
+    if(src)
+    {
+        memcpy(data,src,byteNum);
+    }
+    refCount=new int(1);
+}
 
-//GImage::GImage(int width,int height,int type)
-//    :cols(width),rows(height),flags(type),data(NULL),refCount(NULL)
-//{
-//    data=new uchar[width*height*eleSize()];
-//}
+GImage::~GImage()
+{
+    if(data)
+    {
+        if((*refCount)==1)
+            delete data;
+        else (*refCount)--;
+    }
+}
 
-//GImage::~GImage()
-//{
-//    if(data) delete data;
-//}
+GImage::GImage(const GImage& ref)
+    :cols(ref.cols),rows(ref.rows),flags(ref.flags),
+      data(ref.data),refCount(ref.refCount)
+{
+    if(refCount)
+        (*refCount)++;
+}
 
-//GImage::GImage(const GImage& ref)
-//{
+GImage GImage::clone()
+{
+    return GImage(cols,rows,flags,data);
+}
 
-//}
-
-//}
+}

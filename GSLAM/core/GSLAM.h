@@ -44,26 +44,26 @@ public:
 class MapPoint : public GObject
 {
 public:
-    MapPoint(const PointID& id_,const Point3Type& position=Point3Type(0,0,0));
+    MapPoint(const PointID& id,const Point3Type& position=Point3Type(0,0,0));
     virtual ~MapPoint(){}
     virtual std::string type(){return "InvalidPoint";}
     const PointID id(){return _id;}
     Point3Type    getPose();
-    void          setPose(const Point3Type& pt_);
+    void          setPose(const Point3Type& pt);
 
 protected:
-    pi::MutexRW   mutexPt;
+    pi::MutexRW   _mutexPt;
 
 private:
     const PointID _id;
-    Point3Type    pt;
+    Point3Type    _pt;
 };
 
 
 class MapFrame : public GObject
 {
 public:
-    MapFrame(const FrameID& id_);
+    MapFrame(const FrameID& id=0,const double& timestamp=0);
     virtual ~MapFrame(){}
     virtual std::string type(){return "InvalidFrame";}
 
@@ -71,12 +71,15 @@ public:
     SE3           getPose();
     void          setPose(const SE3& pose);
 
+public:
+    const FrameID   _id;
+    double          _timestamp;
+
 protected:
-    pi::MutexRW    mutexPose;
+    pi::MutexRW     _mutexPose;
 
 private:
-    SE3             c2w;//worldPt=c2w*cameraPt;
-    const FrameID   _id;
+    SE3             _c2w;//worldPt=c2w*cameraPt;
 };
 
 typedef SPtr<MapFrame> FramePtr;
@@ -110,12 +113,12 @@ public:
     virtual bool load(std::string path){return false;}
 
     /// 0 is reserved for INVALID
-    std::size_t getPid(){return ptId++;}//obtain an unique point id
-    std::size_t getFid(){return frId++;}//obtain an unique frame id
+    PointID getPid(){return _ptId++;}//obtain an unique point id
+    FrameID getFid(){return _frId++;}//obtain an unique frame id
 
 private:
-    PointID ptId;
-    FrameID frId;
+    PointID _ptId;
+    FrameID _frId;
 };
 
 typedef SPtr<Map> MapPtr;
@@ -134,8 +137,8 @@ public:
     bool    track(FramePtr frame){return false;}
 
 protected:
-    MapPtr      curMap;
-    pi::MutexRW mutexMap;
+    MapPtr      _curMap;
+    pi::MutexRW _mutexMap;
 };
 
 } //end of namespace GSLAM
