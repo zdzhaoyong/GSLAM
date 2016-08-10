@@ -64,7 +64,10 @@ HEADERS += \
     GSLAM/orbslam/MapFrameORB.h \
     GSLAM/orbslam/MapPointORB.h \
     GSLAM/test/System.h \
-    GSLAM/core/types/VideoFrame.h
+    GSLAM/core/types/VideoFrame.h \
+    GSLAM/core/types/Camera.h \
+    GSLAM/core/types/SE3.h \
+    GSLAM/core/types/HashMap.h
 
 # Input
 SOURCES += \
@@ -75,5 +78,8 @@ SOURCES += \
     GSLAM/orbslam/MapPointORB.cpp \
     GSLAM/test/System.cpp \
     GSLAM/test/main.cpp \
-    GSLAM/test/TestGImage.cpp
+    GSLAM/test/TestGImage.cpp \
+    GSLAM/core/types/VideoFrame.cpp \
+    GSLAM/core/types/Camera.cpp \
+    GSLAM/core/types/HashMap.cpp
 

@@ -54,6 +54,7 @@ public:
         pi_assert(img1.total()==mat1.total());
         pi_assert(memcmp(img1.data,mat1.data,img1.total()*img1.elemSize())==0);
 
+        img=img1=img1.clone();
 //        cout<<"type:"<<type<<"passed\n";
     }
 

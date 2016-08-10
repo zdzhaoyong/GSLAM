@@ -45,4 +45,16 @@ GImage GImage::clone()
     return GImage(cols,rows,flags,data);
 }
 
+GImage& GImage::operator=(const GImage& rhs)
+{
+    this->~GImage();
+    cols=rhs.cols;
+    rows=rhs.rows;
+    flags=rhs.flags;
+    data=rhs.data;
+    refCount=rhs.refCount;
+    if(refCount) (*refCount)++;
+    return *this;
+}
+
 }

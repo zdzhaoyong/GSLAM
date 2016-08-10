@@ -1,6 +1,6 @@
 #ifndef GIMAGE_H
 #define GIMAGE_H
-#include <GSLAM/core/GSLAM.h>
+#include "SE3.h"
 
 namespace GSLAM{
 
@@ -79,7 +79,7 @@ struct GImageType
 
 /**
  * @brief The GImage class is a tiny implementation of image for removing dependency of opencv.
- * Most apis are corrosponding to "cv::Mat".
+ * Most APIs are corrosponding to "cv::Mat".
  */
 class GImage
 {
@@ -88,6 +88,8 @@ public:
     GImage(int width,int height,int type=GImageType<>::Type,uchar* src=NULL);
     GImage(const GImage& ref);
     ~GImage();
+
+    GImage& operator=(const GImage& rhs);
 
     bool empty()const{return !data;}
     int  elemSize()const{return channels()*elemSize1();}

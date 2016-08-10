@@ -24,7 +24,7 @@ MapFrame::MapFrame(const FrameID& id,const double& timestamp)
 {
 }
 
-SE3 MapFrame::getPose()
+SE3 MapFrame::getPose()const
 {
     pi::ReadMutex lock(_mutexPose);
     return _c2w;
@@ -50,7 +50,7 @@ bool SLAM::setMap(const MapPtr& map)
     _curMap=map;
 }
 
-MapPtr SLAM::getMap()
+MapPtr SLAM::getMap()const
 {
     pi::ReadMutex lock(_mutexMap);
     return _curMap;

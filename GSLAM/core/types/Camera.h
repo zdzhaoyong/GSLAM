@@ -1,8 +1,11 @@
 #ifndef CAMERA_H
 #define CAMERA_H
 
+#include <base/Types/Point.h>
+#include <base/Types/SPtr.h>
 #include <cv/Camera/Camera.h>
-namespace GSLAM{
+
+namespace GSLAM {
 
 typedef pi::Camera Camera;
 

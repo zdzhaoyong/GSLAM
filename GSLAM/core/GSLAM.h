@@ -12,27 +12,18 @@
 #define GSLAM_H
 
 #include <vector>
-#include <base/Types/SPtr.h>
-#include <base/Types/SIM3.h>
-#include <base/Thread/Thread.h>
+#include "types/SE3.h"
+#include "types/GImage.h"
+#include "types/Camera.h"
 
 namespace GSLAM {
 
-typedef pi::UInt8   uchar;
-typedef uchar       byte;
-typedef std::size_t PointID;
-typedef std::size_t FrameID;
-typedef pi::Point2d Point2D;
-typedef pi::Point2i Point2i;
-typedef pi::Point3d Point3Type;
-typedef pi::Point3ub ColorType;
-typedef pi::SE3d    SE3;
 
 class GObject
 {
 public:
     virtual ~GObject(){}
-    virtual std::string type(){return "GObject";}
+    virtual std::string type()const{return "GObject";}
     virtual void  call(const std::string& command,void* arg=NULL){}
     virtual void  draw(){}
 
@@ -51,12 +42,18 @@ public:
     Point3Type    getPose();
     void          setPose(const Point3Type& pt);
 
+    virtual Point3Type getNormal(){return Point3Type(0,0,0);}
+    virtual ColorType  getColor(){return ColorType(255,255,255);}
+
+    virtual int        observationNum(){return -1;}
+    virtual bool       getObservations(std::map<FrameID,size_t>& obs){return false;}
+
 protected:
-    pi::MutexRW   _mutexPt;
+    mutable pi::MutexRW     _mutexPt;
 
 private:
-    const PointID _id;
-    Point3Type    _pt;
+    const PointID           _id;
+    Point3Type              _pt;
 };
 
 
@@ -65,21 +62,27 @@ class MapFrame : public GObject
 public:
     MapFrame(const FrameID& id=0,const double& timestamp=0);
     virtual ~MapFrame(){}
-    virtual std::string type(){return "InvalidFrame";}
+    virtual std::string type()const{return "InvalidFrame";}
 
-    const PointID id(){return _id;}
-    SE3           getPose();
+    const PointID id()const{return _id;}
+    SE3           getPose()const;
     void          setPose(const SE3& pose);
 
+    virtual GImage getImage(int idx=0){return GImage();}
+    virtual Camera getCamera(int idx=0){return Camera();}
+
+    virtual bool   getObservations(std::map<PointID,size_t>& obs)const{return false;}
+    virtual bool   getConnects(std::map<FrameID,int>& connects)const{return false;}
+
 public:
-    const FrameID   _id;
-    double          _timestamp;
+    const FrameID           _id;
+    double                  _timestamp;
 
 protected:
-    pi::MutexRW     _mutexPose;
+    mutable pi::MutexRW     _mutexPose;
 
 private:
-    SE3             _c2w;//worldPt=c2w*cameraPt;
+    SE3                     _c2w;//worldPt=c2w*cameraPt;
 };
 
 typedef SPtr<MapFrame> FramePtr;
@@ -100,8 +103,8 @@ public:
     virtual bool eraseMapPoint(const PointID& pointId){return false;}
     virtual bool eraseMapFrame(const FrameID& frameId){return false;}
 
-    virtual std::size_t frameNum(){return 0;}
-    virtual std::size_t pointNum(){return 0;}
+    virtual std::size_t frameNum()const{return 0;}
+    virtual std::size_t pointNum()const{return 0;}
 
     virtual FramePtr getFrame(const FrameID& id){return FramePtr();}
     virtual PointPtr getPoint(const PointID& id){return PointPtr();}
@@ -109,7 +112,7 @@ public:
     virtual bool     getPoints(PointArray& points){return false;}
 
     /// Save or load the map from/to the file
-    virtual bool save(std::string path){return false;}
+    virtual bool save(std::string path)const{return false;}
     virtual bool load(std::string path){return false;}
 
     /// 0 is reserved for INVALID
@@ -128,17 +131,17 @@ class SLAM : public GObject
 public:
     SLAM();
     virtual ~SLAM(){}
-    virtual std::string type(){return "InvalidSLAM";}
-    virtual bool valid(){return false;}
+    virtual std::string type()const{return "InvalidSLAM";}
+    virtual bool valid()const{return false;}
 
     bool    setMap(const MapPtr& map);
-    MapPtr  getMap();
+    MapPtr  getMap()const;
 
     bool    track(FramePtr frame){return false;}
 
 protected:
-    MapPtr      _curMap;
-    pi::MutexRW _mutexMap;
+    MapPtr              _curMap;
+    mutable pi::MutexRW _mutexMap;
 };
 
 } //end of namespace GSLAM
