@@ -18,6 +18,7 @@
 
 namespace GSLAM {
 
+class Map;
 
 class GObject
 {

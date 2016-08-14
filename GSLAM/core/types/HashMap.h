@@ -44,8 +44,10 @@ public:
     PointID getPid(){return _ptId++;}//obtain an unique point id
     FrameID getFid(){return _frId++;}//obtain an unique frame id
 
-     PointMap _points;
-
+private:
+    PointMap _points;
+    FrameMap _frames;
+    pi::MutexRW  _mutexPoints,_mutexFrames;
 };
 
 }
