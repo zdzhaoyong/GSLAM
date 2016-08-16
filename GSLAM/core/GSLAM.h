@@ -138,7 +138,7 @@ public:
     bool    setMap(const MapPtr& map);
     MapPtr  getMap()const;
 
-    bool    track(FramePtr frame){return false;}
+    virtual bool    track(FramePtr& frame){return false;}
 
 protected:
     MapPtr              _curMap;

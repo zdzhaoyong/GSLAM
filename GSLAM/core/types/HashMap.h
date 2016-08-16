@@ -40,14 +40,10 @@ public:
     virtual bool save(std::string path)const;
     virtual bool load(std::string path);
 
-    /// 0 is reserved for INVALID
-    PointID getPid(){return _ptId++;}//obtain an unique point id
-    FrameID getFid(){return _frId++;}//obtain an unique frame id
-
 private:
     PointMap _points;
     FrameMap _frames;
-    pi::MutexRW  _mutexPoints,_mutexFrames;
+    mutable pi::MutexRW  _mutexPoints,_mutexFrames;
 };
 
 }

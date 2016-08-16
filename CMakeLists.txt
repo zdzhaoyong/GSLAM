@@ -39,6 +39,7 @@ find_package(OpenCV 2.4.9 REQUIRED)
 find_package(Eigen3 3.1.0 REQUIRED)
 find_package(QGLViewer    REQUIRED)
 find_package(PIL 1.1.0 REQUIRED)
+find_package(G2O REQUIRED)
 
 set(QT_LIBRARIES QtGui QtCore QtXml QtOpenGL GL GLU glut GLEW)
 include_directories(${CMAKE_CURRENT_LIST_DIR})
@@ -51,6 +52,8 @@ PIL_ECHO_LIBINFO(OPENCV)
 PIL_ECHO_LIBINFO(QT)
 PIL_ECHO_LIBINFO(QGLVIEWER)
 PIL_ECHO_LIBINFO(PIL)
+PIL_ECHO_LIBINFO(EIGEN3)
+PIL_ECHO_LIBINFO(G2O)
 
 message("----------------------------------------------------------")
 #####################################################################

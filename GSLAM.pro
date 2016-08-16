@@ -57,29 +57,90 @@ INCLUDEPATH += $$PIL_TOP/src
 LIBS+=-L$$PIL_TOP/libs \
 -lpi_base -lpi_hardware -lpi_gui
 
+################################################################################
+# g2o settings
+################################################################################
+INCLUDEPATH += /data/zhaoyong/Linux/Program/Apps/Thirdparty/ORB_SLAM2/Thirdparty/g2o
+
+LIBS+=
+
 HEADERS += \
     GSLAM/core/GSLAM.h \
     GSLAM/core/types/GImage.h \
     GSLAM/orbslam/ORBSLAM.h \
-    GSLAM/orbslam/MapFrameORB.h \
-    GSLAM/orbslam/MapPointORB.h \
     GSLAM/test/System.h \
     GSLAM/core/types/VideoFrame.h \
     GSLAM/core/types/Camera.h \
     GSLAM/core/types/SE3.h \
-    GSLAM/core/types/HashMap.h
+    GSLAM/core/types/HashMap.h \
+    GSLAM/orbslam/Converter.h \
+    GSLAM/orbslam/Frame.h \
+    GSLAM/orbslam/Initializer.h \
+    GSLAM/orbslam/KeyFrame.h \
+    GSLAM/orbslam/KeyFrameDatabase.h \
+    GSLAM/orbslam/LocalMapping.h \
+    GSLAM/orbslam/LoopClosing.h \
+    GSLAM/orbslam/Map.h \
+    GSLAM/orbslam/MapPoint.h \
+    GSLAM/orbslam/Optimizer.h \
+    GSLAM/orbslam/ORBextractor.h \
+    GSLAM/orbslam/ORBmatcher.h \
+    GSLAM/orbslam/ORBVocabulary.h \
+    GSLAM/orbslam/OSLAM.h \
+    GSLAM/orbslam/PnPsolver.h \
+    GSLAM/orbslam/Sim3Solver.h \
+    GSLAM/orbslam/Tracking.h \
+    GSLAM/orbslam/DBoW2/BowVector.h \
+    GSLAM/orbslam/DBoW2/CNN_Vocabulary.h \
+    GSLAM/orbslam/DBoW2/FClass.h \
+    GSLAM/orbslam/DBoW2/FCNN.h \
+    GSLAM/orbslam/DBoW2/FeatureVector.h \
+    GSLAM/orbslam/DBoW2/FORB.h \
+    GSLAM/orbslam/DBoW2/ORB_Vocabulary.h \
+    GSLAM/orbslam/DBoW2/Random.h \
+    GSLAM/orbslam/DBoW2/ScoringObject.h \
+    GSLAM/orbslam/DBoW2/TemplatedVocabulary.h \
+    GSLAM/orbslam/DBoW2/Timestamp.h \
+    GSLAM/test/MainWindow.h \
+    GSLAM/test/VideoReader.h
 
 # Input
 SOURCES += \
     GSLAM/core/GSLAM.cpp \
     GSLAM/core/types/GImage.cpp\
     GSLAM/orbslam/ORBSLAM.cpp \
-    GSLAM/orbslam/MapFrameORB.cpp \
-    GSLAM/orbslam/MapPointORB.cpp \
     GSLAM/test/System.cpp \
     GSLAM/test/main.cpp \
     GSLAM/test/TestGImage.cpp \
     GSLAM/core/types/VideoFrame.cpp \
     GSLAM/core/types/Camera.cpp \
-    GSLAM/core/types/HashMap.cpp
+    GSLAM/core/types/HashMap.cpp \
+    GSLAM/orbslam/Converter.cpp \
+    GSLAM/orbslam/Frame.cpp \
+    GSLAM/orbslam/Initializer.cpp \
+    GSLAM/orbslam/KeyFrame.cpp \
+    GSLAM/orbslam/KeyFrameDatabase.cpp \
+    GSLAM/orbslam/LocalMapping.cpp \
+    GSLAM/orbslam/LoopClosing.cpp \
+    GSLAM/orbslam/Map.cpp \
+    GSLAM/orbslam/MapPoint.cpp \
+    GSLAM/orbslam/Optimizer.cpp \
+    GSLAM/orbslam/ORBextractor.cpp \
+    GSLAM/orbslam/ORBmatcher.cpp \
+    GSLAM/orbslam/PnPsolver.cpp \
+    GSLAM/orbslam/Sim3Solver.cpp \
+    GSLAM/orbslam/Tracking.cpp \
+    GSLAM/orbslam/DBoW2/BowVector.cpp \
+    GSLAM/orbslam/DBoW2/FCNN.cpp \
+    GSLAM/orbslam/DBoW2/FeatureVector.cpp \
+    GSLAM/orbslam/DBoW2/FORB.cpp \
+    GSLAM/orbslam/DBoW2/Random.cpp \
+    GSLAM/orbslam/DBoW2/ScoringObject.cpp \
+    GSLAM/orbslam/DBoW2/Timestamp.cpp \
+    GSLAM/test/MainWindow.cpp \
+    GSLAM/test/VideoReader.cpp
+
+OTHER_FILES += \
+    GSLAM/orbslam/Makefile \
+    GSLAM/orbslam/DBoW2/LICENSE.txt
 
