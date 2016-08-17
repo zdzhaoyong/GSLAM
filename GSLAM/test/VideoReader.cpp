@@ -11,7 +11,8 @@ class VideoReaderMonoOpenCV : public VideoReader
 public:
     VideoReaderMonoOpenCV(const std::string& name)
         : frameId(0),video(svar.GetString(name+".VideoFile","")),
-          camera(svar.GetString(name+".Camera","DefaultCamera"))
+          camera(svar.GetString(name+".Camera","DefaultCamera")),
+          skip(svar.GetInt(name+".Skip",5))
     {
     }
 
@@ -21,6 +22,7 @@ public:
 
     GSLAM::FramePtr grabFrame()
     {
+        for(int i=0;i<skip;i++) video.grab();
         double timestamp=video.get(CV_CAP_PROP_POS_MSEC)*0.001;
         video>>img;
         GSLAM::GImage gimg(img.cols,img.rows,img.type(),img.data);
@@ -31,6 +33,7 @@ public:
     cv::VideoCapture video;
     GSLAM::Camera    camera;
     cv::Mat img;
+    int&             skip;
 };
 
 VideoReader::VideoReader(const std::string& name)

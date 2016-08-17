@@ -19,12 +19,6 @@ namespace GSLAM{
 
 ORBSLAM::ORBSLAM()
 {
-    start();
-
-}
-
-void ORBSLAM::run()
-{
     //Load ORB Vocabulary
     string strVocFile = svar.GetString("ORBVocabularyFile", "./Data/GSLAM/ORBvoc.yml");
     cout << endl << "Loading ORB Vocabulary: " << strVocFile << " ...";
@@ -44,14 +38,10 @@ void ORBSLAM::run()
 
     //Initialize the Local Mapping Thread and launch
     LocalMapper = SPtr<LocalMapping>(new LocalMapping(World.get()));
-    boost::thread localMappingThread(&ORB_SLAM::LocalMapping::Run, LocalMapper.get());
 
     //Initialize the Loop Closing Thread and launch
     LoopCloser = SPtr<LoopClosing>(new LoopClosing(World.get(), Database.get(), Vocabulary.get()));
-    boost::thread loopClosingThread(&ORB_SLAM::LoopClosing::Run, LoopCloser.get());
 
-    // running map cleanup thread
-//    boost::thread mapClearnThread(&ORB_SLAM::Map::Run, World);
 
     //Set pointers between threads
     Tracker->SetLocalMapper(LocalMapper.get());
@@ -62,6 +52,19 @@ void ORBSLAM::run()
 
     LoopCloser->SetTracker(Tracker.get());
     LoopCloser->SetLocalMapper(LocalMapper.get());
+
+    start();
+}
+
+void ORBSLAM::run()
+{
+
+    boost::thread localMappingThread(&ORB_SLAM::LocalMapping::Run, LocalMapper.get());
+
+    boost::thread loopClosingThread(&ORB_SLAM::LoopClosing::Run, LoopCloser.get());
+
+    // running map cleanup thread
+    boost::thread mapClearnThread(&ORB_SLAM::Map::Run, World);
 
     //This "main" thread will show the current processed frame and publish the map
     double fps = svar.GetDouble("Video.FPS", 60);

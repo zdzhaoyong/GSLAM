@@ -7,6 +7,10 @@
 #include <GSLAM/core/GSLAM.h>
 #include "VideoReader.h"
 
+#ifdef DEBUG_WithQT
+#include <GSLAM/orbslam/ORBSLAM.h>
+#endif
+
 using namespace std;
 
 int excuteTest()
@@ -54,16 +58,24 @@ System::System()
 void System::run()
 {
     try{
-    string act=svar.GetString("Act","");
-    if(""==act)
-    {
-        cout<<"'Act' not setted. Lauching tests...\n";
-        excuteTest();
-    }
-    else if("SLAM"==act)
-    {
-        SLAMMain();
-    }
+        string act=svar.GetString("Act","");
+        if("Tests"==act)
+        {
+            excuteTest();
+        }
+        else if("SLAM"==act)
+        {
+            SLAMMain();
+        }
+        else //if("SLAMDebug"==act)
+        {
+#ifdef DEBUG_WithQT
+            SLAMDebug();
+#else
+            cout<<"'Act' not setted. Lauching tests...\n";
+            excuteTest();
+#endif
+        }
     }
     catch(const std::exception& e)
     {
@@ -71,6 +83,55 @@ void System::run()
     }
 }
 
+void System::SLAMDebug()
+{
+#ifdef DEBUG_WithQT
+    string videoName=svar.GetString("VideoReader","VideoReader");
+    VideoReader video(videoName);
+    if(!video.isOpened())
+    {
+        cout<<"Failed to open video "+videoName<<endl;return;
+    }
+
+    _slam=SPtr<GSLAM::SLAM>(new GSLAM::ORBSLAM());
+    cout<<"Loaded SLAM system "<<_slam->type()<<endl;
+
+    if(!_slam->valid()) {cerr<<_slam->type()<<" is not valid!\n"; return;}
+
+    if(_mainwindow.get())
+    {
+        _mainwindow->call("Show");
+        if(_mainwindow->getWin3D())
+        {
+            _mainwindow->getWin3D()->SetDraw_Opengl(this);
+            _mainwindow->getWin3D()->SetEventHandle(this);
+        }
+    }
+
+    int& pause=svar.GetInt("Pause");
+    while (!shouldStop()) {
+        if(pause) {sleep(10);continue;}
+        GSLAM::FramePtr frame=video.grabFrame();
+        if(!frame.get())
+        {
+            cerr<<"Video finished.\n";return;
+        }
+        if(_slam->track(frame))
+        {
+            cout<<frame->type()<<":"<<frame->_timestamp<<","<<frame->getPose()<<endl;
+
+            if(_mainwindow.get())
+                _mainwindow->call("Update");
+        }
+    }
+
+    _mainwindow.reset();
+    _slam.reset();
+    cout<<"SLAM system stoped.\n";cout.flush();
+#else
+    SLAMMain();
+#endif
+}
 
 void System::SLAMMain()
 {
@@ -95,6 +156,8 @@ void System::SLAMMain()
     _slam=SPtr<GSLAM::SLAM>(cl.create("GSLAM::ORBSLAM"));
     cout<<"Loaded SLAM system "<<_slam->type()<<endl;
 
+    if(!_slam->valid()) {cerr<<_slam->type()<<" is not valid!\n"; return;}
+
     if(_mainwindow.get())
     {
         _mainwindow->call("Show");
@@ -104,13 +167,24 @@ void System::SLAMMain()
             _mainwindow->getWin3D()->SetEventHandle(this);
         }
     }
+
     int& pause=svar.GetInt("Pause");
     while (!shouldStop()) {
         if(pause) {sleep(10);continue;}
         GSLAM::FramePtr frame=video.grabFrame();
-        _slam->track(frame);
-        _mainwindow->call("Update");
+        if(!frame.get())
+        {
+            cerr<<"Video finished.\n";return;
+        }
+        if(_slam->track(frame))
+        {
+            cout<<frame->type()<<":"<<frame->_timestamp<<","<<frame->getPose()<<endl;
+
+            if(_mainwindow.get())
+                _mainwindow->call("Update");
+        }
     }
+
     _mainwindow.reset();
     _slam.reset();
     cout<<"SLAM system stoped.\n";cout.flush();

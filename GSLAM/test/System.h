@@ -12,6 +12,7 @@ public:
     System();
     virtual void run();
     void SLAMMain();
+    void SLAMDebug();
 
     virtual void Draw_Something();
 private:

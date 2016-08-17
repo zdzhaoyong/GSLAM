@@ -370,7 +370,7 @@ void Frame::draw()
     pose.fromMatrix((float*)pose_cv.data);
     pose=pose.inverse();
 
-    double depth=3;
+    double depth=0.5;
 
     Point3f t=pose.get_translation();
 
@@ -388,9 +388,8 @@ void Frame::draw()
 //    Point3f  W_ct=pose*(pi::Point3d(ct.x,ct.y,1)*depth);
 
     // Draw camera rect
-
     glBegin(GL_LINES);
-    glColor3f(1, 1, 1);
+    glColor3f(1, 0, 0);
     glLineWidth(2.5);
     glVertex(t);glVertex(W_tl);
     glVertex(t);glVertex(W_tr);

@@ -11,7 +11,7 @@ QMAKE_CXXFLAGS+= -std=c++11
 ####### OPENCV ############
 CONFIG  += link_pkgconfig
 PKGCONFIG += opencv
-
+DEFINES += DEBUG_WithQT
 
 ################################################################################
 # QT settings
@@ -55,12 +55,13 @@ LIBS+= -L/usr/lib/x86_64-linux-gnu \
 PIL_TOP=/data/zhaoyong/Linux/Program/Apps/PIL-1.1.0
 INCLUDEPATH += $$PIL_TOP/src
 LIBS+=-L$$PIL_TOP/libs \
--lpi_base -lpi_hardware -lpi_gui
+-lpi_base -lpi_hardware -lpi_gui -lpi_cv
 
 ################################################################################
 # g2o settings
 ################################################################################
-INCLUDEPATH += /data/zhaoyong/Linux/Program/Apps/Thirdparty/ORB_SLAM2/Thirdparty/g2o
+INCLUDEPATH += /data/zhaoyong/Linux/Program/Apps/GSLAM-1.1.0/ThirdParty/g2o
+LIBS +=-L/data/zhaoyong/Linux/Program/Apps/GSLAM-1.1.0/ThirdParty/g2o/lib -lg2o
 
 LIBS+=
 

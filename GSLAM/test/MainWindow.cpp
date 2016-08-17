@@ -104,7 +104,8 @@ void MainWindow::call_slot(QString cmd)
     if("Show"==cmd)   show();
     if("Update"==cmd)
     {
-        update();
+        if(win3d)
+            win3d->update();
     }
     else
         scommand.Call(cmd.toStdString());

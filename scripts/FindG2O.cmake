@@ -5,12 +5,13 @@ IF(WIN32)
 		SET ( PIL_FOUND 0 )
 ELSE(WIN32) # Linux
 
+#	message("G2O path?=" ${PROJECT_SOURCE_DIR}/ThirdParty/g2o)
 	FIND_PATH( G2O_PATH g2o/types/sim3.h
+	${PROJECT_SOURCE_DIR}/ThirdParty/g2o
 	/data/zhaoyong/Linux/Program/Apps/Thirdparty/orbslam/trunk/Thirdparty/g2o
 	# installation selected by user
 	$ENV{G2O_PATH}
 	# system placed in /usr/local/include
-	${CMAKE_CURRENT_LIST_DIR}/../Thirdparty/g2o
 	)
 
 	if(G2O_PATH)

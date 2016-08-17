@@ -47,7 +47,7 @@ namespace ORB_SLAM {
 
 Tracking::Tracking(ORBVocabulary *pVoc, Map *pMap) :
     mState(NO_IMAGES_YET),
-    mpORBVocabulary(pVoc),
+    mpORBVocabulary(pVoc),mpInitializer(NULL),
     mpMap(pMap),
     mnLastRelocFrameId(0), mbPublisherStopped(false),
     mbReseting(false), mbForceRelocalisation(false), mbMotionModel(false)
@@ -156,6 +156,7 @@ bool Tracking::track(GSLAM::FramePtr& videoframe)
                 DistCoef.at<float>(4) = parameters[10];
             }
             DistCoef.copyTo(mDistCoef);
+            SvarWithType<Camera>::instance()["CameraOut"]=camera;
         }
         else
         {
@@ -169,6 +170,7 @@ bool Tracking::track(GSLAM::FramePtr& videoframe)
     {
         return false;
     }
+
     GSLAM::GImage img=videoframe->getImage();
     assert(!img.empty());
     track(cv::Mat(img.rows,img.cols,img.type(),img.data).clone(),videoframe->_timestamp);
@@ -198,7 +200,6 @@ void Tracking::track(const cv::Mat &img_in, double timestamp)
         im = img_in;
     }
 
-
     // grenerate frame
     if( mState==WORKING || mState==LOST )
         mCurrentFrame = Frame(im, timestamp, mpORBextractor, mpORBVocabulary, mK, mDistCoef);
@@ -212,6 +213,12 @@ void Tracking::track(const cv::Mat &img_in, double timestamp)
     }
 
     mLastProcessedState=mState;
+
+    if(!svar.GetInt("WithQt"))
+    {
+        cv::imshow("img",im);
+        cv::waitKey(10);
+    }
 
     if( mState == NOT_INITIALIZED )
     {
@@ -431,6 +438,7 @@ void Tracking::CreateInitialMap(cv::Mat &Rcw, cv::Mat &tcw)
         Reset();
         return;
     }
+    else printf("Initialized with %d mappoints.\n",pKFcur->TrackedMapPoints());
 
     // Scale initial baseline
     cv::Mat Tc2w = pKFcur->GetPose();
@@ -1029,11 +1037,12 @@ void Tracking::Reset()
 
     mbPublisherStopped = false;
     mbReseting = true;
+    ResetIfRequested();
 }
 
 void Tracking::ResetIfRequested(void)
 {
-    boost::mutex::scoped_lock lock(mMutexReset);
+//    boost::mutex::scoped_lock lock(mMutexReset);
 
     // check if reset is required
     if( !mbReseting ) return;
