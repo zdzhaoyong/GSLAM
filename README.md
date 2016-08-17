@@ -4,9 +4,13 @@
 
 ### 1.1. What is GSLAM?
 GSLAM is aimed to provide a general open-source SLAM framework with following features :
+
 -> 1. Share the same API while maintain compatibility with different SLAM systems (such as feature based or direct methods).
+
 -> 2. Support Monocular, Stereo, RGB-D or any custom input types (SAR, IMU, GPS and so on).
+
 -> 3. Provide high efficient implementations of SLAM util classes like SO3, SE3, Camera, IMU, GPS, Bundle and so on.
+
 -> 4. Support other features like coorperation SLAM to build a singular map.
 
 ### 1.2. What we can do with GSLAM?
@@ -55,7 +59,7 @@ Not tested yet.
 ./test Act=SLAM 
 3.3. Configuration with Svar
     More parameters can be setted with Svar at file Default.cfg.
-    See more details of Svar at [PILBASE](./ThirdParty/PIL-1.1.0/apps/SvarTest/README.md).
+    See more details of Svar at [PILBASE](https://github.com/zdzhaoyong/PIL2/blob/master/apps/SvarTest/README.md).
 
 ## 4. Contacts
 ShuhuiBu: bushuhui@nwpu.edu.cn
