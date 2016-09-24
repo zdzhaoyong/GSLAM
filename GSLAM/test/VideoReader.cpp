@@ -1,6 +1,7 @@
 #include "VideoReader.h"
 #include <GSLAM/core/types/VideoFrame.h>
 #include <base/Svar/Svar.h>
+#include <base/Time/Timestamp.h>
 
 #include <opencv2/highgui/highgui.hpp>
 
@@ -14,6 +15,21 @@ public:
           camera(svar.GetString(name+".Camera","DefaultCamera")),
           skip(svar.GetInt(name+".Skip",5))
     {
+        if(!video.isOpened())
+        {
+            cerr<<"Can't open video file "<<svar.GetString(name+".VideoFile","")<<endl;
+            video.open(0);
+        }
+        if(video.isOpened())
+        {
+            int width=video.get(CV_CAP_PROP_FRAME_WIDTH);
+            int height=video.get(CV_CAP_PROP_FRAME_HEIGHT);
+            if(camera.width()!=width||camera.height()!=height)
+            {
+                cout<<"The video size ["<<width<<","<<height<<"] is not corrosponding to the setted camera:"<<camera.info()<<endl;
+                video.release();
+            }
+        }
     }
 
     std::string type() const {return "VideoReaderMonoOpenCV";}
@@ -23,7 +39,8 @@ public:
     GSLAM::FramePtr grabFrame()
     {
         for(int i=0;i<skip;i++) video.grab();
-        double timestamp=video.get(CV_CAP_PROP_POS_MSEC)*0.001;
+//        double timestamp=video.get(CV_CAP_PROP_POS_MSEC)*0.001;
+        double timestamp=pi::Timestamp().timestampF();
         video>>img;
         GSLAM::GImage gimg(img.cols,img.rows,img.type(),img.data);
         return SPtr<GSLAM::VideoFrameMono>(new GSLAM::VideoFrameMono(gimg,camera,frameId++,timestamp));

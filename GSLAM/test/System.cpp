@@ -180,9 +180,9 @@ void System::SLAMMain()
         {
             cout<<frame->type()<<":"<<frame->_timestamp<<","<<frame->getPose()<<endl;
 
-            if(_mainwindow.get())
-                _mainwindow->call("Update");
         }
+        if(_mainwindow.get())
+            _mainwindow->call("Update");
     }
 
     _mainwindow.reset();

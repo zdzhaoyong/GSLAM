@@ -227,6 +227,7 @@ void Tracking::track(const cv::Mat &img_in, double timestamp)
     else if( mState == INITIALIZING )
     {
         Initialize();
+        cout<<timestamp<<":Initializing...\n";
     }
     else
     {
