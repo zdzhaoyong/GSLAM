@@ -51,11 +51,11 @@ ELSE(WIN32) # Linux
 	# installation selected by user
 	$ENV{PIL_PATH}
 	# system placed in /usr/local/include
-	#${PROJECT_SOURCE_DIR}/ThirdParty/PIL-1.1.0
+	${PROJECT_SOURCE_DIR}/ThirdParty/PIL-1.1.0
 	${PROJECT_SOURCE_DIR}/ThirdParty/PIL2
-	#/data/zhaoyong/Linux/Program/Apps/PIL-1.1.0	
-	#/mnt/server0/users/zhaoyong/Program/Apps/PIS-1.1.0/Thirdparty/PIL-1.1.0
-	#/data/zhaoyong/Linux/Program/Apps/PIS-1.1.0/Thirdparty/PIL-1.1.0	
+	/data/zhaoyong/Linux/Program/Apps/PIL-1.1.0	
+	/mnt/server0/users/zhaoyong/Program/Apps/PIS-1.1.0/Thirdparty/PIL-1.1.0
+	/data/zhaoyong/Linux/Program/Apps/PIS-1.1.0/Thirdparty/PIL-1.1.0	
 	)
 
 	if(PIL_PATH)
