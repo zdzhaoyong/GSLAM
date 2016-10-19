@@ -47,19 +47,20 @@ IF(WIN32)
 	endif( PIL_PATH )
 
 ELSE(WIN32) # Linux
-
 	FIND_PATH( PIL_PATH src/base/PIL_VERSION.h
 	# installation selected by user
 	$ENV{PIL_PATH}
 	# system placed in /usr/local/include
-	/data/zhaoyong/Linux/Program/Apps/PIL-1.1.0	
-	/mnt/server0/users/zhaoyong/Program/Apps/PIS-1.1.0/Thirdparty/PIL-1.1.0
-	/data/zhaoyong/Linux/Program/Apps/PIS-1.1.0/Thirdparty/PIL-1.1.0	
+	#${PROJECT_SOURCE_DIR}/ThirdParty/PIL-1.1.0
+	${PROJECT_SOURCE_DIR}/ThirdParty/PIL2
+	#/data/zhaoyong/Linux/Program/Apps/PIL-1.1.0	
+	#/mnt/server0/users/zhaoyong/Program/Apps/PIS-1.1.0/Thirdparty/PIL-1.1.0
+	#/data/zhaoyong/Linux/Program/Apps/PIS-1.1.0/Thirdparty/PIL-1.1.0	
 	)
-	MESSAGE( STATUS "Found PIL at path " ${PIL_PATH})
-	set(PIL_INCLUDES ${PIL_PATH}/src)
 
 	if(PIL_PATH)
+		MESSAGE( STATUS "Found PIL at path " ${PIL_PATH})
+		set(PIL_INCLUDES ${PIL_PATH}/src)
 		set(PIL_MODULES2FIND base network hardware gui cv)
 		foreach (PIL_MODULE_NAME ${PIL_MODULES2FIND})
 
@@ -100,6 +101,10 @@ ELSE(WIN32) # Linux
 		else(  PIL_INCLUDES AND PIL_LIBRARIES)
 			message( STATUS "Looking for PIL-1.1.0 or greater  - not found" )
 			SET ( PIL_FOUND 0 )
+			
+			message( SEND_ERROR "Please clone PIL (https://github.com/zdzhaoyong/PIL2) to the ThirdParty (${PROJECT_SOURCE_DIR}/ThirdParty) and compile it first!")
+			
+				
 		endif(  PIL_INCLUDES AND PIL_LIBRARIES)
 	
 ENDIF(WIN32)

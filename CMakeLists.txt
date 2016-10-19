@@ -56,6 +56,7 @@ PIL_ECHO_LIBINFO(EIGEN3)
 PIL_ECHO_LIBINFO(G2O)
 
 message("----------------------------------------------------------")
+
 #####################################################################
 # Now do build things
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin)
