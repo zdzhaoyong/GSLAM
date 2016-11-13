@@ -114,8 +114,8 @@ void MapPoint::EraseAssociatedKF(KeyFrame *pKF)
         boost::mutex::scoped_lock lock(mMutexFeatures);
 
         if( mObservations.count(pKF) ) {
-            printf("Found KeyFrame: %8d at MP[%8d], and erase it from MapPoint",
-                   pKF->mnId, mnId);
+//            printf("Found KeyFrame: %8d at MP[%8d], and erase it from MapPoint",
+//                   pKF->mnId, mnId);
 
             mObservations.erase(pKF);
 
