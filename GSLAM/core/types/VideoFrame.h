@@ -10,15 +10,30 @@ namespace GSLAM {
 class VideoFrameMono : public MapFrame
 {
 public:
-    VideoFrameMono(const GImage& img,const Camera& camera,FrameID id,double time);
+    VideoFrameMono(const GImage& img,const Camera& camera,FrameID id,double time,const Camera& recCamera=Camera());
     virtual std::string type() const{return "VideoFrameMono";}
 
     virtual GImage getImage(int idx=0);
-    virtual Camera getCamera(int idx=0);
-
+    virtual Camera getCamera(int idx=0);//0:origin camera, 1:recommand slam camera
 protected:
     GImage       _img;
-    Camera       _camera;
+    Camera       _camera,_recCamera;
+};
+
+class VideoFrameMonoWithExposure : public VideoFrameMono
+{
+public:
+    VideoFrameMonoWithExposure(const GImage& img, const Camera& camera, FrameID id, double time,const Camera& recCamera=Camera(),
+                               float explosure_time=0,const GImage& G=GImage(),const GImage& vignetteMap=GImage());
+
+    virtual std::string type() const{return "VideoFrameMonoWithExposure";}
+
+    virtual void  call(const std::string& command,void* arg=NULL);// "getExposure" float*
+
+    virtual GImage getImage(int idx=0);// 0:_img 1:_G 2:_vignetteMap
+
+    float  _explosureTime;
+    GImage _G,_vignetteMap;
 };
 
 class VideoFrameRGBD : public MapFrame

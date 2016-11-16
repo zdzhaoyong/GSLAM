@@ -18,6 +18,16 @@ void GuiHandle(void *ptr,string cmd,string para)
         mainwindow->call("Update");
         return;
     }
+    else if(cmd=="MainWindow.SetRadius")
+    {
+        MainWindow* mainwindow=(MainWindow*)ptr;
+        stringstream sst(para);
+        float radius=-1;
+        sst>>radius;
+        if(radius>0)
+        mainwindow->getWin3D()->setSceneRadius(radius);
+        return;
+    }
 
 }
 
@@ -32,6 +42,7 @@ MainWindow::MainWindow(QWidget *parent):QMainWindow(parent),win3d(NULL)
 
     scommand.RegisterCommand("MainWindow.Show",GuiHandle,this);
     scommand.RegisterCommand("MainWindow.Update",GuiHandle,this);
+    scommand.RegisterCommand("MainWindow.SetRadius",GuiHandle,this);
 
     // setup layout
     setupLayout();
@@ -46,7 +57,7 @@ int MainWindow::setupLayout(void)
     m_tabWidget->addTab(win3d,"Win3D");
 
     /// 2. SvarTable tab
-    if(svar.GetInt("Draw.SvarWidget",0))
+    if(svar.GetInt("Draw.SvarWidget",1))
     {
         m_tabWidget->addTab(new SvarWidget(this),"SvarWidget");
     }

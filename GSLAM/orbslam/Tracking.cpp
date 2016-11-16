@@ -126,9 +126,9 @@ void Tracking::SetKeyFrameDatabase(KeyFrameDatabase *pKFDB)
 
 bool Tracking::track(GSLAM::FramePtr& videoframe)
 {
-    if(videoframe->type()!="VideoFrameMono")
+    if(videoframe->type()!="VideoFrameMono"&&videoframe->type()!="VideoFrameMonoWithExposure")
     {
-        cout<<"ORBSLAM need VideoFrameMono input!\n";
+        cout<<"ORBSLAM need VideoFrameMono or VideoFrameMonoWithExposure input but "<<videoframe->type()<<" is obtained!\n";
         return false;
     }
     if(mK.empty())
@@ -214,11 +214,11 @@ void Tracking::track(const cv::Mat &img_in, double timestamp)
 
     mLastProcessedState=mState;
 
-    if(!svar.GetInt("WithQt"))
-    {
-        cv::imshow("img",im);
-        cv::waitKey(10);
-    }
+//    if(!svar.GetInt("WithQt"))
+//    {
+//        cv::imshow("img",im);
+//        cv::waitKey(10);
+//    }
 
     if( mState == NOT_INITIALIZED )
     {

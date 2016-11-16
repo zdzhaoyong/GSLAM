@@ -1,4 +1,5 @@
 #include <base/Utils/TestCase.h>
+#include <base/Time/Global_Timer.h>
 #include <GSLAM/core/types/GImage.h>
 #include <opencv2/highgui/highgui.hpp>
 
@@ -11,24 +12,26 @@ public:
     GImageTest():TestCase("GImageTest"){}
 
 
-    cv::Mat GImage2Mat(const GSLAM::GImage& gimage)
+    cv::Mat GImage2Mat(GSLAM::GImage& gimage)// fast operation, no copy
     {
         if(gimage.empty())  return cv::Mat();
-        cv::Mat img(gimage.rows,gimage.cols,gimage.type(),gimage.data);
-        return img.clone();
+        cv::Mat img(gimage.rows,gimage.cols,gimage.type(),gimage.getDataCopy(false));
+        return img;
     }
 
-    GSLAM::GImage GImagefromMat(const cv::Mat& mat)
+    GSLAM::GImage GImagefromMat(const cv::Mat& mat)// deep copy of image
     {
         if(mat.empty()) return GSLAM::GImage();
-        else return GSLAM::GImage(mat.cols,mat.rows,mat.type(),mat.data);
+        else return GSLAM::GImage(mat.cols,mat.rows,mat.type(),mat.data,true);
     }
 
-    void testType(int type,int cols=100,int rows=200)
+    void testType(int type,int cols=1000,int rows=2000)
     {
 //        cout<<"Testing type "<<type<<endl;
         cv::Mat mat(rows,cols,type);
+        pi::timer.enter("GImagefromMat");
         GSLAM::GImage  img=GImagefromMat(mat);
+        pi::timer.leave("GImagefromMat");
         pi_assert(img.cols==mat.cols);
         pi_assert(img.rows==mat.rows);
         pi_assert(img.empty()==mat.empty());
@@ -42,7 +45,10 @@ public:
 
         pi_assert(memcmp(img.data,mat.data,img.total()*img.elemSize())==0);
 
-        cv::Mat mat1=cv::Mat(img.rows,img.cols,img.type(),img.data).clone();
+        pi::timer.enter("GImage2Mat");
+        cv::Mat mat1=GImage2Mat(img);
+        pi::timer.leave("GImage2Mat");
+
         GSLAM::GImage img1=img.clone();
 
         pi_assert(img1.cols==mat1.cols);
