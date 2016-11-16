@@ -58,7 +58,7 @@ installDependency()
 
 doCompile()
 {
-	PIL_PATH=$Here_Path/ThirdParty/PIL-1.1.0
+	PIL_PATH=$Here_Path/ThirdParty/PIL2
 	echo "Building PIL at $PIL_PATH ."
 
 	if [ -d "$PIL_PATH" ];then
