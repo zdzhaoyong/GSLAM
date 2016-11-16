@@ -23,7 +23,7 @@ GSLAM is aimed to provide a general open-source SLAM framework with following fe
  - GUtils  -- Utils for GSLAM implementations including Pose optimization, BA frame work
  - ORBSLAM -- Implementation of ORBSLAM (SLAM plugin demo)
  - dso     -- Implementation of dso (SLAM plugin demo)
- - test    -- Test system of GSLAM (Apllication demo)
+ - gslam    -- Test system of GSLAM (Apllication demo)
 
 * Thirdparty --- thirdparty libraries
  - PIL		 -- the basic c++ library for configuration, display, plugin loader (enssential, buildin)
@@ -76,10 +76,10 @@ Not tested yet.
 ## 3. Run the demo
 
 3.1. Test modules
-./bin/test Act=Tests [Cases=[case1,case2,...,caseN]]
+./bin/gslam Act=Tests [Cases=[case1,case2,...,caseN]]
 
 3.2. Test slam system
-./bin/test Act=SLAM VideoReaderTUMMonoDataset.VideoFile="datasetPath/" [SLAM.LibraryPath="SLAMPluginFile"]
+./bin/gslam Act=SLAM VideoReaderTUMMonoDataset.VideoFile="datasetPath/" [SLAM.LibraryPath="SLAMPluginFile"]
 
 3.3. Configuration with Svar
     More parameters can be setted with Svar at file Default.cfg.
