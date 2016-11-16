@@ -15,5 +15,9 @@ src/uav
 PIL.pro
 PIL.pro.user
 PIL.pro.user.*
+ThirdParty/g2o/build
+ThirdParty/g2o/lib
+ThirdParty/PIL-1.1.0
+ThirdParty/PIL2
 *.pro.user*
 
