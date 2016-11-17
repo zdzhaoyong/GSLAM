@@ -35,11 +35,11 @@ GSLAM is aimed to provide a general open-source SLAM framework with following fe
 * doc			--- documents
 
 ### 1.4. Implemented SLAM plugin
-ORBSLAM:
- ![ORBSLAM](./doc/gslam_orbslam_calib_wideGamma_scene1.small.png)
+| SLAM Plugin Name        |  Plugin Authers  | Demostration  |
+| ------- |:------:|:-------------:|
+| DSO     | Yong Zhao | ![DSO](./doc/gslam_dso_calib_wideGamma_scene1.small.png) |
+| ORBSLAM | Yong Zhao | ![ORBSLAM](./doc/gslam_orbslam_calib_wideGamma_scene1.small.png) |
 
-DSO:
- ![DSO](./doc/gslam_dso_calib_wideGamma_scene1.small.png)
 
 ## 2. Compilation
 
@@ -75,15 +75,15 @@ Not tested yet.
 
 ## 3. Run the demo
 
-3.1. Test modules
+### 3.1. Test modules
 ./bin/gslam Act=Tests [Cases=[case1,case2,...,caseN]]
 
-3.2. Test slam system
+### 3.2. Test slam system
 ./bin/gslam Act=SLAM VideoReaderTUMMonoDataset.VideoFile="datasetPath/" [SLAM.LibraryPath="SLAMPluginFile"]
 
-3.3. Configuration with Svar
-    More parameters can be setted with Svar at file Default.cfg.
-    See more details of Svar at [PILBASE](https://github.com/zdzhaoyong/PIL2/blob/master/apps/SvarTest/README.md).
+### 3.3. Configuration with Svar
+More parameters can be setted with Svar at file Default.cfg.
+See more details of Svar at [PILBASE](https://github.com/zdzhaoyong/PIL2/blob/master/apps/SvarTest/README.md).
 
 ## 4. Contacts
 
