@@ -39,7 +39,7 @@ ORBSLAM:
  ![ORBSLAM](./doc/gslam_orbslam_calib_wideGamma_scene1.small.png)
 
 DSO:
- ![DSO](./doc/gslam_dso_calib_wideGamma_scene1.small)
+ ![DSO](./doc/gslam_dso_calib_wideGamma_scene1.small.png)
 
 ## 2. Compilation
 
