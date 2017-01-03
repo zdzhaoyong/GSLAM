@@ -5,6 +5,7 @@
 int main(int argc,char** argv)
 {
     svar.ParseMain(argc,argv);
+
     if(svar.GetInt("WithQt"))
     {
         QApplication app(argc,argv);

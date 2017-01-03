@@ -153,7 +153,7 @@ void System::SLAMMain()
     {
         cout<<cl<<endl;
     }
-    _slam=SPtr<GSLAM::SLAM>(cl.create("GSLAM::ORBSLAM"));
+    _slam=SPtr<GSLAM::SLAM>(cl.create(svar.GetString("SLAM.Name", "GSLAM::ORBSLAM")));
     cout<<"Loaded SLAM system "<<_slam->type()<<endl;
 
     if(!_slam->valid()) {cerr<<_slam->type()<<" is not valid!\n"; return;}

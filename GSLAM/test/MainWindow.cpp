@@ -44,6 +44,7 @@ int MainWindow::setupLayout(void)
 
     win3d=new pi::gl::Win3D(this);
     m_tabWidget->addTab(win3d,"Win3D");
+    svar.GetPointer("MainWin3DPtr", NULL) = win3d;
 
     /// 2. SvarTable tab
     if(svar.GetInt("Draw.SvarWidget",0))

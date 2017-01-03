@@ -49,7 +49,7 @@ public:
     GSLAM::FrameID   frameId;
     cv::VideoCapture video;
     GSLAM::Camera    camera;
-    cv::Mat img;
+    cv::Mat          img;
     int&             skip;
 };
 

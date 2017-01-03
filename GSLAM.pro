@@ -52,7 +52,7 @@ LIBS+= -L/usr/lib/x86_64-linux-gnu \
 ################################################################################
 # PIL settings
 ################################################################################
-PIL_TOP=/data/zhaoyong/Linux/Program/Apps/PIL-1.1.0
+PIL_TOP=./ThirdParty/PIL2
 INCLUDEPATH += $$PIL_TOP/src
 LIBS+=-L$$PIL_TOP/libs \
 -lpi_base -lpi_hardware -lpi_gui -lpi_cv
@@ -60,8 +60,9 @@ LIBS+=-L$$PIL_TOP/libs \
 ################################################################################
 # g2o settings
 ################################################################################
-INCLUDEPATH += /data/zhaoyong/Linux/Program/Apps/GSLAM-1.1.0/ThirdParty/g2o
-LIBS +=-L/data/zhaoyong/Linux/Program/Apps/GSLAM-1.1.0/ThirdParty/g2o/lib -lg2o
+G2O_TOP         = ./ThirdParty/g2o
+INCLUDEPATH    += $$G2O_TOP
+LIBS           +=-L$$G2O_TOP/lib -lg2o
 
 LIBS+=
 
