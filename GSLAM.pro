@@ -5,13 +5,13 @@
 TEMPLATE = app
 TARGET = 
 DEPENDPATH += . src
-INCLUDEPATH += . ../../src ./src
+INCLUDEPATH += . ../../src ./src GSLAM/dso
 QMAKE_CXXFLAGS+= -std=c++11
 
 ####### OPENCV ############
 CONFIG  += link_pkgconfig
 PKGCONFIG += opencv
-DEFINES += DEBUG_WithQT
+DEFINES += DEBUG_WithQT DEBUG_DSO
 
 ################################################################################
 # QT settings
@@ -28,7 +28,7 @@ LIBS+=-lQtGui -lQtCore -lQtXml
 ################################################################################
 # QGLViewer settings
 ################################################################################
-LIBS+=-lQtOpenGL -lQGLViewer -lGL -lGLU -lglut
+LIBS+=-lQtOpenGL -lQGLViewer -lGL -lGLU -lglut -lGLEW
 
 ################################################################################
 # Boost settings
@@ -69,12 +69,95 @@ LIBS+=
 HEADERS += \
     GSLAM/core/GSLAM.h \
     GSLAM/core/types/GImage.h \
-    GSLAM/orbslam/ORBSLAM.h \
     GSLAM/test/System.h \
     GSLAM/core/types/VideoFrame.h \
     GSLAM/core/types/Camera.h \
     GSLAM/core/types/SE3.h \
     GSLAM/core/types/HashMap.h \
+    GSLAM/test/MainWindow.h \
+    GSLAM/test/VideoReader.h \
+
+# Input
+SOURCES += \
+    GSLAM/core/GSLAM.cpp \
+    GSLAM/core/types/GImage.cpp\
+    GSLAM/test/System.cpp \
+    GSLAM/test/main.cpp \
+    GSLAM/test/TestGImage.cpp \
+    GSLAM/core/types/VideoFrame.cpp \
+    GSLAM/core/types/Camera.cpp \
+    GSLAM/core/types/HashMap.cpp \
+    GSLAM/test/MainWindow.cpp \
+    GSLAM/test/VideoReader.cpp
+
+if(contains(DEFINES,DEBUG_DSO)){
+
+HEADERS+=GSLAM/dso/FullSystem/CoarseInitializer.h \
+    GSLAM/dso/FullSystem/CoarseTracker.h \
+    GSLAM/dso/FullSystem/FullSystem.h \
+    GSLAM/dso/FullSystem/HessianBlocks.h \
+    GSLAM/dso/FullSystem/ImmaturePoint.h \
+    GSLAM/dso/FullSystem/PixelSelector.h \
+    GSLAM/dso/FullSystem/PixelSelector2.h \
+    GSLAM/dso/FullSystem/ResidualProjections.h \
+    GSLAM/dso/FullSystem/Residuals.h \
+    GSLAM/dso/OptimizationBackend/AccumulatedSCHessian.h \
+    GSLAM/dso/OptimizationBackend/AccumulatedTopHessian.h \
+    GSLAM/dso/OptimizationBackend/EnergyFunctional.h \
+    GSLAM/dso/OptimizationBackend/EnergyFunctionalStructs.h \
+    GSLAM/dso/OptimizationBackend/MatrixAccumulators.h \
+    GSLAM/dso/OptimizationBackend/RawResidualJacobian.h \
+    GSLAM/dso/sophus/rxso3.hpp \
+    GSLAM/dso/sophus/se2.hpp \
+    GSLAM/dso/sophus/se3.hpp \
+    GSLAM/dso/sophus/sim3.hpp \
+    GSLAM/dso/sophus/so2.hpp \
+    GSLAM/dso/sophus/so3.hpp \
+    GSLAM/dso/sophus/sophus.hpp \
+    GSLAM/dso/sophus/tests.hpp \
+    GSLAM/dso/util/DatasetReader.h \
+    GSLAM/dso/util/FrameShell.h \
+    GSLAM/dso/util/globalCalib.h \
+    GSLAM/dso/util/globalFuncs.h \
+    GSLAM/dso/util/ImageAndExposure.h \
+    GSLAM/dso/util/IndexThreadReduce.h \
+    GSLAM/dso/util/MinimalImage.h \
+    GSLAM/dso/util/nanoflann.h \
+    GSLAM/dso/util/NumType.h \
+    GSLAM/dso/util/settings.h \
+    GSLAM/dso/util/Undistort.h \
+    GSLAM/dso/IOWrapper/Output3DWrapper.h \
+    GSLAM/dso/DSO.h \
+    GSLAM/dso/IOWrapper/WarperGSLAM.h \
+    GSLAM/dso/IOWrapper/ImageDisplay.h \
+    GSLAM/dso/IOWrapper/ImageRW.h \
+    GSLAM/dso/IOWrapper/KeyFrameDisplay.h
+
+SOURCES+=GSLAM/dso/FullSystem/CoarseInitializer.cpp \
+    GSLAM/dso/FullSystem/CoarseTracker.cpp \
+    GSLAM/dso/FullSystem/FullSystem.cpp \
+    GSLAM/dso/FullSystem/FullSystemDebugStuff.cpp \
+    GSLAM/dso/FullSystem/FullSystemMarginalize.cpp \
+    GSLAM/dso/FullSystem/FullSystemOptimize.cpp \
+    GSLAM/dso/FullSystem/FullSystemOptPoint.cpp \
+    GSLAM/dso/FullSystem/HessianBlocks.cpp \
+    GSLAM/dso/FullSystem/ImmaturePoint.cpp \
+    GSLAM/dso/FullSystem/PixelSelector2.cpp \
+    GSLAM/dso/FullSystem/Residuals.cpp \
+    GSLAM/dso/OptimizationBackend/AccumulatedSCHessian.cpp \
+    GSLAM/dso/OptimizationBackend/AccumulatedTopHessian.cpp \
+    GSLAM/dso/OptimizationBackend/EnergyFunctional.cpp \
+    GSLAM/dso/OptimizationBackend/EnergyFunctionalStructs.cpp \
+    GSLAM/dso/util/globalCalib.cpp \
+    GSLAM/dso/util/settings.cpp \
+    GSLAM/dso/util/Undistort.cpp \
+    GSLAM/dso/DSO.cpp \
+    GSLAM/dso/IOWrapper/WarperGSLAM.cpp \
+    GSLAM/dso/IOWrapper/KeyFrameDisplay.cpp
+}else{
+
+  HEADERS+=\
+    GSLAM/orbslam/ORBSLAM.h \
     GSLAM/orbslam/Converter.h \
     GSLAM/orbslam/Frame.h \
     GSLAM/orbslam/Initializer.h \
@@ -102,21 +185,10 @@ HEADERS += \
     GSLAM/orbslam/DBoW2/Random.h \
     GSLAM/orbslam/DBoW2/ScoringObject.h \
     GSLAM/orbslam/DBoW2/TemplatedVocabulary.h \
-    GSLAM/orbslam/DBoW2/Timestamp.h \
-    GSLAM/test/MainWindow.h \
-    GSLAM/test/VideoReader.h
+    GSLAM/orbslam/DBoW2/Timestamp.h
 
-# Input
-SOURCES += \
-    GSLAM/core/GSLAM.cpp \
-    GSLAM/core/types/GImage.cpp\
+SOURCES+=\
     GSLAM/orbslam/ORBSLAM.cpp \
-    GSLAM/test/System.cpp \
-    GSLAM/test/main.cpp \
-    GSLAM/test/TestGImage.cpp \
-    GSLAM/core/types/VideoFrame.cpp \
-    GSLAM/core/types/Camera.cpp \
-    GSLAM/core/types/HashMap.cpp \
     GSLAM/orbslam/Converter.cpp \
     GSLAM/orbslam/Frame.cpp \
     GSLAM/orbslam/Initializer.cpp \
@@ -139,10 +211,4 @@ SOURCES += \
     GSLAM/orbslam/DBoW2/Random.cpp \
     GSLAM/orbslam/DBoW2/ScoringObject.cpp \
     GSLAM/orbslam/DBoW2/Timestamp.cpp \
-    GSLAM/test/MainWindow.cpp \
-    GSLAM/test/VideoReader.cpp
-
-OTHER_FILES += \
-    GSLAM/orbslam/Makefile \
-    GSLAM/orbslam/DBoW2/LICENSE.txt
-
+}

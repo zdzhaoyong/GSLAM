@@ -22,7 +22,8 @@ GSLAM is aimed to provide a general open-source SLAM framework with following fe
  - GSLAM   -- Common SLAM APIs 
  - GUtils  -- Utils for GSLAM implementations including Pose optimization, BA frame work
  - ORBSLAM -- Implementation of ORBSLAM (SLAM plugin demo)
- - test    -- Test system of GSLAM (Apllication demo)
+ - dso     -- Implementation of dso (SLAM plugin demo)
+ - gslam    -- Test system of GSLAM (Apllication demo)
 
 * Thirdparty --- thirdparty libraries
  - PIL		 -- the basic c++ library for configuration, display, plugin loader (enssential, buildin)
@@ -30,38 +31,63 @@ GSLAM is aimed to provide a general open-source SLAM framework with following fe
  - g2o 		 -- a general optimization framework (optional & buildin, needed by ORBSLAM plugin)
  - boost     -- a c++ development library (optional, needed by ORBSLAM)
  - pba 		 -- an opensoure bundle implementation on GPU (optional)
- 
+
+* doc			--- documents
+
+### 1.4. Implemented SLAM plugin
+| SLAM Plugin Name        |  Plugin Authers  | Demostration  |
+| ------- |:------:|:-------------:|
+| DSO     | Yong Zhao | ![DSO](./doc/gslam_dso_calib_wideGamma_scene1.small.png) |
+| ORBSLAM | Yong Zhao | ![ORBSLAM](./doc/gslam_orbslam_calib_wideGamma_scene1.small.png) |
+
+
 ## 2. Compilation
 
-### 2.1. Compile on linux
+### 2.1. Compile on linux (Tested in Ubuntu 14.04 and 16.04)
 
 #### 2.1.1 Install dependency
+
+Tips: Use ''bash buildAll.sh -d'' to install dependencies. Or you can install the following dependencies by yourself:
+
+**Lapack&Blas** :  sudo apt-get install libblas3 libblas-dev liblapack-dev liblapack3
+
+**Boost** : sudo apt-get install libboost-all-dev libboost-thread* libboost-system* libboost-filesystem*
 
 **OpenCV** : sudo apt-get install libopencv-dev 
 
 **Qt** : sudo apt-get install build-essential g++ libqt4-core libqt4-dev libqt4-gui qt4-doc qt4-designer 
 
+**OpenGL**:sudo apt-get install freeglut3 freeglut3-dev libglew-dev libglew1.10
+
 **QGLViewer** : sudo apt-get install libqglviewer-dev libqglviewer2 
 
+**Chomod for dso**: sudo apt-get install libsuitesparse-dev libeigen3-dev
+
+#### ** WARNING: It it Qt4 instead of Qt5 that should be installed! For Ubuntu 16.06 libqglviewer-qt4 should be linked. **
+
+
+
 #### 2.1.2 Compile
-mkdir build; cd build;cmake ..;make
+bash buildAll.sh -a
 
 ###2.2 Compile on windows
 Not tested yet.
 
-###2.3 Compile on windows
-Not tested yet.
-
 ## 3. Run the demo
-3.1. Test modules
-./test Act=Tests [Cases=[case1,case2,...,caseN]]
-3.2. Test slam system
-./test Act=SLAM 
-3.3. Configuration with Svar
-    More parameters can be setted with Svar at file Default.cfg.
-    See more details of Svar at [PILBASE](https://github.com/zdzhaoyong/PIL2/blob/master/apps/SvarTest/README.md).
+
+### 3.1. Test modules
+./bin/gslam Act=Tests [Cases=[case1,case2,...,caseN]]
+
+### 3.2. Test slam system
+./bin/gslam Act=SLAM VideoReaderTUMMonoDataset.VideoFile="datasetPath/" [SLAM.LibraryPath="SLAMPluginFile"]
+
+### 3.3. Configuration with Svar
+More parameters can be setted with Svar at file Default.cfg.
+See more details of Svar at [PILBASE](https://github.com/zdzhaoyong/PIL2/blob/master/apps/SvarTest/README.md).
 
 ## 4. Contacts
-ShuhuiBu: bushuhui@nwpu.edu.cn
+
 YongZhao: zd5945@126.com
+
+ShuhuiBu: bushuhui@nwpu.edu.cn
 

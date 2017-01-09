@@ -85,7 +85,7 @@ class GImage
 {
 public:
     GImage();
-    GImage(int width,int height,int type=GImageType<>::Type,uchar* src=NULL);
+    GImage(int width,int height,int type=GImageType<>::Type,uchar* src=NULL,bool copy=true);
     GImage(const GImage& ref);
     ~GImage();
 
@@ -99,6 +99,9 @@ public:
     int  type()const{return flags;}
     int  total()const{return cols*rows;}
 
+    // This is a shallow copy, the data won't be released once this function be called,
+    // so the user should remember to release the memory. Return NULL if not success.
+    uchar* getDataCopy(bool deepCopy=true);
     GImage clone();
 
     template <typename C>
@@ -110,6 +113,7 @@ public:
     int  cols,rows,flags;
     uchar*          data;
     int*            refCount;
+    bool            notRelease;
 };
 
 }

@@ -8,7 +8,11 @@
 #include "VideoReader.h"
 
 #ifdef DEBUG_WithQT
+#ifdef DEBUG_DSO
+#include <GSLAM/dso/DSO.h>
+#else
 #include <GSLAM/orbslam/ORBSLAM.h>
+#endif
 #endif
 
 using namespace std;
@@ -67,7 +71,7 @@ void System::run()
         {
             SLAMMain();
         }
-        else //if("SLAMDebug"==act)
+        else if("SLAMDebug"==act)
         {
 #ifdef DEBUG_WithQT
             SLAMDebug();
@@ -92,8 +96,11 @@ void System::SLAMDebug()
     {
         cout<<"Failed to open video "+videoName<<endl;return;
     }
-
+#ifdef DEBUG_DSO
+    _slam=SPtr<GSLAM::SLAM>(new GSLAM::DSO());
+#else
     _slam=SPtr<GSLAM::SLAM>(new GSLAM::ORBSLAM());
+#endif
     cout<<"Loaded SLAM system "<<_slam->type()<<endl;
 
     if(!_slam->valid()) {cerr<<_slam->type()<<" is not valid!\n"; return;}
@@ -153,7 +160,9 @@ void System::SLAMMain()
     {
         cout<<cl<<endl;
     }
-    _slam=SPtr<GSLAM::SLAM>(cl.create(svar.GetString("SLAM.Name", "GSLAM::ORBSLAM")));
+    vector<string> names=cl.names();
+    if(!names.size()) return;
+    _slam=SPtr<GSLAM::SLAM>(cl.create(names.front()));
     cout<<"Loaded SLAM system "<<_slam->type()<<endl;
 
     if(!_slam->valid()) {cerr<<_slam->type()<<" is not valid!\n"; return;}

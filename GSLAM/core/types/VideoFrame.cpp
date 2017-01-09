@@ -2,8 +2,8 @@
 
 namespace GSLAM{
 
-VideoFrameMono::VideoFrameMono(const GImage& img,const Camera& camera,FrameID id,double time)
-    :MapFrame(id,time),_img(img),_camera(camera)
+VideoFrameMono::VideoFrameMono(const GImage& img,const Camera& camera,FrameID id,double time,const Camera& recCamera)
+    :MapFrame(id,time),_img(img),_camera(camera),_recCamera(recCamera)
 {
 
 }
@@ -17,7 +17,31 @@ GImage VideoFrameMono::getImage(int idx)
 Camera VideoFrameMono::getCamera(int idx)
 {
     pi::ReadMutex lock(_mutexPose);
-    return _camera;
+    if(idx==0)
+        return _camera;
+    else if(idx==1)
+        return _recCamera;
+}
+
+VideoFrameMonoWithExposure::VideoFrameMonoWithExposure(const GImage &img, const Camera &camera, FrameID id, double time,const Camera& recCamera,
+                                                       float explosure_time,const GImage& G,const GImage& vignetteMap)
+    :VideoFrameMono(img,camera,id,time,recCamera),_explosureTime(explosure_time)
+{
+}
+
+GImage VideoFrameMonoWithExposure::getImage(int idx)// 0:_img 1:_G 2:_vignetteMap
+{
+    pi::ReadMutex lock(_mutexPose);
+    if(idx==1) return _G;
+    else if(idx==2) return _vignetteMap;
+    else   return _img;// FIXME: .clone()?
+}
+
+void  VideoFrameMonoWithExposure::call(const std::string& command,void* arg){
+    if("getExposure"==command)
+    {
+        *(float*)arg=_explosureTime;
+    }
 }
 
 VideoFrameRGBD::VideoFrameRGBD(const GImage& img,const GImage& depth,const Camera& camera,FrameID id,double timestamp)
