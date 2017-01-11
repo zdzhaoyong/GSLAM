@@ -37,8 +37,8 @@ GSLAM is aimed to provide a general open-source SLAM framework with following fe
 ### 1.4. Implemented SLAM plugin
 | SLAM Plugin Name        |  Plugin Authers  | Demostration  |
 | ------- |:------:|:-------------:|
-| DSO     | Yong Zhao | ![DSO](./doc/gslam_dso_calib_wideGamma_scene1.small.png) |
-| ORBSLAM | Yong Zhao | ![ORBSLAM](./doc/gslam_orbslam_calib_wideGamma_scene1.small.png) |
+| DSO     | Yong Zhao | ![DSO](./data/doc/gslam_dso_calib_wideGamma_scene1.small.png) |
+| ORBSLAM | Yong Zhao | ![ORBSLAM](./data/doc/gslam_orbslam_calib_wideGamma_scene1.small.png) |
 
 
 ## 2. Compilation
@@ -67,8 +67,18 @@ Tips: Use ''bash buildAll.sh -d'' to install dependencies. Or you can install th
 
 
 
-#### 2.1.2 Compile
-bash buildAll.sh -a
+#### 2.1.2 Compile and install PIL
+```
+git clone https://github.com/zdzhaoyong/PIL2
+cd PIL2;mkdir build;cd build;
+cmake ..;make;sudo make install;
+```
+### 2.1.3 Compile and insall GSLAM
+
+```
+mkdir build;cd build;
+cmake ..;make;sudo make install
+```
 
 ###2.2 Compile on windows
 Not tested yet.
@@ -76,10 +86,10 @@ Not tested yet.
 ## 3. Run the demo
 
 ### 3.1. Test modules
-./bin/gslam Act=Tests [Cases=[case1,case2,...,caseN]]
+gslam Act=Tests [Cases=[case1,case2,...,caseN]]
 
 ### 3.2. Test slam system
-./bin/gslam Act=SLAM VideoReaderTUMMonoDataset.VideoFile="datasetPath/" [SLAM.LibraryPath="SLAMPluginFile"]
+Act=SLAM VideoReaderTUMMonoDataset.VideoFile="datasetPath/" [SLAM.LibraryPath="SLAMPluginFile"]
 
 ### 3.3. Configuration with Svar
 More parameters can be setted with Svar at file Default.cfg.

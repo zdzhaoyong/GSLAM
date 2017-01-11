@@ -1,5 +1,3 @@
-# G2O
-
 IF(WIN32)
 		message( STATUS "Looking for G2O or greater  - not found" )
 		SET ( PIL_FOUND 0 )

@@ -16,6 +16,11 @@
 #include "types/GImage.h"
 #include "types/Camera.h"
 
+#define GSLAM_VERSION "1.1.1"
+#define GSLAM_VERSION_MAJOR 1
+#define GSLAM_VERSION_MINOR 1
+#define GSLAM_VERSION_PATCH 1
+
 namespace GSLAM {
 
 class Map;
