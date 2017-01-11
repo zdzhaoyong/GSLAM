@@ -68,7 +68,7 @@ find_package(OpenCV 2.4.9)
 find_package(Eigen3 3.1.0)
 find_package(Qt)
 pi_report_modules(PIL OpenCV Eigen3 Qt)
-pi_collect_packages(VERBOSE MODULES OpenGL GLEW GLUT G2O QGLViewer Boost)
+pi_collect_packages(VERBOSE MODULES OpenGL GLEW GLUT G2O QGLViewer Boost Cholmod)
 
 
 GSLAM_FIND_VERSION()
@@ -83,8 +83,8 @@ include_directories(${CMAKE_CURRENT_LIST_DIR} ${CMAKE_SOURCE_DIR}/GSLAM/dso)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wl,-rpath,.:./libs:../libs:${CMAKE_INSTALL_PREFIX}/lib")
 
 pi_add_target(gslam_core SHARED GSLAM/core REQUIRED PIL PI_BASE)
-pi_add_target(gslam_dso SHARED GSLAM/dso REQUIRED gslam_core PIL PI_BASE BOOST EIGEN3 QT QGLVIEWER GLEW GLUT) 
-pi_add_target(gslam_orbslam SHARED GSLAM/orbslam REQUIRED gslam_core PIL PI_BASE BOOST EIGEN3 QT QGLVIEWER GLEW GLUT G2O OpenCV)
+pi_add_target(gslam_dso SHARED GSLAM/dso REQUIRED gslam_core Cholmod PIL PI_BASE BOOST EIGEN3 QT QGLVIEWER GLEW GLUT) 
+pi_add_target(gslam_orbslam SHARED GSLAM/orbslam REQUIRED gslam_core PIL PI_BASE BOOST EIGEN3 QT QGLVIEWER GLEW GLUT OpenCV)
 pi_add_target(gslam BIN GSLAM/gslam REQUIRED gslam_core PI_BASE OpenCV Qt QGLViewer)
 
 

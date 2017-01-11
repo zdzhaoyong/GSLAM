@@ -31,7 +31,7 @@
 #include <cassert>
 #include <Eigen/Core>
 
-#include "../../config.h"
+#include "../config.h"
 #include "matrix_operations.h"
 
 #ifdef _MSC_VER
