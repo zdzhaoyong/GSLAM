@@ -86,13 +86,16 @@ Not tested yet.
 ## 3. Run the demo
 
 ### 3.1. Test modules
+```
 gslam Act=Tests [Cases=[case1,case2,...,caseN]]
-
+```
 ### 3.2. Test slam system
-Act=SLAM VideoReaderTUMMonoDataset.VideoFile="datasetPath/" [SLAM.LibraryPath="SLAMPluginFile"]
-
+```
+cd data
+gslam conf=orbslam.cfg
+```
 ### 3.3. Configuration with Svar
-More parameters can be setted with Svar at file Default.cfg.
+More parameters can be setted with Svar at file *.cfg.
 See more details of Svar at [PILBASE](https://github.com/zdzhaoyong/PIL2/blob/master/apps/SvarTest/README.md).
 
 ## 4. Contacts
