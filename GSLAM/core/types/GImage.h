@@ -1,8 +1,15 @@
-#ifndef GIMAGE_H
-#define GIMAGE_H
-#include "SE3.h"
+#ifndef GIMAGE
+#define GIMAGE
+#include <stdint.h>
+#include <string.h>
+
+#ifdef HAS_OPENCV
+#include <opencv2/core/core.hpp>
+#endif
 
 namespace GSLAM{
+
+typedef uint8_t uchar;
 
 enum GElementType{
     GElementType_8U =0,
@@ -23,7 +30,7 @@ public:
 };
 
 template <>
-class GElement<uchar>
+class GElement<uint8_t>
 {
 public:
     enum{Type=GElementType_8U};
@@ -37,21 +44,21 @@ public:
 };
 
 template <>
-class GElement<pi::Int16>
+class GElement<int16_t>
 {
 public:
     enum{Type=GElementType_16S};
 };
 
 template <>
-class GElement<pi::UInt16>
+class GElement<uint16_t>
 {
 public:
     enum{Type=GElementType_16U};
 };
 
 template <>
-class GElement<pi::Int32>
+class GElement<int32_t>
 {
 public:
     enum{Type=GElementType_32S};
@@ -71,7 +78,7 @@ public:
     enum{Type=GElementType_64F};
 };
 
-template <typename EleType=uchar,int channelSize=1>
+template <typename EleType=uint8_t,int channelSize=1>
 struct GImageType
 {
     enum{Type=((GElement<EleType>::Type&0x7)+((channelSize-1)<<3))};
@@ -84,12 +91,80 @@ struct GImageType
 class GImage
 {
 public:
-    GImage();
-    GImage(int width,int height,int type=GImageType<>::Type,uchar* src=NULL,bool copy=true);
-    GImage(const GImage& ref);
-    ~GImage();
+    GImage()
+        :cols(0),rows(0),flags(0),data(NULL),refCount(NULL)
+    {
 
-    GImage& operator=(const GImage& rhs);
+    }
+
+    GImage(int width,int height,int type=GImageType<>::Type,uchar* src=NULL,bool copy=true)
+        :cols(width),rows(height),flags(type),data(NULL),refCount(NULL)
+    {
+        if(data&&!copy)
+        {
+            data=src;
+            return;
+        }
+
+        int byteNum=total()*elemSize();
+        data=new uchar[byteNum+sizeof(int*)];
+        refCount=(int*)(data+byteNum);
+        *refCount=1;
+        if(src)
+            memcpy(data,src,byteNum);
+    }
+
+    GImage(const GImage& ref)
+        : cols(ref.cols),rows(ref.rows),flags(ref.flags),
+          data(ref.data),refCount(ref.refCount)
+    {
+        if(refCount)
+            (*refCount)++;
+    }
+
+    ~GImage()
+    {
+        if(data&&refCount)
+        {
+            if((*refCount)==1)
+            {
+                cols=rows=0;
+                refCount=NULL;
+                delete data;
+                data=NULL;
+            }
+            else (*refCount)--;
+        }
+    }
+
+    GImage& operator=(const GImage& rhs)
+    {
+        this->~GImage();
+        cols=rhs.cols;
+        rows=rhs.rows;
+        flags=rhs.flags;
+        data=rhs.data;
+        refCount=rhs.refCount;
+        if(refCount) (*refCount)++;
+        return *this;
+    }
+
+#ifdef HAS_OPENCV
+    operator cv::Mat()const
+    {
+        cv::Mat result(rows,cols,type(),data);
+        result.refcount=refCount;
+        refCount++;
+        return result;
+    }
+
+    GImage(const cv::Mat& mat)
+        : cols(mat.cols),rows(mat.rows),flags(mat.type()),
+          data(mat.data),refCount(mat.refcount)
+    {
+        if(refCount) (*refCount)++;
+    }
+#endif
 
     bool empty()const{return !data;}
     int  elemSize()const{return channels()*elemSize1();}
@@ -99,10 +174,10 @@ public:
     int  type()const{return flags;}
     int  total()const{return cols*rows;}
 
-    // This is a shallow copy, the data won't be released once this function be called,
-    // so the user should remember to release the memory. Return NULL if not success.
-    uchar* getDataCopy(bool deepCopy=true);
-    GImage clone();
+    GImage clone()
+    {
+        return GImage(cols,rows,flags,data,true);
+    }
 
     template <typename C>
     C& at(int idx){return ((C*)data)[idx];}
@@ -112,9 +187,9 @@ public:
 
     int  cols,rows,flags;
     uchar*          data;
-    int*            refCount;
-    bool            notRelease;
+    mutable int*    refCount;
 };
 
 }
-#endif // GIMAGE_H
+#endif // GIMAGE
+

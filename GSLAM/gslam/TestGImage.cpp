@@ -11,26 +11,12 @@ class GImageTest : public TestCase
 public:
     GImageTest():TestCase("GImageTest"){}
 
-
-    cv::Mat GImage2Mat(GSLAM::GImage& gimage)// fast operation, no copy
-    {
-        if(gimage.empty())  return cv::Mat();
-        cv::Mat img(gimage.rows,gimage.cols,gimage.type(),gimage.getDataCopy(false));
-        return img;
-    }
-
-    GSLAM::GImage GImagefromMat(const cv::Mat& mat)// deep copy of image
-    {
-        if(mat.empty()) return GSLAM::GImage();
-        else return GSLAM::GImage(mat.cols,mat.rows,mat.type(),mat.data,true);
-    }
-
     void testType(int type,int cols=1000,int rows=2000)
     {
 //        cout<<"Testing type "<<type<<endl;
         cv::Mat mat(rows,cols,type);
         pi::timer.enter("GImagefromMat");
-        GSLAM::GImage  img=GImagefromMat(mat);
+        GSLAM::GImage  img=(mat);
         pi::timer.leave("GImagefromMat");
         pi_assert(img.cols==mat.cols);
         pi_assert(img.rows==mat.rows);
@@ -46,7 +32,7 @@ public:
         pi_assert(memcmp(img.data,mat.data,img.total()*img.elemSize())==0);
 
         pi::timer.enter("GImage2Mat");
-        cv::Mat mat1=GImage2Mat(img);
+        cv::Mat mat1=(img);
         pi::timer.leave("GImage2Mat");
 
         GSLAM::GImage img1=img.clone();
