@@ -107,7 +107,7 @@ public:
         }
 
         int byteNum=total()*elemSize();
-        data=new uchar[byteNum+sizeof(int*)];
+        data=(uchar*)fastMalloc(byteNum+sizeof(int*));
         refCount=(int*)(data+byteNum);
         *refCount=1;
         if(src)
@@ -130,7 +130,7 @@ public:
             {
                 cols=rows=0;
                 refCount=NULL;
-                delete data;
+                fastFree(data);
                 data=NULL;
             }
             else (*refCount)--;
@@ -154,7 +154,7 @@ public:
     {
         cv::Mat result(rows,cols,type(),data);
         result.refcount=refCount;
-        refCount++;
+        (*refCount)++;
         return result;
     }
 
@@ -185,6 +185,32 @@ public:
     template <typename C>
     C& at(int ix,int iy){return ((C*)data)[iy*cols+ix];}
 
+private:
+
+    template<typename _Tp> static inline _Tp* alignPtr(_Tp* ptr, int n=(int)sizeof(_Tp))
+    {
+        return (_Tp*)(((size_t)ptr + n-1) & -n);
+    }
+
+    void* fastMalloc( size_t size )
+    {
+            uchar* udata = (uchar*)malloc(size + sizeof(void*) + 16);
+            if(!udata)
+                    return NULL;
+            uchar** adata = alignPtr((uchar**)udata + 1, 16);
+            adata[-1] = udata;
+            return adata;
+    }
+
+    void fastFree(void* ptr)
+    {
+            if(ptr)
+            {
+                    uchar* udata = ((uchar**)ptr)[-1];
+                    free(udata);
+            }
+    }
+public:
     int  cols,rows,flags;
     uchar*          data;
     mutable int*    refCount;
