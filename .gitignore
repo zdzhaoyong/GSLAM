@@ -22,4 +22,5 @@ ThirdParty/PIL2
 *.pro.user*
 cmake-build-debug
 .idea
+CMakeLists.txt.user
 

@@ -35,6 +35,13 @@ public:
 
 };
 
+class GObjectHandle
+{
+public:
+    virtual ~GObjectHandle(){}
+    virtual void handle(const SPtr<GObject>& obj){}
+};
+
 /**
  * @brief The MapPoint class
  */
@@ -135,7 +142,7 @@ typedef SPtr<Map> MapPtr;
 class SLAM : public GObject
 {
 public:
-    SLAM();
+    SLAM(){}
     virtual ~SLAM(){}
     virtual std::string type()const{return "InvalidSLAM";}
     virtual bool valid()const{return false;}
@@ -144,11 +151,63 @@ public:
     MapPtr  getMap()const;
 
     virtual bool    track(FramePtr& frame){return false;}
+    virtual bool    setCallback(GObjectHandle* cbk){return false;}
 
 protected:
     MapPtr              _curMap;
     mutable pi::MutexRW _mutexMap;
 };
+
+inline MapPoint::MapPoint(const PointID& id,const Point3Type& position)
+    :_id(id),_pt(position)
+{
+}
+
+inline Point3Type   MapPoint::getPose()
+{
+    pi::ReadMutex lock(_mutexPt);
+    return _pt;
+}
+
+inline void MapPoint::setPose(const Point3Type& pt)
+{
+    pi::WriteMutex lock(_mutexPt);
+    _pt=pt;
+}
+
+inline MapFrame::MapFrame(const FrameID& id,const double& timestamp)
+    :_id(id),_timestamp(timestamp)
+{
+}
+
+inline SE3 MapFrame::getPose()const
+{
+    pi::ReadMutex lock(_mutexPose);
+    return _c2w;
+}
+
+inline void MapFrame::setPose(const SE3& pose)
+{
+    pi::WriteMutex lock(_mutexPose);
+    _c2w=pose;
+}
+
+inline Map::Map():_ptId(1),_frId(1)
+{
+
+}
+
+inline bool SLAM::setMap(const MapPtr& map)
+{
+    _curMap=map;
+}
+
+inline MapPtr SLAM::getMap()const
+{
+    pi::ReadMutex lock(_mutexMap);
+    return _curMap;
+}
+
 
 } //end of namespace GSLAM
 

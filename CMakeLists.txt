@@ -82,10 +82,10 @@ message("----------------------------------------------------------")
 include_directories(${CMAKE_CURRENT_LIST_DIR} ${CMAKE_SOURCE_DIR}/GSLAM/dso)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wl,-rpath,.:./libs:../libs:${CMAKE_INSTALL_PREFIX}/lib")
 
-pi_add_target(gslam_core SHARED GSLAM/core REQUIRED PIL PI_BASE)
-pi_add_target(gslam_dso SHARED GSLAM/dso REQUIRED gslam_core Cholmod PIL PI_BASE BOOST EIGEN3 QT QGLVIEWER GLEW GLUT) 
-pi_add_target(gslam_orbslam SHARED GSLAM/orbslam REQUIRED gslam_core PIL PI_BASE BOOST EIGEN3 QT QGLVIEWER GLEW GLUT OpenCV)
-pi_add_target(gslam BIN GSLAM/gslam REQUIRED gslam_core PI_BASE OpenCV Qt QGLViewer)
+#pi_add_target(gslam_core SHARED GSLAM/core REQUIRED PIL PI_BASE)
+pi_add_target(gslam_dso SHARED GSLAM/dso REQUIRED Cholmod PIL PI_BASE BOOST EIGEN3 QT QGLVIEWER GLEW GLUT) 
+pi_add_target(gslam_orbslam SHARED GSLAM/orbslam REQUIRED PIL PI_BASE BOOST EIGEN3 QT QGLVIEWER GLEW GLUT OpenCV)
+pi_add_target(gslam BIN GSLAM/gslam REQUIRED PIL OpenCV Qt QGLViewer DEPENDENCY pthread)
 
 
 pi_report_target()
@@ -94,5 +94,5 @@ pi_report_target()
 #####################################################################
 # Now do make install
 pi_install(HEADERS GSLAM/core HEADER_DESTINATION include/GSLAM
-           TARGETS gslam_core gslam CMAKE "${PROJECT_SOURCE_DIR}/scripts/cmake/FindGSLAM.cmake.in")
+           gslam CMAKE "${PROJECT_SOURCE_DIR}/scripts/cmake/FindGSLAM.cmake.in")
 

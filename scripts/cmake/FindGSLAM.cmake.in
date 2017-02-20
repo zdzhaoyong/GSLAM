@@ -121,9 +121,10 @@ if(WIN32)
 		endif(GSLAM_LIBRARIES)
 
 	else( GSLAM_VERSION_OK )
-		message( STATUS "Looking for GSLAM-${GSLAM_FIND_VERSION} or greater  - not found" )
+#		message( STATUS "Looking for GSLAM-${GSLAM_FIND_VERSION} or greater  - not found" )
 		SET ( GSLAM_FOUND 0 )
 	endif( GSLAM_VERSION_OK )
+        SET ( GSLAM_FOUND 1 )
 
 ELSE(WIN32) # Linux
 
@@ -155,19 +156,19 @@ ELSE(WIN32) # Linux
 
 		endforeach()
 	
-		if(GSLAM_LIBRARIES)
+#		if(GSLAM_LIBRARIES)
 			message( STATUS "Looking for GSLAM-${GSLAM_FIND_VERSION} or greater  - found ${GSLAM_VERSION}" )
-			if(GSLAM_NOTFOUND_COMPONENTS)
-				SET(GSLAM_FOUND 0)
-				message(FATAL_ERROR "The following GSLAM modules are required but not found: ${GSLAM_NOTFOUND_COMPONENTS}")
-			else(GSLAM_NOTFOUND_COMPONENTS)
+#			if(GSLAM_NOTFOUND_COMPONENTS)
+#				SET(GSLAM_FOUND 0)
+#				message(FATAL_ERROR "The following GSLAM modules are required but not found: ${GSLAM_NOTFOUND_COMPONENTS}")
+#			else(GSLAM_NOTFOUND_COMPONENTS)
 				SET ( GSLAM_DEFINITIONS -std=c++11)
 				SET ( GSLAM_FOUND 1 )
-			endif(GSLAM_NOTFOUND_COMPONENTS)
-		else(GSLAM_LIBRARIES)
-			message( STATUS "Looking for GSLAM-${GSLAM_FIND_VERSION} or greater  - found ${GSLAM_VERSION} but no library available." )
-			SET ( GSLAM_FOUND 0 )
-		endif()
+#			endif(GSLAM_NOTFOUND_COMPONENTS)
+#		else(GSLAM_LIBRARIES)
+#			message( STATUS "Looking for GSLAM-${GSLAM_FIND_VERSION} or greater  - found ${GSLAM_VERSION} but no library available." )
+#			SET ( GSLAM_FOUND 0 )
+#		endif()
 
 	else(GSLAM_VERSION_OK)
 			message( STATUS "Looking for GSLAM-${GSLAM_FIND_VERSION} or greater  - not found" )
