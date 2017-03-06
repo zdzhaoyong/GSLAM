@@ -1,0 +1,2 @@
+set(OpenGL_FOUND 1)
+set(OPENGL_LIBRARIES GL GLU glut GLEW)

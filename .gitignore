@@ -12,5 +12,13 @@ src/map2dfusion
 src/math
 src/slam
 src/uav
-*.pro.user*
 *.user
+*.pro.user*
+cmake-build-debug
+.idea
+CMakeLists.txt.user
+ThirdParty/g2o/build
+ThirdParty/g2o/lib
+ThirdParty/PIL-1.1.0
+ThirdParty/PIL2
+

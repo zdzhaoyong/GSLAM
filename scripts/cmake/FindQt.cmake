@@ -1,0 +1,5 @@
+find_package(Qt4)
+include(${QT_USE_FILE})
+add_definitions(${QT_DEFINITIONS})
+include_directories(${QT_INCLUDE_DIR})
+set(QT_LIBRARIES QtGui QtCore QtXml QtOpenGL)
