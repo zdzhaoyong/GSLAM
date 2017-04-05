@@ -108,6 +108,10 @@ public:
 
         int byteNum=total()*elemSize();
         data=(uchar*)fastMalloc(byteNum+sizeof(int*));
+        if(!data)
+        {
+            width=0;height=0;return ;
+        }
         refCount=(int*)(data+byteNum);
         *refCount=1;
         if(src)
@@ -152,6 +156,7 @@ public:
 #ifdef HAS_OPENCV
     operator cv::Mat()const
     {
+        if(empty()) return cv::Mat();
         cv::Mat result(rows,cols,type(),data);
         result.refcount=refCount;
         (*refCount)++;

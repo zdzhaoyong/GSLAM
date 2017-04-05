@@ -16,14 +16,20 @@
 #include "types/GImage.h"
 #include "types/Camera.h"
 
-#define GSLAM_VERSION "1.1.1"
+#define GSLAM_VERSION "1.2.1"
 #define GSLAM_VERSION_MAJOR 1
-#define GSLAM_VERSION_MINOR 1
+#define GSLAM_VERSION_MINOR 2
 #define GSLAM_VERSION_PATCH 1
 
 namespace GSLAM {
 
 class Map;
+class MapFrame;
+class MapPoint;
+typedef SPtr<MapFrame> FramePtr;
+typedef SPtr<MapPoint> PointPtr;
+typedef std::vector<FramePtr> FrameArray;
+typedef std::vector<PointPtr> PointArray;
 
 class GObject
 {
@@ -52,14 +58,26 @@ public:
     virtual ~MapPoint(){}
     virtual std::string type(){return "InvalidPoint";}
     const PointID id(){return _id;}
-    Point3Type    getPose();
+
+    Point3Type    getPose()const;
     void          setPose(const Point3Type& pt);
 
-    virtual Point3Type getNormal(){return Point3Type(0,0,0);}
-    virtual ColorType  getColor(){return ColorType(255,255,255);}
+    virtual Point3Type getNormal()const{return Point3Type(0,0,0);}
+    virtual bool       setNormal(const Point3Type& nVec){return false;}
 
-    virtual int        observationNum(){return -1;}
-    virtual bool       getObservations(std::map<FrameID,size_t>& obs){return false;}
+    virtual ColorType  getColor()const{return ColorType(255,255,255);}
+    virtual bool       setColor()const{return false;}
+
+    virtual bool       setDescriptor(const GImage& des){return false;}
+    virtual GImage     getDescriptor()const{return GImage();}
+
+    virtual FrameID    refKeyframeID()const{return 0;}
+
+    virtual int        observationNum()const{return -1;}
+    virtual bool       getObservations(std::map<FrameID,size_t>& obs)const{return false;}
+    virtual bool       addObservation(GSLAM::FrameID frId,size_t featId){return false;}
+    virtual bool       eraseObservation(GSLAM::FrameID frId){return false;}
+    virtual bool       clearObservation(){return false;}
 
 protected:
     mutable pi::MutexRW     _mutexPt;
@@ -84,8 +102,14 @@ public:
     virtual GImage getImage(int idx=0){return GImage();}
     virtual Camera getCamera(int idx=0){return Camera();}
 
-    virtual bool   getObservations(std::map<PointID,size_t>& obs)const{return false;}
-    virtual bool   getConnects(std::map<FrameID,int>& connects)const{return false;}
+    virtual int    observationNum()const{return 0;}
+    virtual bool   getObservations(std::map<GSLAM::PointID,size_t>& obs)const{return false;}
+    virtual bool   addObservation(const GSLAM::PointPtr& pt,size_t featId,bool add2Point=false){return false;}
+    virtual bool   eraseObservation(const GSLAM::PointPtr& pt,bool erasePoint=false){return false;}
+    virtual bool   clearObservations(){return false;}
+
+    virtual bool   setConnects(const std::map<GSLAM::FrameID,int>& connects){return false;}
+    virtual bool   getConnects(std::map<GSLAM::FrameID,int>& connects)const{return false;}
 
 public:
     const FrameID           _id;
@@ -98,10 +122,6 @@ private:
     SE3                     _c2w;//worldPt=c2w*cameraPt;
 };
 
-typedef SPtr<MapFrame> FramePtr;
-typedef SPtr<MapPoint> PointPtr;
-typedef std::vector<FramePtr> FrameArray;
-typedef std::vector<PointPtr> PointArray;
 
 class Map : public GObject
 {
@@ -119,10 +139,10 @@ public:
     virtual std::size_t frameNum()const{return 0;}
     virtual std::size_t pointNum()const{return 0;}
 
-    virtual FramePtr getFrame(const FrameID& id){return FramePtr();}
-    virtual PointPtr getPoint(const PointID& id){return PointPtr();}
-    virtual bool     getFrames(FrameArray& frames){return false;}
-    virtual bool     getPoints(PointArray& points){return false;}
+    virtual FramePtr getFrame(const FrameID& id)const{return FramePtr();}
+    virtual PointPtr getPoint(const PointID& id)const{return PointPtr();}
+    virtual bool     getFrames(FrameArray& frames)const{return false;}
+    virtual bool     getPoints(PointArray& points)const{return false;}
 
     /// Save or load the map from/to the file
     virtual bool save(std::string path)const{return false;}
@@ -163,7 +183,7 @@ inline MapPoint::MapPoint(const PointID& id,const Point3Type& position)
 {
 }
 
-inline Point3Type   MapPoint::getPose()
+inline Point3Type   MapPoint::getPose()const
 {
     pi::ReadMutex lock(_mutexPt);
     return _pt;

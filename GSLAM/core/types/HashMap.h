@@ -31,10 +31,10 @@ public:
     virtual std::size_t frameNum()const;
     virtual std::size_t pointNum()const;
 
-    virtual FramePtr getFrame(const FrameID& id);
-    virtual PointPtr getPoint(const PointID& id);
-    virtual bool     getFrames(FrameArray& frames);
-    virtual bool     getPoints(PointArray& points);
+    virtual FramePtr getFrame(const FrameID& id)const;
+    virtual PointPtr getPoint(const PointID& id)const;
+    virtual bool     getFrames(FrameArray& frames)const;
+    virtual bool     getPoints(PointArray& points)const;
 
     /// Save or load the map from/to the file
     virtual bool save(std::string path)const;
@@ -88,19 +88,19 @@ inline std::size_t HashMap::pointNum()const
     return _points.size();
 }
 
-inline FramePtr HashMap::getFrame(const FrameID& id)
+inline FramePtr HashMap::getFrame(const FrameID& id)const
 {
     pi::ReadMutex lock(_mutexFrames);
-    return _frames[id];
+    return _frames.at(id);
 }
 
-inline PointPtr HashMap::getPoint(const PointID& id)
+inline PointPtr HashMap::getPoint(const PointID& id)const
 {
     pi::ReadMutex lock(_mutexPoints);
-    return _points[id];
+    return _points.at(id);
 }
 
-inline bool  HashMap::getFrames(FrameArray& frames)
+inline bool  HashMap::getFrames(FrameArray& frames)const
 {
     pi::ReadMutex lock(_mutexFrames);
     frames.clear();
@@ -109,7 +109,7 @@ inline bool  HashMap::getFrames(FrameArray& frames)
     return true;
 }
 
-inline bool  HashMap::getPoints(PointArray& points)
+inline bool  HashMap::getPoints(PointArray& points)const
 {
     pi::ReadMutex lock(_mutexPoints);
     points.clear();
