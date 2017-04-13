@@ -20,7 +20,7 @@ public:
 
     virtual ~HashMap(){}
 
-    virtual std::string type(){return "HashMap";}
+    virtual std::string type()const{return "HashMap";}
 
     /// MapFrame & MapPoint interface
     virtual bool insertMapPoint(const PointPtr& point);

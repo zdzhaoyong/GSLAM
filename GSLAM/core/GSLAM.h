@@ -56,7 +56,7 @@ class MapPoint : public GObject
 public:
     MapPoint(const PointID& id,const Point3Type& position=Point3Type(0,0,0));
     virtual ~MapPoint(){}
-    virtual std::string type(){return "InvalidPoint";}
+    virtual std::string type()const{return "InvalidPoint";}
     const PointID id(){return _id;}
 
     Point3Type    getPose()const;
@@ -128,7 +128,7 @@ class Map : public GObject
 public:
     Map();
     virtual ~Map(){}
-    virtual std::string type(){return "InvalidMap";}
+    virtual std::string type()const{return "InvalidMap";}
 
     /// MapFrame & MapPoint interface
     virtual bool insertMapPoint(const PointPtr& point){return false;}
