@@ -3,6 +3,10 @@
 #include <GSLAM/core/types/GImage.h>
 #include <opencv2/highgui/highgui.hpp>
 
+#include <GSLAM/core/types/HashMap.h>
+#include <pil/base/Types/Random.h>
+#include <thread>
+
 using namespace std;
 using namespace pi;
 
@@ -87,4 +91,65 @@ public:
     }
 };
 
+class HashMapTest : public TestCase
+{
+public:
+    HashMapTest():TestCase("HashMapTest"),
+        _maxID(svar.GetInt("HashMapTest.MaxID",1000)),
+        _shouldStop(false),
+        _map(new GSLAM::HashMap())
+    {}
+
+    void  eraseThread()
+    {
+        while(!_shouldStop)
+        {
+            GSLAM::FrameID fid=pi::Random::RandomInt(1,_maxID);
+            if(_map->getFrame(fid))
+                _map->eraseMapFrame(fid);
+
+            GSLAM::FrameID pid=pi::Random::RandomInt(1,_maxID);
+            if(_map->getPoint(pid))
+                _map->eraseMapPoint(pid);
+            sleep(1);
+        }
+    }
+
+    void  addThread()
+    {
+        while(!_shouldStop)
+        {
+            GSLAM::FrameID fid=pi::Random::RandomInt(1,_maxID);
+            if(!_map->getFrame(fid))
+            {
+                GSLAM::FramePtr fr(new GSLAM::MapFrame(fid));
+                _map->insertMapFrame(fr);
+            }
+
+            GSLAM::FrameID pid=pi::Random::RandomInt(1,_maxID);
+            if(!_map->getPoint(pid))
+            {
+                GSLAM::PointPtr pt(new GSLAM::MapPoint(pid));
+                _map->insertMapPoint(pt);
+            }
+            sleep(1);
+        }
+    }
+
+    virtual void run()
+    {
+        std::thread addT(&HashMapTest::addThread,this);
+        std::thread eraseT(&HashMapTest::eraseThread,this);
+        sleep(1000);
+        _shouldStop=true;
+        addT.join();
+        eraseT.join();
+    }
+
+    GSLAM::FrameID _maxID;
+    bool           _shouldStop;
+    GSLAM::MapPtr  _map;
+};
+
 GImageTest gimageTest;
+HashMapTest hashTest;

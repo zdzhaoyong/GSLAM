@@ -91,13 +91,21 @@ inline std::size_t HashMap::pointNum()const
 inline FramePtr HashMap::getFrame(const FrameID& id)const
 {
     pi::ReadMutex lock(_mutexFrames);
-    return _frames.at(id);
+    ConstFrameIt it=_frames.find(id);
+    if(it!=_frames.end())
+        return it->second;
+    else
+        return FramePtr();
 }
 
 inline PointPtr HashMap::getPoint(const PointID& id)const
 {
     pi::ReadMutex lock(_mutexPoints);
-    return _points.at(id);
+    ConstPointIt it=_points.find(id);
+    if(it!=_points.end())
+        return it->second;
+    else
+        return PointPtr();
 }
 
 inline bool  HashMap::getFrames(FrameArray& frames)const

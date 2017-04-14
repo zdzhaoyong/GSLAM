@@ -62,7 +62,7 @@ System::System()
 void System::run()
 {
     try{
-        string act=svar.GetString("Act","");
+        string act=svar.GetString("Act","Tests");
         if("Tests"==act)
         {
             excuteTest();
@@ -76,9 +76,12 @@ void System::run()
 #ifdef DEBUG_WithQT
             SLAMDebug();
 #else
+#endif
+        }
+        else
+        {
             cout<<"'Act' not setted. Lauching tests...\n";
             excuteTest();
-#endif
         }
     }
     catch(const std::exception& e)

@@ -8,7 +8,7 @@ FIND_PATH(QGLVIEWER_INCLUDES qglviewer.h
     /sw/include/QGLViewer
   )
 
-FIND_LIBRARY(QGLVIEWER_LIBRARIES NAMES  qglviewer-qt4 QGLViewer
+FIND_LIBRARY(QGLVIEWER_LIBRARIES NAMES QGLViewer-qt4 qglviewer-qt4 QGLViewer
   PATHS
   /usr/lib
   /usr/local/lib
