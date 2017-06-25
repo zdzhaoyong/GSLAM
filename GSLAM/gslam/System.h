@@ -1,24 +1,17 @@
 #ifndef SYSTEM_H
 #define SYSTEM_H
-#include <base/Thread/Thread.h>
-#include <base/ClassLoader/ClassLoader.h>
-#include <gui/gl/SignalHandle.h>
-#include <GSLAM/core/GSLAM.h>
-#include "MainWindow.h"
+#include "../core/GSLAM.h"
+#include "../core/SharedLibrary.h"
 
-class System : public pi::Thread, pi::gl::EventHandle, pi::gl::Draw_Opengl
+class System
 {
 public:
     System();
-    virtual void run();
+    void run();
     void SLAMMain();
-    void SLAMDebug();
-
-    virtual void Draw_Something();
 private:
-    SPtr<MainWindow>  _mainwindow;
-    SPtr<GSLAM::SLAM> _slam;
-
+    SPtr<GSLAM::SharedLibrary> _slamPlugin;
+    GSLAM::SLAMPtr             _slam;
 };
 
 #endif // SYSTEM_H

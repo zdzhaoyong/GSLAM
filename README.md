@@ -18,19 +18,14 @@ GSLAM is aimed to provide a general open-source SLAM framework with following fe
 2. *For SLAM users* : Applications are able to use different SLAM plugins with the same API without recompilation and implementations are loaded at runtime.
 
 ### 1.3. Folder structure
-* src -- source folder
- - GSLAM   -- Common SLAM APIs 
- - GUtils  -- Utils for GSLAM implementations including Pose optimization, BA frame work
- - ORBSLAM -- Implementation of ORBSLAM (SLAM plugin demo)
- - dso     -- Implementation of dso (SLAM plugin demo)
- - gslam    -- Test system of GSLAM (Apllication demo)
+* GSLAM -- source folder
+ - core    -- Common SLAM APIs with only headers [c++11]
+ - utils   -- Utils for GSLAM implementations including Optimizer(PnP,ICP,BA,PoseGraph .etc) [Eigen3 ceres-solver]
+ - gslam   -- Test system of GSLAM (Apllication demo) [Qt PIL2]
 
 * Thirdparty --- thirdparty libraries
- - PIL		 -- the basic c++ library for configuration, display, plugin loader (enssential, buildin)
- - Eigen 	 -- an opensoure linear algebra library (optional, needed by ORBSLAM plugin)
- - g2o 		 -- a general optimization framework (optional & buildin, needed by ORBSLAM plugin)
- - boost     -- a c++ development library (optional, needed by ORBSLAM)
- - pba 		 -- an opensoure bundle implementation on GPU (optional)
+ - PIL		 -- The basic c++ library for configuration, display, plugin loader (enssential, buildin)
+ - Eigen3	 -- An opensoure linear algebra library (optional, needed by utils)
 
 * doc			--- documents
 
@@ -64,8 +59,6 @@ Tips: Use ''bash buildAll.sh -d'' to install dependencies. Or you can install th
 **Chomod for dso**: sudo apt-get install libsuitesparse-dev libeigen3-dev
 
 #### ** WARNING: It it Qt4 instead of Qt5 that should be installed! For Ubuntu 16.06 libqglviewer-qt4 should be linked. **
-
-
 
 #### 2.1.2 Compile and install PIL
 ```

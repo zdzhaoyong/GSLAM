@@ -12,24 +12,62 @@
 #define GSLAM_H
 
 #include <vector>
-#include "types/SE3.h"
-#include "types/GImage.h"
-#include "types/Camera.h"
-
-#define GSLAM_VERSION "1.2.1"
-#define GSLAM_VERSION_MAJOR 1
-#define GSLAM_VERSION_MINOR 2
-#define GSLAM_VERSION_PATCH 1
+#include "SIM3.h"
+#include "GImage.h"
+#include "Camera.h"
+#include "Mutex.h"
+#define GSLAM_COMMAND_STRHELPER(COMMAND) #COMMAND
+#define GSLAM_COMMAND_STR(COMMAND) GSLAM_COMMAND_STRHELPER(COMMAND)
+#define GSLAM_VERSION_MAJOR 2
+#define GSLAM_VERSION_MINOR 0
+#define GSLAM_VERSION_PATCH 0
+#define GSLAM_VERSION (GSLAM_COMMAND_STR(GSLAM_VERSION_MAJOR) "." \
+                       GSLAM_COMMAND_STR(GSLAM_VERSION_MINOR) "." \
+                       GSLAM_COMMAND_STR(GSLAM_VERSION_PATCH))
 
 namespace GSLAM {
 
-class Map;
 class MapFrame;
 class MapPoint;
+class Map;
+class SLAM;
+typedef pi::SO3d       SO3;
+typedef pi::SE3d       SE3;
+typedef pi::SIM3d      SIM3;
+typedef pi::Point2i    Point2i;
+typedef pi::Point2d    Point2d;
+typedef pi::Point3d    Point3d;
+typedef pi::Point3f    Point3f;
+typedef pi::Point2f    Point2f;
+typedef pi::Point3ub   Point3ub;
+typedef pi::Point3d    Point3Type;
+typedef Point3ub       ColorType;
+typedef size_t         PointID;
+typedef size_t         FrameID;
 typedef SPtr<MapFrame> FramePtr;
 typedef SPtr<MapPoint> PointPtr;
+typedef SPtr<Map>      MapPtr;
+typedef SPtr<SLAM>     SLAMPtr;
 typedef std::vector<FramePtr> FrameArray;
 typedef std::vector<PointPtr> PointArray;
+typedef GSLAM::Point3d CameraAnchor;        // for both Pinhole projection and Sphere projection
+typedef GSLAM::Point2d IdepthEstimation;    // [idepth,invSqSigma]^T
+
+enum ImageSourceType{
+    IMAGE_ORIGIN=0,
+    IMAGE_GRAY  =1,
+    IMAGE_DEPTH =2,
+    IMAGE_IDEPTH=3,
+    IMAGE_UNDIS_ORIGIN=4,
+    IMAGE_UNDIS_GRAY  =5,
+    IMAGE_UNDIS_DEPTH =6,
+    IMAGE_UNDIS_IDEPTH=7,
+    IMAGE_GREEN ,
+    IMAGE_RED,
+    IMAGE_REDEDGE,
+    IMAGE_NIR,
+    IMAGE_NDVI,
+};
 
 class GObject
 {
@@ -38,6 +76,8 @@ public:
     virtual std::string type()const{return "GObject";}
     virtual void  call(const std::string& command,void* arg=NULL){}
     virtual void  draw(){}
+    virtual bool  toByteArray(std::vector<uchar>& array){return false;}
+    virtual bool  fromByteArray(std::vector<uchar>& array){return false;}
 
 };
 
@@ -71,7 +111,9 @@ public:
     virtual bool       setDescriptor(const GImage& des){return false;}
     virtual GImage     getDescriptor()const{return GImage();}
 
-    virtual FrameID    refKeyframeID()const{return 0;}
+    virtual bool       isPoseRelative()const{return false;}     // Default use world coordinate
+    virtual FrameID    refKeyframeID()const{return 0;}          // If using relative pose, which keyframe referencing
+    virtual FramePtr   refKeyframe()const{return FramePtr();}
 
     virtual int        observationNum()const{return -1;}
     virtual bool       getObservations(std::map<FrameID,size_t>& obs)const{return false;}
@@ -80,13 +122,12 @@ public:
     virtual bool       clearObservation(){return false;}
 
 protected:
-    mutable pi::MutexRW     _mutexPt;
+    mutable MutexRW     _mutexPt;
 
 private:
     const PointID           _id;
     Point3Type              _pt;
 };
-
 
 class MapFrame : public GObject
 {
@@ -95,31 +136,93 @@ public:
     virtual ~MapFrame(){}
     virtual std::string type()const{return "InvalidFrame";}
 
+    // Basic things, ID, Timestamp, Image, CameraModel, IMU, GPS informations
     const PointID id()const{return _id;}
-    SE3           getPose()const;
+    const double& timestamp()const{return _timestamp;}
+
+    // Frame transform from local to world, this is essential
     void          setPose(const SE3& pose);
+    void          setPose(const SIM3& pose);
+    SE3           getPose()const;
+    bool          getPose(SIM3& pose)const;
+    SIM3          getPoseScale()const;
 
-    virtual GImage getImage(int idx=0){return GImage();}
-    virtual Camera getCamera(int idx=0){return Camera();}
+    // When the frame contains one or more images captured from cameras
+    virtual int    cameraNum()const{return 0;}                // Camera number
+    virtual GImage getImage(int idx=0){return GImage();}      // The source image or processed things
+    virtual Camera getCamera(int idx=0){return Camera();}     // The camera model of the image
+    virtual SE3    getCameraPose(int idx=0) const{return SE3();}// The transform from camera to local
 
-    virtual int    observationNum()const{return 0;}
-    virtual bool   getObservations(std::map<GSLAM::PointID,size_t>& obs)const{return false;}
-    virtual bool   addObservation(const GSLAM::PointPtr& pt,size_t featId,bool add2Point=false){return false;}
-    virtual bool   eraseObservation(const GSLAM::PointPtr& pt,bool erasePoint=false){return false;}
-    virtual bool   clearObservations(){return false;}
+    // When the frame contains IMUs or GPSs
+    virtual int     getIMUNum()const{return 0;}
+    virtual int     getGPSNum()const{return 0;}
+    virtual SE3     getIMUPose(int idx=0)const{return SE3();}
+    virtual SE3     getGPSPose(int idx=0)const{return SE3();}
+    virtual bool    getAcceleration(Point3d& acc,int idx=0)const{return false;}        // m/s^2
+    virtual bool    getAngularVelocity(Point3d& angularV,int idx=0)const{return false;}// rad/s
+    virtual bool    getMagnetic(Point3d& mag,int idx=0)const{return false;}            // gauss
+    virtual bool    getGPSLLA(Point3d& LonLatAlt,int idx=0)const{return false;}        // WGS84 [longtitude latitude altitude]
+    virtual bool    getGPSECEF(Point3d& xyz,int idx=0)const{return false;}             // meter
 
-    virtual bool   setConnects(const std::map<GSLAM::FrameID,int>& connects){return false;}
-    virtual bool   getConnects(std::map<GSLAM::FrameID,int>& connects)const{return false;}
+    // Tracking things for feature based methods
+    virtual int     keyPointNum()const{return 0;}
+    virtual bool    getKeyPoint(int idx,Point2f& pt)const{return false;}
+    virtual bool    getKeyPoints(std::vector<Point2f>& keypoints)const{return false;}
+    virtual GImage  getDescriptor(int idx=-1)const{return GImage();}        // idx<0: return all descriptors
+    virtual bool    setKeyPoints(const std::vector<Point2f>& keypoints,
+                                 const GImage& descriptors=GImage()){return false;}
 
+    // MapPoint <-> KeyPoint  : MapPoint Observation usually comes along Mappoint::*obs*
+    virtual int     observationNum()const{return 0;}
+    virtual bool    getObservations(std::map<GSLAM::PointID,size_t>& obs)const{return false;}
+    virtual bool    addObservation(const GSLAM::PointPtr& pt,size_t featId,bool add2Point=false){return false;}
+    virtual bool    eraseObservation(const GSLAM::PointPtr& pt,bool erasePoint=false){return false;}
+    virtual bool    clearObservations(){return false;}
+
+    // MapFrame <-> MapFrame  : MapFrame connections for Pose Graph
+    class FrameConnection : public GObject
+    {
+        virtual std::string type()const{return "FrameConnection";}
+        virtual int  matchesNum(){return 0;}
+
+        virtual bool getMatches(std::vector<std::pair<int,int> >& matches){return false;}
+        virtual bool getChild2Parent(GSLAM::SIM3& sim3){return false;}
+        virtual bool getChild2Parent(GSLAM::SE3& se3){return false;}
+        virtual bool getInformation(double* info){return false;}
+
+        virtual bool setMatches(std::vector<std::pair<int,int> >& matches){return false;}
+        virtual bool setChild2Parent(GSLAM::SIM3& sim3){return false;}
+        virtual bool setChild2Parent(GSLAM::SE3& se3){return false;}
+        virtual bool setInformation(double* info){return false;}
+    };
+
+    virtual SPtr<FrameConnection> getParent(GSLAM::FrameID parentId)const{return SPtr<FrameConnection>();}
+    virtual SPtr<FrameConnection> getChild(GSLAM::FrameID childId)const{return SPtr<FrameConnection>();}
+    virtual bool    getParents(std::map<GSLAM::FrameID,SPtr<FrameConnection> >& parents)const{return false;}
+    virtual bool    getChildren(std::map<GSLAM::FrameID,SPtr<FrameConnection> >& children)const{return false;}
+    virtual bool    addParent(GSLAM::FrameID parentId,SPtr<FrameConnection>& parent){return false;}
+    virtual bool    addChildren(GSLAM::FrameID childId,SPtr<FrameConnection>& child){return false;}
+    virtual bool    eraseParent(GSLAM::FrameID parentId){return false;}
+    virtual bool    eraseChild(GSLAM::FrameID  childId){return false;}
+    virtual bool    clearParents(){return false;}
+    virtual bool    clearChildren(){return false;}
+
+    // Extra utils
+    virtual double getMedianDepth(){return getPoseScale().get_scale();}
+
+    static int imageIndex(int16_t cameraId=0,uchar imagePyramid=0,ImageSourceType imageSourceType=IMAGE_ORIGIN)
+    {
+        return cameraId|(imagePyramid<<16)|(IMAGE_ORIGIN<<24);
+    }
 public:
     const FrameID           _id;
     double                  _timestamp;
 
 protected:
-    mutable pi::MutexRW     _mutexPose;
+    mutable MutexRW         _mutexPose;
 
 private:
-    SE3                     _c2w;//worldPt=c2w*cameraPt;
+    SIM3                    _c2w;//worldPt=c2w*cameraPt;
 };
 
 
@@ -135,6 +238,7 @@ public:
     virtual bool insertMapFrame(const FramePtr& frame){return false;}
     virtual bool eraseMapPoint(const PointID& pointId){return false;}
     virtual bool eraseMapFrame(const FrameID& frameId){return false;}
+    virtual void clear(){}
 
     virtual std::size_t frameNum()const{return 0;}
     virtual std::size_t pointNum()const{return 0;}
@@ -174,8 +278,8 @@ public:
     virtual bool    setCallback(GObjectHandle* cbk){return false;}
 
 protected:
-    MapPtr              _curMap;
-    mutable pi::MutexRW _mutexMap;
+    MapPtr          _curMap;
+    mutable MutexRW _mutexMap;
 };
 
 inline MapPoint::MapPoint(const PointID& id,const Point3Type& position)
@@ -185,13 +289,13 @@ inline MapPoint::MapPoint(const PointID& id,const Point3Type& position)
 
 inline Point3Type   MapPoint::getPose()const
 {
-    pi::ReadMutex lock(_mutexPt);
+    ReadMutex lock(_mutexPt);
     return _pt;
 }
 
 inline void MapPoint::setPose(const Point3Type& pt)
 {
-    pi::WriteMutex lock(_mutexPt);
+    WriteMutex lock(_mutexPt);
     _pt=pt;
 }
 
@@ -202,13 +306,32 @@ inline MapFrame::MapFrame(const FrameID& id,const double& timestamp)
 
 inline SE3 MapFrame::getPose()const
 {
-    pi::ReadMutex lock(_mutexPose);
+    ReadMutex lock(_mutexPose);
+    return _c2w.get_se3();
+}
+
+inline SIM3 MapFrame::getPoseScale()const
+{
+    ReadMutex lock(_mutexPose);
     return _c2w;
+}
+
+inline bool MapFrame::getPose(SIM3& pose)const
+{
+    pose=getPoseScale();
+    return true;
 }
 
 inline void MapFrame::setPose(const SE3& pose)
 {
-    pi::WriteMutex lock(_mutexPose);
+    WriteMutex lock(_mutexPose);
+    _c2w.get_se3()=pose;
+}
+
+
+inline void MapFrame::setPose(const SIM3& pose)
+{
+    WriteMutex lock(_mutexPose);
     _c2w=pose;
 }
 
@@ -219,16 +342,26 @@ inline Map::Map():_ptId(1),_frId(1)
 
 inline bool SLAM::setMap(const MapPtr& map)
 {
+    ReadMutex lock(_mutexMap);
     _curMap=map;
 }
 
 inline MapPtr SLAM::getMap()const
 {
-    pi::ReadMutex lock(_mutexMap);
+    ReadMutex lock(_mutexMap);
     return _curMap;
 }
 
 
 } //end of namespace GSLAM
 
+
+#include "Optimizer.h"
+
+/// create
+typedef GSLAM::SLAMPtr (*funcCreateSLAMInstance)();
+extern "C"
+{
+GSLAM::SLAMPtr createSLAMInstance();
+}
 #endif

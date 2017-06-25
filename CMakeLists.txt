@@ -26,17 +26,18 @@ macro(GSLAM_FIND_VERSION)
   set(PROJECT_VERSION ${GSLAM_VERSION})
   set(PROJECT_SOVERSION ${GSLAM_VERSION_MAJOR}.${GSLAM_VERSION_MINOR})
 endmacro()
+GSLAM_FIND_VERSION()
+message("-- Compiling GSLAM Version ${GSLAM_VERSION}.")
 
 IF(NOT CMAKE_BUILD_TYPE)
   SET(CMAKE_BUILD_TYPE Release)#Debug
 ENDIF()
 
-MESSAGE("Build type: " ${CMAKE_BUILD_TYPE})
+message("-- Build type: " ${CMAKE_BUILD_TYPE})
 
 if(CMAKE_BUILD_TYPE STREQUAL Release)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -march=native ")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -march=native")
-    message("Build with O3...")
 endif()
 
 # Check C++11 or C++0x support
@@ -56,52 +57,32 @@ else()
 endif()
 
 
-LIST(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/scripts/cmake)
+LIST(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 include(PICMake)
 
 #####################################################################
 # Find dependencies
 message("----------------------------------------------------------")
 
-#**Qt** : sudo apt-get install build-essential g++ libqt4-core libqt4-dev libqt4-gui qt4-doc qt4-designer 
-#**QGLViewer** : sudo apt-get install libqglviewer-dev libqglviewer2
+# The GSLAM core need only -std-c++11 and no extra dependency, to build gslam with Util, GUI and IO things, please install the following dependencies.
+pi_collect_packages(VERBOSE REQUIRED System MODULES # System dependency -dl is essential
+                    Eigen3 Ceres                    # Dependency for Optimizer
+                    Qt OpenGL GLEW GLUT QGLViewer   # Dependency for GUI
+                    OpenCV PIL                         # Dependency for IO
+                    )
 
-find_package(PIL 1.1.1 REQUIRED)
-find_package(OpenCV 2.4.9)
-find_package(Eigen3 3.1.0)
-find_package(Qt)
-pi_report_modules(PIL OpenCV Eigen3 Qt)
-pi_collect_packages(VERBOSE MODULES System OpenGL GLEW GLUT G2O QGLViewer Boost Cholmod)
-
-
-GSLAM_FIND_VERSION()
 message("----------------------------------------------------------")
 
 #####################################################################
 # Now do build things
 #set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin)
 #set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/libs)
-# Build libs
-include_directories(${CMAKE_CURRENT_LIST_DIR} ${CMAKE_SOURCE_DIR}/GSLAM/dso)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wl,-rpath,.:./libs:../libs:${CMAKE_INSTALL_PREFIX}/lib")
 
-#pi_add_target(gslam_core SHARED GSLAM/core REQUIRED PIL PI_BASE)
-if(BUILD_DSO)
-pi_add_target(gslam_dso SHARED GSLAM/dso REQUIRED Cholmod PIL PI_BASE BOOST EIGEN3 QT QGLVIEWER GLEW GLUT) 
-endif()
-
-if(BUILD_ORB)
-pi_add_target(gslam_orbslam SHARED GSLAM/orbslam REQUIRED PIL PI_BASE BOOST EIGEN3 QT QGLVIEWER GLEW GLUT OpenCV)
-endif()
-
-pi_add_target(gslam BIN GSLAM/gslam REQUIRED PIL OpenGL OpenCV Qt QGLViewer GLUT GLEW System DEPENDENCY pthread)
-
+pi_add_target(gslam BIN GSLAM/gslam REQUIRED System MODULES OpenCV Qt OpenGL GLEW GLUT QGLViewer PIL)
 
 pi_report_target()
-
-
 #####################################################################
 # Now do make install
 pi_install(HEADERS GSLAM/core HEADER_DESTINATION include/GSLAM
-           gslam CMAKE "${PROJECT_SOURCE_DIR}/scripts/cmake/FindGSLAM.cmake.in")
+           TARGETS gslam CMAKE "${PROJECT_SOURCE_DIR}/cmake/FindGSLAM.cmake.in")
 
