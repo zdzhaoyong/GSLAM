@@ -1079,7 +1079,7 @@ inline bool Svar::ParseFile(std::string sFileName)
     if(!ifs.is_open())
     {
         cerr << "!Svar::ParseFile: Failed to load script file \"" << sFileName << "\"."<< endl;
-        return 0;
+        return false;
     }
 
     fileQueue.push_back(sFileName);

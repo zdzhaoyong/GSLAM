@@ -12,18 +12,27 @@
 #define GSLAM_H
 
 #include <vector>
+#include <map>
+
 #include "SIM3.h"
 #include "GImage.h"
 #include "Camera.h"
 #include "Mutex.h"
+#include "Svar.h"
+#include "SharedLibrary.h"
+
+#define GSLAM_VERSION_MAJOR 2
+#define GSLAM_VERSION_MINOR 1
+#define GSLAM_VERSION_PATCH 0
 #define GSLAM_COMMAND_STRHELPER(COMMAND) #COMMAND
 #define GSLAM_COMMAND_STR(COMMAND) GSLAM_COMMAND_STRHELPER(COMMAND)
-#define GSLAM_VERSION_MAJOR 2
-#define GSLAM_VERSION_MINOR 0
-#define GSLAM_VERSION_PATCH 0
 #define GSLAM_VERSION (GSLAM_COMMAND_STR(GSLAM_VERSION_MAJOR) "." \
                        GSLAM_COMMAND_STR(GSLAM_VERSION_MINOR) "." \
                        GSLAM_COMMAND_STR(GSLAM_VERSION_PATCH))
+
+#define USE_GSLAM_PLUGIN_(SLAMCLASS) extern "C"{\
+    GSLAM::SLAMPtr createSLAMInstance(){return GSLAM::SLAMPtr(new SLAMCLASS());}}
+#define USE_GSLAM_PLUGIN(SLAMCLASS) USE_GSLAM_PLUGIN_(SLAMCLASS)
 
 namespace GSLAM {
 
@@ -52,21 +61,28 @@ typedef std::vector<FramePtr> FrameArray;
 typedef std::vector<PointPtr> PointArray;
 typedef GSLAM::Point3d CameraAnchor;        // for both Pinhole projection and Sphere projection
 typedef GSLAM::Point2d IdepthEstimation;    // [idepth,invSqSigma]^T
+typedef GSLAM::SLAMPtr (*funcCreateSLAMInstance)();
 
-enum ImageSourceType{
-    IMAGE_ORIGIN=0,
-    IMAGE_GRAY  =1,
-    IMAGE_DEPTH =2,
-    IMAGE_IDEPTH=3,
-    IMAGE_UNDIS_ORIGIN=4,
-    IMAGE_UNDIS_GRAY  =5,
-    IMAGE_UNDIS_DEPTH =6,
-    IMAGE_UNDIS_IDEPTH=7,
-    IMAGE_GREEN ,
-    IMAGE_RED,
-    IMAGE_REDEDGE,
-    IMAGE_NIR,
-    IMAGE_NDVI,
+enum ImageChannelFlags{
+    IMAGE_UNDEFINED     =0,
+    // For colorful or depth camera
+    IMAGE_RGBA          =1<<0,// when channals()==3 means RGB, Alpha means the image mask
+    IMAGE_BGRA          =1<<1,
+    IMAGE_GRAY          =1<<2,
+    IMAGE_DEPTH         =1<<3,// the depth image cam be obtained from lidar or depth camera such as Kinect
+    IMAGE_IDEPTH        =1<<4,// this is usually obtained with
+
+    IMAGE_RGBD          =IMAGE_BGRA|IMAGE_DEPTH,
+
+    // For multispectral camera
+    IMAGE_GRE           =1<<5,// Green
+    IMAGE_NIR           =1<<6,// Near
+    IMAGE_RED           =1<<7,// Red
+    IMAGE_REG           =1<<8,// Red Edge
+
+    IMAGE_LIDAR         =1<<9,
+    IMAGE_SONAR         =1<<10,
+    IMAGE_SAR           =1<<11,
 };
 
 class GObject
@@ -137,32 +153,40 @@ public:
     virtual std::string type()const{return "InvalidFrame";}
 
     // Basic things, ID, Timestamp, Image, CameraModel, IMU, GPS informations
-    const PointID id()const{return _id;}
-    const double& timestamp()const{return _timestamp;}
+    const PointID   id()const{return _id;}
+    const double&   timestamp()const{return _timestamp;}
 
     // Frame transform from local to world, this is essential
-    void          setPose(const SE3& pose);
-    void          setPose(const SIM3& pose);
-    SE3           getPose()const;
-    bool          getPose(SIM3& pose)const;
-    SIM3          getPoseScale()const;
+    void            setPose(const SE3& pose);
+    void            setPose(const SIM3& pose);
+    SE3             getPose()const;
+    bool            getPose(SIM3& pose)const;
+    SIM3            getPoseScale()const;
 
     // When the frame contains one or more images captured from cameras
-    virtual int    cameraNum()const{return 0;}                // Camera number
-    virtual GImage getImage(int idx=0){return GImage();}      // The source image or processed things
-    virtual Camera getCamera(int idx=0){return Camera();}     // The camera model of the image
-    virtual SE3    getCameraPose(int idx=0) const{return SE3();}// The transform from camera to local
+    virtual int     cameraNum()const{return 0;}                                      // Camera number
+    virtual SE3     getCameraPose(int idx=0) const{return SE3();}                    // The transform from camera to local
+    virtual int     imageChannels(int idx=0) const{return IMAGE_RGBA;}               // Default is a colorful camera
+    virtual Camera  getCamera(int idx=0){return Camera();}                           // The camera model
+    virtual GImage  getImage(int idx,int channalMask){return GImage();}              // Just return the image if only one channel is available
+    GImage          getImage(int idx=0){return getImage(idx,IMAGE_UNDEFINED);}
 
     // When the frame contains IMUs or GPSs
     virtual int     getIMUNum()const{return 0;}
-    virtual int     getGPSNum()const{return 0;}
     virtual SE3     getIMUPose(int idx=0)const{return SE3();}
-    virtual SE3     getGPSPose(int idx=0)const{return SE3();}
     virtual bool    getAcceleration(Point3d& acc,int idx=0)const{return false;}        // m/s^2
     virtual bool    getAngularVelocity(Point3d& angularV,int idx=0)const{return false;}// rad/s
     virtual bool    getMagnetic(Point3d& mag,int idx=0)const{return false;}            // gauss
+    virtual bool    getAccelerationNoise(Point3d& accN,int idx=0)const{return false;}
+    virtual bool    getAngularVNoise(Point3d& angularVN,int idx=0)const{return false;}
+
+    virtual int     getGPSNum()const{return 0;}
+    virtual SE3     getGPSPose(int idx=0)const{return SE3();}
     virtual bool    getGPSLLA(Point3d& LonLatAlt,int idx=0)const{return false;}        // WGS84 [longtitude latitude altitude]
+    virtual bool    getGPSLLASigma(Point3d& llaSigma,int idx=0)const{return false;}    // meter
     virtual bool    getGPSECEF(Point3d& xyz,int idx=0)const{return false;}             // meter
+    virtual bool    getGPSPitchYawRoll(Point3d& pyr,int idx=0)const{return false;}     // in rad
+    virtual bool    getGPSPYRSigma(Point3d& pyrSigma,int idx=0)const{return false;}    // in rad
 
     // Tracking things for feature based methods
     virtual int     keyPointNum()const{return 0;}
@@ -208,12 +232,7 @@ public:
     virtual bool    clearChildren(){return false;}
 
     // Extra utils
-    virtual double getMedianDepth(){return getPoseScale().get_scale();}
-
-    static int imageIndex(int16_t cameraId=0,uchar imagePyramid=0,ImageSourceType imageSourceType=IMAGE_ORIGIN)
-    {
-        return cameraId|(imagePyramid<<16)|(IMAGE_ORIGIN<<24);
-    }
+    virtual double  getMedianDepth(){return getPoseScale().get_scale();}
 public:
     const FrameID           _id;
     double                  _timestamp;
@@ -270,12 +289,15 @@ public:
     virtual ~SLAM(){}
     virtual std::string type()const{return "InvalidSLAM";}
     virtual bool valid()const{return false;}
+    virtual bool isDrawable(){return false;}
 
     bool    setMap(const MapPtr& map);
     MapPtr  getMap()const;
 
     virtual bool    track(FramePtr& frame){return false;}
     virtual bool    setCallback(GObjectHandle* cbk){return false;}
+
+    static SLAMPtr create(const std::string& slamPlugin);
 
 protected:
     MapPtr          _curMap;
@@ -352,16 +374,18 @@ inline MapPtr SLAM::getMap()const
     return _curMap;
 }
 
+inline SLAMPtr SLAM::create(const std::string& slamPlugin){
+    SPtr<SharedLibrary>& plugin=SvarWithType<SPtr<SharedLibrary> >::instance()[slamPlugin];
+    if(!plugin) plugin=SPtr<SharedLibrary>(new SharedLibrary());
+    if(!plugin->isLoaded()) plugin->load(slamPlugin);
+    funcCreateSLAMInstance createFunc=(funcCreateSLAMInstance)plugin->getSymbol("createSLAMInstance");
+    if(!createFunc) return SLAMPtr();
+    else return createFunc();
+}
 
 } //end of namespace GSLAM
 
-
 #include "Optimizer.h"
 
-/// create
-typedef GSLAM::SLAMPtr (*funcCreateSLAMInstance)();
-extern "C"
-{
-GSLAM::SLAMPtr createSLAMInstance();
-}
+
 #endif

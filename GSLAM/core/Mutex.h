@@ -22,6 +22,7 @@ typedef pi::Event       Event;
 #include <atomic>
 
 namespace GSLAM{
+typedef std::mutex Mutex;
 typedef std::mutex MutexRW;
 typedef std::unique_lock<MutexRW> ReadMutex;
 typedef std::unique_lock<MutexRW> WriteMutex;

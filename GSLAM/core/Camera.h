@@ -176,7 +176,7 @@ inline std::string CameraImpl::info()const{
     sst<<CameraType()<<":[";
     std::vector<double> paras=getParameters();
     for(int i=0;i<paras.size();i++)
-        sst<<paras[i]<<(i+1==paras.size())?"]":",";
+        sst<<paras[i]<<((i+1==paras.size())?"]":",");
     return sst.str();
 }
 

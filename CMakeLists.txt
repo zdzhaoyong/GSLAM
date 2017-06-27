@@ -12,10 +12,10 @@ macro(GSLAM_FIND_VERSION)
   set(GSLAM_VERSION_PATCH "${CMAKE_MATCH_1}")
 	
   if(NOT GSLAM_VERSION_MAJOR)
-    set(GSLAM_VERSION_MAJOR 1)
+    set(GSLAM_VERSION_MAJOR 0)
   endif(NOT GSLAM_VERSION_MAJOR)
   if(NOT GSLAM_VERSION_MINOR)
-    set(GSLAM_VERSION_MINOR 1)
+    set(GSLAM_VERSION_MINOR 0)
   endif(NOT GSLAM_VERSION_MINOR)
   if(NOT GSLAM_VERSION_PATCH)
     set(GSLAM_VERSION_PATCH 0)
@@ -30,7 +30,7 @@ GSLAM_FIND_VERSION()
 message("-- Compiling GSLAM Version ${GSLAM_VERSION}.")
 
 IF(NOT CMAKE_BUILD_TYPE)
-  SET(CMAKE_BUILD_TYPE Release)#Debug
+  SET(CMAKE_BUILD_TYPE Debug)#
 ENDIF()
 
 message("-- Build type: " ${CMAKE_BUILD_TYPE})
@@ -68,7 +68,7 @@ message("----------------------------------------------------------")
 pi_collect_packages(VERBOSE REQUIRED System MODULES # System dependency -dl is essential
                     Eigen3 Ceres                    # Dependency for Optimizer
                     Qt OpenGL GLEW GLUT QGLViewer   # Dependency for GUI
-                    OpenCV PIL                         # Dependency for IO
+                    OpenCV                          # Dependency for IO
                     )
 
 message("----------------------------------------------------------")
@@ -77,8 +77,11 @@ message("----------------------------------------------------------")
 # Now do build things
 #set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin)
 #set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/libs)
+if(QT_FOUND)
+qt4_add_resources(QRC_FILES GSLAM/gslam/GUI/res.qrc)
+endif()
 
-pi_add_target(gslam BIN GSLAM/gslam REQUIRED System MODULES OpenCV Qt OpenGL GLEW GLUT QGLViewer PIL)
+pi_add_target(gslam BIN GSLAM/gslam ${QRC_FILES} REQUIRED System MODULES OpenCV Qt OpenGL GLEW GLUT QGLViewer)
 
 pi_report_target()
 #####################################################################

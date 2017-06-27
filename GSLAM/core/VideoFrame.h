@@ -2,6 +2,7 @@
 #define VIDEOFRAME_H
 
 #include "GSLAM.h"
+#include "GPS.h"
 
 /** The VideoFrame classes are used as the input of different slam systems
 Class name : "Frame"+MainSonsor+OtherSensor
@@ -13,11 +14,16 @@ namespace GSLAM {
 class FrameMono : public MapFrame
 {
 public:
-    FrameMono(const GImage& img,const Camera& camera,FrameID id,double time,const Camera& recCamera=Camera());
+    FrameMono(const GImage& img,const Camera& camera,FrameID id,double time,
+              int channel=IMAGE_RGBA,const Camera& recCamera=Camera());
     virtual std::string type() const{return "FrameMono";}
 
-    virtual GImage getImage(int idx=0); // 0:origin image
-    virtual Camera getCamera(int idx=0);// 0:origin camera, 1:recommand slam camera
+    virtual int    imageChannels(int idx) const{return _channel;}
+    virtual int    cameraNum()const{return 1;}     // Camera number
+    virtual GImage getImage(int idx,int channels); // 0:origin image
+    virtual Camera getCamera(int idx=0);           // 0:origin camera, 1:recommand slam camera
+
+    int          _channel;
 protected:
     GImage       _img;
     Camera       _camera,_recCamera;
@@ -29,7 +35,13 @@ public:
     FrameRGBD(const GImage& img,const GImage& depth,const Camera& camera,FrameID id,double timestamp);
     virtual std::string type() const{return "FrameRGBD";}
 
-    virtual GImage getImage(int idx=0); // 0:RGB 1:Depth CV16UC1-factor 1000, CV32FC1-factor 1.f
+    virtual int    cameraNum()const{return 1;}                // Camera number
+    virtual GImage getImage(int idx,int channels) // 0:RGB 1:Depth CV16UC1-factor 1000, CV32FC1-factor 1.f
+    {
+        GSLAM::ReadMutex lock(_mutexPose);
+        if(channels&&IMAGE_DEPTH) return _depth;
+        else return _img;
+    }
     virtual Camera getCamera(int idx=0);// The RGB and Depth are treated as unified
 
 protected:
@@ -45,8 +57,13 @@ public:
                 const SE3&    right2left,FrameID id,double timestamp);
     virtual std::string type() const{return "FrameStereo";}
 
-    virtual GImage getImage(int idx=0);
+    virtual int    cameraNum()const{return 2;}                // Camera number
+    virtual GImage getImage(int idx,int channels);
     virtual Camera getCamera(int idx=0);
+    virtual SE3    getCameraPose(int idx) const{
+        if(idx==0) return SE3();
+        else       return _right2left;
+    }
 
 protected:
     GImage       _imgL,_imgR;
@@ -54,14 +71,73 @@ protected:
     SE3          _right2left;
 };
 
+class FrameMonoGPS : public FrameMono
+{
+public:
+    FrameMonoGPS(FrameID id,double time,const GImage& img,const Camera& camera,
+                 double longtitude,double latitude,double altitude,
+                 double sigmaHorizon,double sigmaVertical,
+                 double pitch,double yaw,double roll,
+                 double sigmaPitch,double sigmaYaw,double sigmaRoll)
+        :FrameMono(img,camera,id,time),_longtitude(longtitude),_latitude(latitude),_altitude(altitude),
+    _sigmaHorizon(sigmaHorizon),_sigmaVertical(sigmaVertical),_pitch(pitch),_yaw(yaw),_roll(roll),
+    _sigmaPitch(sigmaPitch),_sigmaYaw(sigmaYaw),_sigmaRoll(sigmaRoll){}
 
-inline FrameMono::FrameMono(const GImage& img,const Camera& camera,FrameID id,double time,const Camera& recCamera)
-    :MapFrame(id,time),_img(img),_camera(camera),_recCamera(recCamera)
+    virtual std::string type() const{return "FrameMonoGPS";}
+    virtual int     getGPSNum()const{return 1;}
+    virtual SE3     getGPSPose(int idx=0)const{return SE3();}
+
+    virtual bool    getGPSLLA(Point3d& LonLatAlt,int idx=0)const{  // WGS84 [longtitude latitude altitude]
+        LonLatAlt=Point3d(_longtitude,_latitude,_altitude);
+        return true;}
+
+    virtual bool    getGPSLLASigma(Point3d& llaSigma,int idx=0)const{
+        llaSigma=Point3d(_sigmaHorizon,_sigmaHorizon,_sigmaVertical);return true;}     // meter
+
+    virtual bool    getGPSECEF(Point3d& xyz,int idx=0)const{  // meter
+        xyz=GPS<>::GPS2XYZ(_latitude,_longtitude,_altitude);
+        return true;
+    }
+
+    virtual bool    getGPSPitchYawRoll(Point3d& pyr,int idx=0)const{
+        pyr=Point3d(_pitch,_yaw,_roll);
+        return true;}     // in rad
+
+    virtual bool    getGPSPYRSigma(Point3d& pyrSigma,int idx=0)const
+    {
+        pyrSigma=Point3d(_sigmaPitch,_sigmaYaw,_sigmaRoll);
+        return true;
+    }    // in rad
+
+    double _longtitude,_latitude,_altitude,_sigmaHorizon,_sigmaVertical,_pitch,_yaw,_roll,_sigmaPitch,_sigmaYaw,_sigmaRoll;
+};
+
+class FrameMonoIMU : public FrameMono
+{
+public:
+    FrameMonoIMU(FrameID id,double time,const GImage& img,const Camera& camera,
+                    Point3d acc ,Point3d angularV,Point3d mag,
+                    Point3d accN,Point3d gyrN)
+           :FrameMono(img,camera,id,time),_acc(acc),_angularV(angularV),
+             _mag(mag),_accN(accN),_gyrN(gyrN){}
+
+    virtual int     getIMUNum()const{return 1;}
+    virtual bool    getAcceleration(Point3d& acc,int idx=0)const{acc=_acc;return true;}        // m/s^2
+    virtual bool    getAccelerationNoise(Point3d &accN, int idx) const{accN=_accN;return true;}
+    virtual bool    getAngularVelocity(Point3d& angularV,int idx=0)const{angularV=_angularV;return true;}// rad/s
+    virtual bool    getAngularVNoise(Point3d &angularVN, int idx) const{angularVN=_gyrN;return true;}
+    virtual bool    getMagnetic(Point3d& mag,int idx=0)const{mag=_mag;return true;}            // gauss
+
+    Point3d _acc,_angularV,_mag,_accN,_gyrN;
+};
+
+inline FrameMono::FrameMono(const GImage& img,const Camera& camera,FrameID id,double time,int channel,const Camera& recCamera)
+    :MapFrame(id,time),_img(img),_camera(camera),_recCamera(recCamera),_channel(channel)
 {
 
 }
 
-inline GImage FrameMono::getImage(int idx)
+inline GImage FrameMono::getImage(int idx,int channels)
 {
     GSLAM::ReadMutex lock(_mutexPose);
     return _img;// FIXME: .clone()?
@@ -82,14 +158,6 @@ inline FrameRGBD::FrameRGBD(const GImage& img,const GImage& depth,const Camera& 
 
 }
 
-inline GImage FrameRGBD::getImage(int idx)
-{
-    GSLAM::ReadMutex lock(_mutexPose);
-    if(idx==0)
-        return _img;// FIXME: .clone()?
-    else return _depth;
-}
-
 inline Camera FrameRGBD::getCamera(int idx)
 {
     GSLAM::ReadMutex lock(_mutexPose);
@@ -105,7 +173,7 @@ inline FrameStereo::FrameStereo(const GImage& imgLeft,const GImage& imgRight,
 
 }
 
-inline GImage FrameStereo::getImage(int idx)
+inline GImage FrameStereo::getImage(int idx,int channels)
 {
     GSLAM::ReadMutex lock(_mutexPose);
     if(idx==0)

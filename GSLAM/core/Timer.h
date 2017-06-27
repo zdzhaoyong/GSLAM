@@ -31,6 +31,10 @@ public:
 
     double Tac(){return Toc();}
 
+    static double timestamp(){
+        return std::chrono::duration<double>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+    }
+
 protected:
 std::chrono::high_resolution_clock::time_point _tmBegin;
 };
@@ -40,13 +44,20 @@ class Rate
 public:
     Rate(double frequency=1.0)
     {
-        _cycle=1e6/frequency;
+        _cycle=1./frequency;
         _tmBegin=std::chrono::system_clock::now();
     }
 
-    void sleep(double seconds)
+    static void sleep(double seconds)
     {
-        std::this_thread::sleep_for(std::chrono::duration<double>(seconds));
+        if(seconds>0)
+            std::this_thread::sleep_for(std::chrono::duration<double>(seconds));
+    }
+
+    void sleep(){
+        std::chrono::system_clock::time_point now=std::chrono::system_clock::now();
+        sleep(_cycle-std::chrono::duration<double>(now-_tmBegin).count());
+        _tmBegin=now;
     }
 
     double                  _cycle;

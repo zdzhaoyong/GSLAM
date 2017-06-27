@@ -34,8 +34,8 @@ public:
         if( remapCoef != NULL)      delete[] remapCoef;
     }
 
-    bool undistort(const cv::Mat& image, cv::Mat& result);
-    bool undistortFast(const cv::Mat& image, cv::Mat& result);
+    bool undistort(const GImage& image, GImage& result);
+    bool undistortFast(const GImage& image, GImage& result);
 
     bool prepareReMap();
 
@@ -60,9 +60,9 @@ class Undistorter
 public:
     Undistorter(Camera in=Camera(), Camera out=Camera());
 
-    bool undistort(const cv::Mat& image, cv::Mat& result);
+    bool undistort(const GImage& image, GImage& result);
     //Undistorting fast, no interpolate (bilinear) is used
-    bool undistortFast(const cv::Mat& image, cv::Mat& result);
+    bool undistortFast(const GImage& image, GImage& result);
 
     Camera cameraIn();
     Camera cameraOut();
@@ -168,7 +168,7 @@ inline bool UndistorterImpl::prepareReMap()
 }
 
 //Undistorting fast, no interpolate (bilinear) is used
-inline bool UndistorterImpl::undistortFast(const cv::Mat& image, cv::Mat& result)
+inline bool UndistorterImpl::undistortFast(const GImage& image, GImage& result)
 {
     using namespace std;
     if (!valid)
@@ -189,7 +189,7 @@ inline bool UndistorterImpl::undistortFast(const cv::Mat& image, cv::Mat& result
     int wh=width_out*height_out;
     int c=image.channels();
 
-    result=image.zeros(height_out,width_out,image.type());
+    result=GImage(width_out,height_out,image.type());
 
     if(c==1)
     {
@@ -233,7 +233,7 @@ inline bool UndistorterImpl::undistortFast(const cv::Mat& image, cv::Mat& result
 }
 
 //Undistorting bilinear interpolation
-inline bool UndistorterImpl::undistort(const cv::Mat& image, cv::Mat& result)
+inline bool UndistorterImpl::undistort(const GImage& image, GImage& result)
 {
     using namespace std;
     if (!valid)
@@ -254,7 +254,7 @@ inline bool UndistorterImpl::undistort(const cv::Mat& image, cv::Mat& result)
     int wh=width_out*height_out;
     int c=image.channels();
 
-    result=image.zeros(height_out,width_out,image.type());
+    result=GImage(width_out,height_out,image.type());
 
     if(c==1)
     {
@@ -317,12 +317,12 @@ inline Undistorter::Undistorter(Camera in, Camera out)
 {
 }
 
-inline bool Undistorter::undistort(const cv::Mat& image, cv::Mat& result)
+inline bool Undistorter::undistort(const GImage& image, GImage& result)
 {
     return impl->undistort(image,result);
 }
 
-inline bool Undistorter::undistortFast(const cv::Mat& image, cv::Mat& result)
+inline bool Undistorter::undistortFast(const GImage& image, GImage& result)
 {
     return impl->undistortFast(image,result);
 }

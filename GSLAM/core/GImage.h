@@ -2,6 +2,7 @@
 #define GIMAGE
 #include <stdint.h>
 #include <string.h>
+#include <assert.h>
 
 #if defined(HAS_OPENCV) || defined(HAS_OPENCV3)
 #include <opencv2/core/core.hpp>
@@ -179,7 +180,7 @@ public:
     int  type()const{return flags;}
     int  total()const{return cols*rows;}
 
-    GImage clone()
+    GImage clone()const
     {
         return GImage(cols,rows,flags,data,true);
     }
