@@ -5,7 +5,6 @@
 #include <qglviewer.h>
 
 #include "../../core/GSLAM.h"
-#include "../../core/SharedLibrary.h"
 
 namespace GSLAM{
 
@@ -20,20 +19,21 @@ public:
 
     bool open(QString pluginPath){
         _slam=SLAM::create(pluginPath.toStdString());
+        if(_slam) _slam->setCallback(this);
         return _slam.get();
     }
 
-    SLAMPtr slam(){return _slam;}
+    SLAMPtr& slam(){return _slam;}
 
     virtual void draw(){
+        if(!_slam) return;
         if(_slam->isDrawable()) _slam->draw();
         else drawSLAM();
     }
 
-    virtual void drawSLAM(){}
+    virtual void drawSLAM();
 
-    virtual void handle(const SPtr<GObject>& obj){}
-
+    virtual void handle(const SPtr<GObject>& obj);
 protected:
     SLAMPtr   _slam;
 };

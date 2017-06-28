@@ -30,7 +30,7 @@ GSLAM_FIND_VERSION()
 message("-- Compiling GSLAM Version ${GSLAM_VERSION}.")
 
 IF(NOT CMAKE_BUILD_TYPE)
-  SET(CMAKE_BUILD_TYPE Debug)#
+  SET(CMAKE_BUILD_TYPE Release)#Debug
 ENDIF()
 
 message("-- Build type: " ${CMAKE_BUILD_TYPE})

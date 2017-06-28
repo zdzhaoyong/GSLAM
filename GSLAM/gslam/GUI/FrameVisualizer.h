@@ -21,7 +21,7 @@ public:
     void              update(const FramePtr& frame);
 };
 
-class FrameVisualizer: public QWidget
+class FrameVisualizer: public QWidget,public GObjectHandle
 {
     Q_OBJECT
 public:
@@ -29,7 +29,8 @@ public:
         _splitter=new QSplitter(Qt::Vertical,this);
         _imageLayout=new QVBoxLayout(this);
         _imageLayout->addWidget(_splitter);
-        _infos=new InfomationViewer(_splitter);
+        _infos=new InfomationViewer(this);
+        _splitter->addWidget(_infos);
         connect(this,SIGNAL(signalFrameUpdated()),this,SLOT(slotFrameUpdated()));
     }
     virtual ~FrameVisualizer(){}
@@ -45,6 +46,7 @@ public:
         _curFrame=frame;
         emit signalFrameUpdated();
     }
+
 signals:
     void signalFrameUpdated();
 public slots:

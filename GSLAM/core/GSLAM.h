@@ -33,7 +33,6 @@
 #define USE_GSLAM_PLUGIN_(SLAMCLASS) extern "C"{\
     GSLAM::SLAMPtr createSLAMInstance(){return GSLAM::SLAMPtr(new SLAMCLASS());}}
 #define USE_GSLAM_PLUGIN(SLAMCLASS) USE_GSLAM_PLUGIN_(SLAMCLASS)
-
 namespace GSLAM {
 
 class MapFrame;
@@ -102,6 +101,7 @@ class GObjectHandle
 public:
     virtual ~GObjectHandle(){}
     virtual void handle(const SPtr<GObject>& obj){}
+    void handle(GObject* obj){handle(SPtr<GObject>(obj));}
 };
 
 /**
@@ -289,7 +289,7 @@ public:
     virtual ~SLAM(){}
     virtual std::string type()const{return "InvalidSLAM";}
     virtual bool valid()const{return false;}
-    virtual bool isDrawable(){return false;}
+    virtual bool isDrawable()const{return false;}
 
     bool    setMap(const MapPtr& map);
     MapPtr  getMap()const;

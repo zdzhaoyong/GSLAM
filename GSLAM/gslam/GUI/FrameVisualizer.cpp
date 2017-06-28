@@ -18,6 +18,7 @@ public:
     QImageWidget(QWidget* parent)
         :imageUpdated(false), QWidget(parent){
         setBaseSize(QSize(100,100));
+        setMinimumHeight(128);
 
         mStartedMove=false;
     }
@@ -173,6 +174,11 @@ public:
             QImage qimage(gimage.data,gimage.cols,gimage.rows,QImage::Format_RGB888);
             return QImageWidget::setImage(qimage,flush);
         }
+        else if(gimage.type()==GSLAM::GImageType<uchar,4>::Type)
+        {
+            QImage qimage(gimage.data,gimage.cols,gimage.rows,QImage::Format_RGB32);
+            return QImageWidget::setImage(qimage,flush);
+        }
         else if(gimage.type()==GSLAM::GImageType<uchar,1>::Type)
         {
             QImage qimage(gimage.data,gimage.cols,gimage.rows,QImage::Format_Indexed8);
@@ -297,7 +303,7 @@ void FrameVisualizer::slotFrameUpdated()
         if(_images.size()==camIdx)
         {
             _images.push_back(new GImageWidget(_splitter));
-//            _imageLayout->addWidget(_images[camIdx]);
+            _splitter->addWidget(_images[camIdx]);
         }
         GImageWidget* gimageW=_images[camIdx];
         int channelFlags=_curFrame->imageChannels();
@@ -309,6 +315,7 @@ void FrameVisualizer::slotFrameUpdated()
         {
 #ifdef HAS_OPENCV
             cv::Mat img=_curFrame->getImage(camIdx,IMAGE_BGRA);
+            if(img.empty()) return;
             cv::cvtColor(img,img,CV_BGR2RGB);
             gimageW->setImage(img);
 #else

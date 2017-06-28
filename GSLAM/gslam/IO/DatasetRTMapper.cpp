@@ -1,14 +1,17 @@
-#ifdef HAS_OPENCV
+
 #include "../../core/Dataset.h"
 #include "../../core/VideoFrame.h"
 #include "../../core/Svar.h"
 #include "../../core/VecParament.h"
 #include "../../core/Timer.h"
+#undef HAS_OPENCV
 
-
+#ifdef HAS_OPENCV
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
-
+#elif defined(HAS_QT)
+#include <QImage>
+#endif
 using namespace std;
 using namespace GSLAM;
 
@@ -108,17 +111,42 @@ public:
 //            cout<<"ErrorHeight:"<<para[2];
 //            cout<<lineCopy<<endl;
         }
-
+#ifdef HAS_OPENCV
         cv::Mat img=cv::imread(imgFile);
         if(img.empty())
         {
             imgFile=_seqTop+"/"+imgFile;
             img=cv::imread(imgFile);
         }
-//        if(img.type()==CV_8UC3) cv::cvtColor(img,img,CV_BGR2RGB);
+        if(img.type()==CV_8UC3) cv::cvtColor(img,img,CV_BGR2RGB);
+//        frame->_channel=IMAGE_BGRA;
+#else
+        QImage qimage(imgFile.c_str(),"Format_RGB888");
+        GImage img;
+
+        if(qimage.isNull())
+        {
+            imgFile=_seqTop+"/"+imgFile;
+            qimage.load(imgFile.c_str(),"Format_RGB888");
+        }
+
+        if(qimage.format()==QImage::Format_RGB32)
+        {
+            img=GImage(qimage.width(),qimage.height(),
+                       GImageType<uchar,4>::Type,qimage.bits(),true);
+        }
+        else if(qimage.format()==QImage::Format_RGB888){
+            img=GImage(qimage.width(),qimage.height(),
+                       GImageType<uchar,3>::Type,qimage.bits(),true);
+        }
+        else if(qimage.format()==QImage::Format_Indexed8)
+        {
+            img=GImage(qimage.width(),qimage.height(),
+                       GImageType<uchar,1>::Type,qimage.bits(),true);
+        }
+#endif
         ImageFrameWithGPSYRP* frame=new ImageFrameWithGPSYRP(_frameId++,timestamp,img,_camera,para[0],para[1],para[2],para[3],
                 para[4],para[5],para[6],para[7],para[8],para[9],para[10],imgFile);
-        frame->_channel=IMAGE_BGRA;
         return SPtr<GSLAM::MapFrame>(frame);
     }
 
@@ -143,4 +171,3 @@ SPtr<Dataset> createDataset()
 }
 #endif
 
-#endif

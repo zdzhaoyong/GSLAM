@@ -209,8 +209,7 @@ void MainWindow::mousePressEvent(QMouseEvent *event)
 
 void MainWindow::closeEvent(QCloseEvent *event)
 {
-    svar.ParseLine("System.Stop");
-    exit(0);
+    if(!slotStop()) return;
 }
 
 void MainWindow::call(QString cmd)
