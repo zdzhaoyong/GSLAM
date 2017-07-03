@@ -6,6 +6,7 @@
 #include <QToolBar>
 #include <QDockWidget>
 #include <QFileDialog>
+#include <QFileInfo>
 
 #include "MainWindow.h"
 #include "FrameVisualizer.h"
@@ -173,6 +174,7 @@ int MainWindow::setupLayout(void)
     connect(_d->startAction,SIGNAL(triggered(bool)),this,SLOT(slotStart()));
     connect(_d->pauseAction,SIGNAL(triggered(bool)),this,SLOT(slotPause()));
     connect(_d->stopAction,SIGNAL(triggered(bool)),this,SLOT(slotStop()));
+    connect(this,SIGNAL(signalStop()),this,SLOT(slotStop()));
     return 0;
 }
 
@@ -184,7 +186,7 @@ void MainWindow::keyPressEvent(QKeyEvent *e)
         break;
 
     case Qt::Key_Escape:
-        exit(0);
+        close();
         break;
 
     default:
@@ -210,6 +212,7 @@ void MainWindow::mousePressEvent(QMouseEvent *event)
 void MainWindow::closeEvent(QCloseEvent *event)
 {
     if(!slotStop()) return;
+//    this->~MainWindow();
 }
 
 void MainWindow::call(QString cmd)
@@ -236,13 +239,24 @@ void MainWindow::slotShowMessage(QString str,int msgType)
 
 bool MainWindow::slotOpen()
 {
-    QString filePath;
+    return slotOpen("");
+}
+
+bool MainWindow::slotOpen(QString filePath)
+{
     if(!filePath.size())
     {
         filePath= QFileDialog::getOpenFileName(this, tr("Choose a file.\n"),
                                                        _d->lastOpenFile.c_str(),
                                                       "Allfile(*.*);;");
     }
+    QFileInfo info(filePath);
+    if(!info.exists()) return false;
+    if(info.suffix()=="so"||info.suffix()=="dll"){
+        return slotAddSLAM(filePath);
+    }
+    else return slotStartDataset(filePath);
+    return true;
 }
 
 bool MainWindow::slotStart()
@@ -261,10 +275,9 @@ bool MainWindow::slotStart()
     }
 
     if(_d->status==STOP){
-        if(!_d->dataset.open(_d->defaultDataset))
+        if(!_d->dataset.isOpened())
         {
-            slotShowMessage(tr("Failed to open dataset ")+_d->defaultDataset.c_str());
-            return false;
+            slotShowMessage(tr("Please open a dataset first!\n"));
         }
         _d->status=RUNNING;
         _d->threadPlay=std::thread(&MainWindow::runSLAMMain,this);
@@ -311,8 +324,14 @@ bool MainWindow::slotAddSLAM(QString pluginPath)
 
 bool MainWindow::slotStartDataset(QString dataset)
 {
-    _d->defaultDataset=dataset.toStdString();
-    return slotStart();
+    if(!_d->dataset.open(dataset.toStdString()))
+    {
+        slotShowMessage(tr("Failed to open dataset ")+dataset);
+        return false;
+    }
+    _d->frameVis->setFrame(_d->dataset.grabFrame());
+    _d->startAction->setEnabled(true);
+    return true;
 }
 
 void MainWindow::runSLAMMain()
@@ -325,14 +344,20 @@ void MainWindow::runSLAMMain()
         {
             continue;
         }
-        FramePtr frame=_d->dataset.grabFrame();
+
+        FramePtr frame=_d->frameVis->curFrame();
         if(!frame) break;
-        _d->frameVis->setFrame(frame);
         for(SLAMVisualizer* vis:_d->slamVis)
         {
+            string str=vis->slam()->type()+"::Track";
+            timer.enter(str.c_str());
             vis->slam()->track(frame);
+            timer.leave(str.c_str());
         }
+        _d->frameVis->setFrame(_d->dataset.grabFrame());
     }
+    std::cerr<<"Play thread stoped."<<endl;
+    emit signalStop();
 }
 
 SCommandAction::SCommandAction(const QString &cmd, const QString &text, QMenu *parent)

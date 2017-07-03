@@ -82,10 +82,10 @@ qt4_add_resources(QRC_FILES GSLAM/gslam/GUI/res.qrc)
 endif()
 
 pi_add_target(gslam BIN GSLAM/gslam ${QRC_FILES} REQUIRED System MODULES OpenCV Qt OpenGL GLEW GLUT QGLViewer)
-
+pi_add_target(gslamDB_cfg SHARED GSLAM/plugins/cfg REQUIRED System MODULES OpenCV Qt)
 pi_report_target()
 #####################################################################
 # Now do make install
 pi_install(HEADERS GSLAM/core HEADER_DESTINATION include/GSLAM
-           TARGETS gslam CMAKE "${PROJECT_SOURCE_DIR}/cmake/FindGSLAM.cmake.in")
+           TARGETS gslam gslamDB_cfg CMAKE "${PROJECT_SOURCE_DIR}/cmake/FindGSLAM.cmake.in")
 

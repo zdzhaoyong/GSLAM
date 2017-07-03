@@ -9,7 +9,17 @@ typedef pi::SharedLibrary SharedLibrary;
 #else
 
 #include <iostream>
+#include <set>
+
+#if defined(WIN32) && !defined(__CYGWIN__)
+#include <windows.h>
+#else
+#include <unistd.h>
+#endif
+
 #include "Mutex.h"
+#include "SPtr.h"
+#include "Svar.h"
 
 #ifdef __linux
 
@@ -87,13 +97,14 @@ public:
     SharedLibrary():_handle(NULL){}
         /// Creates a SharedLibrary object.
 
-    SharedLibrary(const std::string& path)
+    SharedLibrary(const std::string& path):_handle(NULL)
     {
+        load(path);
     }
         /// Creates a SharedLibrary object and loads a library
         /// from the given path.
 
-    virtual ~SharedLibrary(){}
+    virtual ~SharedLibrary(){if(isLoaded())std::cerr<<"SharedLibrary "<<_path<<"  released.\n";std::cerr.flush();}
         /// Destroys the SharedLibrary. The actual library
         /// remains loaded.
 
@@ -126,6 +137,7 @@ public:
         if (!_handle) return false;
 #endif
         _path = path;
+        return true;
     }
         /// Loads a shared library from the given path.
         /// Throws a LibraryAlreadyLoadedException if
@@ -196,29 +208,13 @@ public:
     static std::string suffix()
     {
 #if defined(__APPLE__)
-#if defined(_DEBUG)
-        return "d.dylib";
-#else
         return ".dylib";
-#endif
 #elif defined(hpux) || defined(_hpux)
-#if defined(_DEBUG)
-        return "d.sl";
-#else
         return ".sl";
-#endif
 #elif defined(__CYGWIN__)
-#if defined(_DEBUG)
-        return "d.dll";
-#else
         return ".dll";
-#endif
-#else
-#if defined(_DEBUG)
-        return "d.so";
 #else
         return ".so";
-#endif
 #endif
     }
         /// Returns the platform-specific filename suffix
@@ -234,6 +230,145 @@ private:
     void*       _handle;
 };
 
+
+class Registry
+{
+public:
+    typedef std::set<std::string> FilePathList;
+    Registry(){
+        updatePaths();
+    }
+
+    static Registry& instance()
+    {
+        static std::shared_ptr<Registry> reg(new Registry);
+        return *reg;
+    }
+
+    static SPtr<SharedLibrary> get(std::string pluginName)
+    {
+        if(pluginName.empty()) return SPtr<SharedLibrary>();
+        Registry& inst=instance();
+        pluginName=inst.getPluginName(pluginName);
+
+        if(inst._registedLibs.exist(pluginName))
+            return inst._registedLibs[pluginName];
+
+        // find out and load the SharedLibrary
+        for(std::string dir:inst._libraryFilePath)
+        {
+            std::string pluginPath=dir+"/"+pluginName;
+            if(!fileExists(pluginPath)) continue;
+            SPtr<SharedLibrary> lib(new SharedLibrary(pluginPath));
+            if(lib->isLoaded())
+            {
+                inst._registedLibs.insert(pluginName,lib);
+                return lib;
+            }
+        }
+        // failed to find the library
+        return inst._registedLibs[pluginName];
+    }
+
+    static bool erase(std::string pluginName)
+    {
+        if(pluginName.empty()) return false;
+        Registry& inst=instance();
+        pluginName=inst.getPluginName(pluginName);
+        return inst._registedLibs.erase(pluginName);
+    }
+protected:
+    static bool fileExists(const std::string& filename)
+    {
+        return access( filename.c_str(), F_OK ) == 0;
+    }
+
+    static void convertStringPathIntoFilePathList(const std::string& paths,FilePathList& filepath)
+    {
+    #if defined(WIN32) && !defined(__CYGWIN__)
+        char delimitor = ';';
+        if(paths.find(delimitor)==std::string::npos) delimitor=':';
+    #else
+        char delimitor = ':';
+        if(paths.find(delimitor)==std::string::npos) delimitor=';';
+    #endif
+
+        if (!paths.empty())
+        {
+            std::string::size_type start = 0;
+            std::string::size_type end;
+            while ((end = paths.find_first_of(delimitor,start))!=std::string::npos)
+            {
+                filepath.insert(std::string(paths,start,end-start));
+                start = end+1;
+            }
+
+            std::string lastPath(paths,start,std::string::npos);
+            if (!lastPath.empty())
+                filepath.insert(lastPath);
+        }
+
+    }
+    std::string getPluginName(std::string pluginName)
+    {
+        std::string suffix;
+        int idx=pluginName.find_last_of('.');
+        if(idx!=std::string::npos)
+        suffix=pluginName.substr(idx);
+        if(suffix!=SharedLibrary::suffix())
+        {
+            pluginName+=SharedLibrary::suffix();
+        }
+
+        std::string folder=Svar::getFolderPath(pluginName);
+        pluginName=Svar::getFileName(pluginName);
+        if(folder.size()){
+            _libraryFilePath.insert(folder);
+        }
+        return pluginName;
+    }
+
+    void updatePaths()
+    {
+        _libraryFilePath.clear();
+
+        char** argv=(char**)svar.GetPointer("argv");
+        if(argv)
+        {
+            _libraryFilePath.insert(Svar::getFolderPath(argv[0]));//application folder
+        }
+
+        FilePathList envs={"GSLAM_LIBRARY_PATH","GSLAM_LD_LIBRARY_PATH"};
+        FilePathList paths;
+#ifdef __linux
+
+#if defined(__ia64__) || defined(__x86_64__)
+        paths.insert("/usr/lib/:/usr/lib64/:/usr/local/lib/:/usr/local/lib64/");
+#else
+        paths.insert("/usr/lib/:/usr/local/lib/");
+#endif
+        envs.insert("LD_LIBRARY_PATH");
+#elif defined(__CYGWIN__)
+        envs.insert("PATH");
+        paths.insert("/usr/bin/:/usr/local/bin/");
+#elif defined(WIN32)
+        envs.insert("PATH");
+#endif
+        for(std::string env:envs)
+        {
+            std::string ptr=svar.GetString(env,"");
+            if(!ptr.empty())
+                convertStringPathIntoFilePathList(ptr,_libraryFilePath);
+        }
+        for(std::string ptr:paths)
+            convertStringPathIntoFilePathList(ptr,_libraryFilePath);
+    }
+
+
+
+    std::set<std::string>               _libraryFilePath;// where to search?
+    SvarWithType<SPtr<SharedLibrary> >  _registedLibs;   // already loaded
+};
 
 } // namespace pi
 

@@ -131,6 +131,7 @@ inline Timer::TCallData::TCallData() :
 inline Timer::~Timer()
 {
     dumpAllStats();
+    m_data.clear();
 }
 
 

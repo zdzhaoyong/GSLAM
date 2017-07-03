@@ -24,7 +24,7 @@ public:
     DatasetOpenCVMono(){
 //        cerr<<"Created Dataset "<<type();
     }
-    virtual std::string type() const{return "cvmono";}
+    virtual std::string type() const{return "DatasetOpenCVMono";}
 
     virtual bool open(const std::string& dataset){
         ifstream ifs(dataset.c_str());
@@ -56,7 +56,7 @@ public:
         double timestamp=GSLAM::TicToc::timestamp();
         video>>img;
         GSLAM::GImage gimg(img.cols,img.rows,img.type(),img.data,true);
-        return SPtr<GSLAM::FrameMono>(new GSLAM::FrameMono(gimg,camera,frameId++,timestamp,IMAGE_BGRA));
+        return SPtr<GSLAM::FrameMono>(new GSLAM::FrameMono(frameId++,timestamp,gimg,camera,IMAGE_BGRA));
     }
 
     GSLAM::FrameID   frameId;
@@ -66,19 +66,7 @@ public:
     int              skip;
 };
 
-#if 1
-// Buildin
-REGISTER_DATASET(DatasetOpenCVMono)
-#else
-// Use as a plugin
-extern "C"
-{
-SPtr<Dataset> createDataset()
-{
-    return SPtr<Dataset>(new DatasetOpenCVMono());
-}
-}
-#endif
+REGISTER_DATASET(DatasetOpenCVMono,cvmono)
 
 
 #endif // HAS_OPENCV

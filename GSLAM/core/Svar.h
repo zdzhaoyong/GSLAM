@@ -760,7 +760,8 @@ inline Svar::Svar()
 
 inline Svar::~Svar()
 {
-//    dumpAllVars();
+    if(svar.GetInt("Svar.DumpAllVars"))
+        dumpAllVars();
 }
 
 inline Svar& Svar::instance()
@@ -1257,9 +1258,11 @@ inline std::string& Svar::GetString(const std::string& name, const std::string& 
     }
     else //Third:Both did not get the var need,insert defaut var to SvarWithType
     {
+        string _def=def;
+        if(char* ptr=getenv(name.c_str())) _def=ptr;
         while( !ptr )
         {
-            ptr=(typed_map.get_ptr(name,def));
+            ptr=(typed_map.get_ptr(name,_def));
             if(ptr) break;
         }
 

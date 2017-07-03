@@ -16,9 +16,11 @@ public:
     {
         open(pluginPath);
     }
+    virtual ~SLAMVisualizer(){_slam.reset();}
 
     bool open(QString pluginPath){
         _slam=SLAM::create(pluginPath.toStdString());
+
         if(_slam) _slam->setCallback(this);
         return _slam.get();
     }

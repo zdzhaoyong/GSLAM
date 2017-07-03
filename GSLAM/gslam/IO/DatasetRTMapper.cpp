@@ -22,16 +22,16 @@ inline GSLAM::Camera camFromName(string name,Svar& var)
     return GSLAM::Camera(paras.data);
 }
 
-class ImageFrameWithGPSYRP : public GSLAM::FrameMonoGPS
+class ImageFrameWithGPSPYR : public GSLAM::FrameMonoGPSPYR
 {
 public:
-    ImageFrameWithGPSYRP(FrameID id,double time,const GImage& img,const Camera& camera,
+    ImageFrameWithGPSPYR(FrameID id,double time,const GImage& img,const Camera& camera,
                          double longtitude,double latitude,double altitude,
                          double sigmaHorizon,double sigmaVertical,
                          double pitch,double yaw,double roll,
                          double sigmaPitch,double sigmaYaw,double sigmaRoll,
                          string imgPath="")
-        :GSLAM::FrameMonoGPS(id,time,img,camera,longtitude,latitude,altitude,sigmaHorizon,sigmaVertical,
+        :GSLAM::FrameMonoGPSPYR(id,time,img,camera,longtitude,latitude,altitude,sigmaHorizon,sigmaVertical,
                              pitch,yaw,roll,sigmaPitch,sigmaYaw,sigmaRoll),_imgPath(imgPath)
     {
     }
@@ -145,7 +145,7 @@ public:
                        GImageType<uchar,1>::Type,qimage.bits(),true);
         }
 #endif
-        ImageFrameWithGPSYRP* frame=new ImageFrameWithGPSYRP(_frameId++,timestamp,img,_camera,para[0],para[1],para[2],para[3],
+        ImageFrameWithGPSPYR* frame=new ImageFrameWithGPSPYR(_frameId++,timestamp,img,_camera,para[0],para[1],para[2],para[3],
                 para[4],para[5],para[6],para[7],para[8],para[9],para[10],imgFile);
         return SPtr<GSLAM::MapFrame>(frame);
     }
@@ -157,17 +157,5 @@ public:
     ifstream         _ifs;
 };
 
-#if 1
-// Buildin
-REGISTER_DATASET(DatasetRTMapper)
-#else
-// Use as a plugin
-extern "C"
-{
-SPtr<Dataset> createDataset()
-{
-    return SPtr<Dataset>(new DatasetRTMapper());
-}
-}
-#endif
+REGISTER_DATASET(DatasetRTMapper,rtm)
 

@@ -13,7 +13,7 @@ class MainWindow: public QMainWindow
     Q_OBJECT
 public:
     MainWindow(QWidget *parent = 0);
-    virtual ~MainWindow(){}
+    virtual ~MainWindow(){slotStop();}
 
     virtual int setupLayout(void);
 
@@ -21,11 +21,13 @@ public:
 
 signals:
     void call_signal(QString cmd);
+    void signalStop();
 
-protected slots:
+public slots:
     void call_slot(QString cmd);
     void slotShowMessage(QString str,int msgType=0);
     bool slotOpen();
+    bool slotOpen(QString file);
     bool slotStart();
     bool slotPause();
     bool slotStop();

@@ -235,7 +235,6 @@ QTableWidgetItem* InfomationViewer::setValue(int row,int col,double  val)
 
 void InfomationViewer::update(const FramePtr& frame)
 {
-    std::map<QString,QString> vars;
     vars["id"]=QString("%1").arg(frame->id());
     vars["type"]=frame->type().c_str();
     vars["timestamp"]=QString("%1").arg(frame->timestamp(),0,'g',13);
@@ -253,6 +252,20 @@ void InfomationViewer::update(const FramePtr& frame)
     if(frame->getIMUNum())
     {
         vars["IMUNum"]=QString("%1").arg(frame->getIMUNum());
+        Point3d pt;
+        for(int i=0;i<frame->getIMUNum();i++)
+        {
+            if(frame->getPitchYawRoll(pt,i))
+            {
+                vars[QString("IMU%1.PitchYawRoll").arg(i)]=QString("%1,%2,%3")
+                        .arg(pt.x,0,'g',13).arg(pt.y,0,'g',13).arg(pt.z,0,'g',13);
+            }
+            if(frame->getPYRSigma(pt,i))
+            {
+                vars[QString("IMU%1.PYRSigma").arg(i)]=QString("%1,%2,%3")
+                        .arg(pt.x,0,'g',13).arg(pt.y,0,'g',13).arg(pt.z,0,'g',13);
+            }
+        }
     }
 
     if(frame->getGPSNum())
@@ -271,16 +284,6 @@ void InfomationViewer::update(const FramePtr& frame)
                 vars[QString("GPS%1.LonLatAltSigma").arg(i)]=QString("%1,%2,%3")
                         .arg(pt.x,0,'g',13).arg(pt.y,0,'g',13).arg(pt.z,0,'g',13);
             }
-            if(frame->getGPSPitchYawRoll(pt,i))
-            {
-                vars[QString("GPS%1.PitchYawRoll").arg(i)]=QString("%1,%2,%3")
-                        .arg(pt.x,0,'g',13).arg(pt.y,0,'g',13).arg(pt.z,0,'g',13);
-            }
-            if(frame->getGPSPYRSigma(pt,i))
-            {
-                vars[QString("GPS%1.PYRSigma").arg(i)]=QString("%1,%2,%3")
-                        .arg(pt.x,0,'g',13).arg(pt.y,0,'g',13).arg(pt.z,0,'g',13);
-            }
         }
     }
 
@@ -296,6 +299,7 @@ void InfomationViewer::update(const FramePtr& frame)
 
 void FrameVisualizer::slotFrameUpdated()
 {
+    if(!_curFrame) return;
     GSLAM::ReadMutex lock(_mutex);
     _infos->update(_curFrame);
     for(int camIdx=0;camIdx<_curFrame->cameraNum();camIdx++)

@@ -19,6 +19,7 @@ public:
     QTableWidgetItem* setValue(int row,int col,QString val);
     QTableWidgetItem* setValue(int row,int col,double  val);
     void              update(const FramePtr& frame);
+    std::map<QString,QString>   vars;
 };
 
 class FrameVisualizer: public QWidget,public GObjectHandle
@@ -35,17 +36,16 @@ public:
     }
     virtual ~FrameVisualizer(){}
 
-    typedef SPtr<FrameVisualizer> FrameVisualizerPtr;
-    static SvarWithType<FrameVisualizerPtr>& visualizers(){
-        static SvarWithType<FrameVisualizerPtr> globalVis;
-        return globalVis;
-    }
-
     void setFrame(const FramePtr& frame){
-        GSLAM::WriteMutex lock(_mutex);
-        _curFrame=frame;
+        {
+            GSLAM::WriteMutex lock(_mutex);
+            _curFrame=frame;
+        }
+        if(!frame) return;
         emit signalFrameUpdated();
     }
+
+    FramePtr curFrame(){return _curFrame;}
 
 signals:
     void signalFrameUpdated();

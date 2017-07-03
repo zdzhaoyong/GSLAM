@@ -5,90 +5,81 @@
 #include "SharedLibrary.h"
 
 namespace GSLAM{
+
+#define REGISTER_DATASET(D,E) \
+    extern "C" SPtr<Dataset> create##D##E(){ return SPtr<Dataset>(new D());}\
+    class D##E##_Register{ \
+    public: D##E##_Register(){\
+    DatasetFactory::instance()._ext2creator.insert(#E,create##D##E);\
+}}D##E##_instance;
+
 /// create
 class Dataset;
 typedef SPtr<Dataset> (*funcCreateDataset)();
-extern "C"
-{
-SPtr<Dataset> createDataset();
-}
 
 // A dataset configuration file : DatasetName.DatasetType --eg. Sequence1.kitti desk.tumrgbd
 class Dataset : public GSLAM::GObject
 {
-    typedef SPtr<Dataset> Loader;
 public:
+    typedef SPtr<Dataset> DatasetPtr;
+    typedef std::vector<std::string> StrVec;
     Dataset():_name("Untitled"){}
     virtual ~Dataset(){}
 
-    virtual std::string type() const{if(_impl) return _impl->type();else return "Dataset";}
     std::string         name() const{if(_impl) return _impl->type();else return _name;}
+    virtual std::string type() const{if(_impl) return _impl->type();else return "Dataset";}
+    virtual bool        isOpened(){if(_impl) return _impl->isOpened();else return false;}
+    virtual FramePtr    grabFrame(){if(_impl) return _impl->grabFrame();else return FramePtr();}
 
-    virtual bool open(const std::string& dataset){
-        // The input path could be dataset configuration file or just a folder path
-        int dotPosition=dataset.find_last_of('.');
-        if(dotPosition!=std::string::npos)// call by extension
-        {
-            std::string ext=dataset.substr(dotPosition+1);
-            Loader loader=loaders()[ext];
-            if(loader)
-            {
-                if(loader->open(dataset))
-                {
-                    _impl=loader;
-                    return true;
-                }
-            }
-        }
-        SvarWithType<Loader>::DataMap impls=loaders().get_data();
-        for(SvarWithType<Loader >::DataIter it=impls.begin();it!=impls.end();it++)
-        {
-            Loader loader=it->second;
-            if(loader->open(dataset))
-            {
-                _impl=loader;
-                return true;
-            }
-        }
-        return false;
-    }
-
-    virtual bool isOpened(){return _impl.get();}
-
-    virtual FramePtr grabFrame(){if(_impl) return _impl->grabFrame();else return FramePtr();}
-
-    static SvarWithType<Loader >& loaders()
-    {
-        static SPtr<SvarWithType<Loader> > globalLoaders(new SvarWithType<Loader>());
-        return *globalLoaders;
-    }
-
-    static bool loadPlugin(const std::string& pluginPath)
-    {
-        typedef SPtr<SharedLibrary> SharedLibPtr;
-        SharedLibPtr& lib=SvarWithType<SharedLibPtr>::instance()[pluginPath];
-        if(lib) return lib->isLoaded();
-        lib=SharedLibPtr(new SharedLibrary());
-        if(!lib->load(pluginPath)) return false;
-        funcCreateDataset factory=(funcCreateDataset)lib->getSymbol("createDataset");
-        if(!factory) return false;
-        Loader loader=factory();
-        if(!loader) return false;
-        loaders()[loader->type()]=loader;// loaded successfully
-        return true;
-    }
-
+    virtual bool        open(const std::string& dataset);
 protected:
     std::string _name;
-    Loader      _impl;
+    DatasetPtr  _impl;
 };
 
-#define REGISTER_DATASET_(D)\
-    class D##_Register{ \
-    public: D##_Register(){D* d=new D();\
-    Dataset::loaders()[d->type()]=SPtr<Dataset>(d);}\
-}D##_inst;
-#define REGISTER_DATASET(D) REGISTER_DATASET_(D)
+class DatasetFactory
+{
+public:
+    typedef SPtr<Dataset> DatasetPtr;
+
+    static DatasetFactory& instance(){
+        static SPtr<DatasetFactory> inst(new DatasetFactory());
+        return *inst;
+    }
+
+    static DatasetPtr create(std::string dataset);
+
+    SvarWithType<funcCreateDataset>        _ext2creator;
+};
+
+inline bool Dataset::open(const std::string& dataset){
+    DatasetPtr impl=DatasetFactory::create(dataset);
+    if(impl) {_impl=impl;return _impl->open(dataset);}
+    return false;
+}
+
+inline SPtr<Dataset> DatasetFactory::create(std::string dataset)
+{
+    std::string extension;
+    // The input path could be dataset configuration file or just a folder path
+    int dotPosition=dataset.find_last_of('.');
+    if(dotPosition!=std::string::npos)// call by extension
+    {
+        extension=dataset.substr(dotPosition+1);
+    }
+    if(extension.empty()) return DatasetPtr();
+
+    if(!instance()._ext2creator.exist(extension))
+    {
+        if(!Registry::get("libgslamDB_"+extension).get()) return DatasetPtr();
+    }
+
+    if(!instance()._ext2creator.exist(extension)) return DatasetPtr();
+    funcCreateDataset createFunc=instance()._ext2creator.get_var(extension,NULL);
+    if(!createFunc) return DatasetPtr();
+
+    return createFunc();
+}
 
 }
 

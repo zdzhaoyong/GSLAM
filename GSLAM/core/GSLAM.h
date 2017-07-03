@@ -179,14 +179,15 @@ public:
     virtual bool    getMagnetic(Point3d& mag,int idx=0)const{return false;}            // gauss
     virtual bool    getAccelerationNoise(Point3d& accN,int idx=0)const{return false;}
     virtual bool    getAngularVNoise(Point3d& angularVN,int idx=0)const{return false;}
+    virtual bool    getPitchYawRoll(Point3d& pyr,int idx=0)const{return false;}     // in rad
+    virtual bool    getPYRSigma(Point3d& pyrSigma,int idx=0)const{return false;}    // in rad
 
     virtual int     getGPSNum()const{return 0;}
     virtual SE3     getGPSPose(int idx=0)const{return SE3();}
     virtual bool    getGPSLLA(Point3d& LonLatAlt,int idx=0)const{return false;}        // WGS84 [longtitude latitude altitude]
     virtual bool    getGPSLLASigma(Point3d& llaSigma,int idx=0)const{return false;}    // meter
     virtual bool    getGPSECEF(Point3d& xyz,int idx=0)const{return false;}             // meter
-    virtual bool    getGPSPitchYawRoll(Point3d& pyr,int idx=0)const{return false;}     // in rad
-    virtual bool    getGPSPYRSigma(Point3d& pyrSigma,int idx=0)const{return false;}    // in rad
+    virtual bool    getHeight2Ground(Point2d& height,int idx=0)const{return false;}    // height against ground
 
     // Tracking things for feature based methods
     virtual int     keyPointNum()const{return 0;}
@@ -375,9 +376,8 @@ inline MapPtr SLAM::getMap()const
 }
 
 inline SLAMPtr SLAM::create(const std::string& slamPlugin){
-    SPtr<SharedLibrary>& plugin=SvarWithType<SPtr<SharedLibrary> >::instance()[slamPlugin];
-    if(!plugin) plugin=SPtr<SharedLibrary>(new SharedLibrary());
-    if(!plugin->isLoaded()) plugin->load(slamPlugin);
+    SPtr<SharedLibrary> plugin=Registry::get(slamPlugin);
+    if(!plugin) return SLAMPtr();
     funcCreateSLAMInstance createFunc=(funcCreateSLAMInstance)plugin->getSymbol("createSLAMInstance");
     if(!createFunc) return SLAMPtr();
     else return createFunc();

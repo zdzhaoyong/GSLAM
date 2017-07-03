@@ -14,11 +14,13 @@ void SLAMVisualizer::handle(const SPtr<GObject>& obj){
         Point3d center=sce->_center;
         setSceneCenter(qglviewer::Vec(center.x,center.y,center.z));
         sce->setHandled();
+        update();
     }
     else if(obj->type()=="ScenceRadiusEvent")
     {
         ScenceRadiusEvent* radiusE=(ScenceRadiusEvent*)obj.get();
         setSceneRadius(radiusE->_radius);
+        update();
     }
 }
 

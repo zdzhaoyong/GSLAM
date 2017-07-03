@@ -27,6 +27,7 @@ public:
 
     bool fromString(std::string str)
     {
+        data.clear();
         if(str.empty()) return false;
         std::string::size_type start,stop;
         start=str.find('[');
