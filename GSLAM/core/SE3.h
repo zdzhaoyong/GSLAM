@@ -1,5 +1,5 @@
-#ifndef SE3_H
-#define SE3_H
+#ifndef GSLAM_SE3_H
+#define GSLAM_SE3_H
 
 #include "SO3.h"
 
@@ -165,6 +165,19 @@ public:
     {
         my_rotation.fromMatrixUnsafe(tn.get_rotation());
         my_translation=*(Vec3*)&tn.get_translation();
+    }
+#endif
+
+#ifdef SOPHUS_SE3_HPP
+    operator Sophus::SE3Group<Precision>()
+    {
+        return *(Sophus::SE3Group<Precision>*)&my_rotation;
+    }
+
+    SE3<Precision>(const Sophus::SE3Group<Precision>& sophus)
+        : my_rotation(sophus.so3()),
+          my_translation(*(Vec3*)&sophus.translation())
+    {
     }
 #endif
 

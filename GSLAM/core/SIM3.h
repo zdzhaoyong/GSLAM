@@ -1,5 +1,5 @@
-#ifndef SIM3_H
-#define SIM3_H
+#ifndef GSLAM_SIM3_H
+#define GSLAM_SIM3_H
 
 #include "SE3.h"
 
@@ -100,10 +100,29 @@ public:
         return SIM3(rinv,(-inv_scale)*(rinv*get_translation()),inv_scale);
     }
 
-    /// v=(x,y,z,rx,ry,rz,s_log)^T
+    // WARNNING: The exp and ln are not the same with the standard Lie Algebra!
+    // TODO:     Implement the correct exp and log
     inline SIM3<Precision> exp(const Array_<Precision,7>& v);
 
     inline Array_<Precision,7> ln()const;
+
+#ifdef SOPHUS_SIM3_HPP
+    SIM3(const Sophus::Sim3Group<Precision>& sim3)
+    {
+        Eigen::Quaternion<Precision> quat(sim3.rxso3().quaternion().coeffs());
+        quat.normalize();
+        get_rotation()=Sophus::SO3Group<Precision>(quat);
+        get_translation()=*(Point3_<Precision>*)sim3.translation().data();
+        get_scale()=sim3.scale();
+    }
+    operator Sophus::Sim3Group<Precision>()
+    {
+        auto translation=get_translation();
+        return Sophus::Sim3Group<Precision>(Sophus::RxSO3Group<Precision>(std::sqrt(get_scale()),
+                                                          get_rotation()),
+                                    Eigen::Map<Eigen::Matrix<Precision, 3, 1>>(&translation.x));
+    }
+#endif
 protected:
     SE3<Precision> my_se3;
     Precision my_scale;
@@ -154,30 +173,36 @@ inline Point3_<Precision> compute_rodrigues_coefficients_sim3( const Precision &
 template <typename Precision>
 inline SIM3<Precision> SIM3<Precision>::exp(const Array_<Precision,7>& mu)
 {
-
     SIM3<Precision> result;
-#ifdef HAS_TOON
-    // scale
-    result.get_scale() = exp(mu.data[6]);
+    result.get_rotation()=SO3<Precision>::exp(*(Point3d*)&mu);
+    result.get_translation()=*(Point3d*)&mu.data[3];
+    result.get_scale()=mu.data[6];
+//#ifdef HAS_TOON
+//    // scale
+//    result.get_scale() = exp(mu.data[6]);
 
-    // rotation
-    const Point3_<Precision> w =*((Point3_<Precision>*)&mu.data[3]);
-    const Precision t = sqrt(w.x*w.x+w.y*w.y+w.z*w.z);
-    result.get_rotation() = SO3<Precision>::exp(w);
+//    // rotation
+//    const Point3_<Precision> w =*((Point3_<Precision>*)&mu.data[3]);
+//    const Precision t = sqrt(w.x*w.x+w.y*w.y+w.z*w.z);
+//    result.get_rotation() = SO3<Precision>::exp(w);
 
-    // translation
-    const Point3_<Precision> coeff = Internal::compute_rodrigues_coefficients_sim3(mu.data[6],t);
-    const Point3_<Precision> trans =*((Point3_<Precision>*)&mu);
-    const TooN::Vector<3,Precision> cross = w ^ trans;
-    result.get_translation() = coeff[0] * mu.template slice<0,3>() + TooN::operator*(coeff[1], cross) + TooN::operator*(coeff[2], (w ^ cross));
-#endif
+//    // translation
+//    const Point3_<Precision> coeff = Internal::compute_rodrigues_coefficients_sim3(mu.data[6],t);
+//    const Point3_<Precision> trans =*((Point3_<Precision>*)&mu);
+//    const TooN::Vector<3,Precision> cross = w ^ trans;
+//    result.get_translation() = coeff[0] * mu.template slice<0,3>() + TooN::operator*(coeff[1], cross) + TooN::operator*(coeff[2], (w ^ cross));
+//#endif
     return result;
 }
 
 template <typename Precision>
 inline Array_<Precision,7> SIM3<Precision>::ln()const
 {
-
+    Array_<Precision,7> result;
+    *(Point3d*)&result=get_rotation().ln();
+    *(Point3d*)&result.data[3]=get_translation();
+    result.data[6]=get_scale();
+    return result;
 }
 
 typedef SIM3<double> SIM3d;

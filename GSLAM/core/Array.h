@@ -1,5 +1,5 @@
-#ifndef ARRAY_H
-#define ARRAY_H
+#ifndef GSLAM_ARRAY_H
+#define GSLAM_ARRAY_H
 #include <iostream>
 
 namespace pi {

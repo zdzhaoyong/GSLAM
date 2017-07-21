@@ -23,7 +23,7 @@
 
 #define GSLAM_VERSION_MAJOR 2
 #define GSLAM_VERSION_MINOR 1
-#define GSLAM_VERSION_PATCH 0
+#define GSLAM_VERSION_PATCH 2
 #define GSLAM_COMMAND_STRHELPER(COMMAND) #COMMAND
 #define GSLAM_COMMAND_STR(COMMAND) GSLAM_COMMAND_STRHELPER(COMMAND)
 #define GSLAM_VERSION (GSLAM_COMMAND_STR(GSLAM_VERSION_MAJOR) "." \
@@ -122,7 +122,7 @@ public:
     virtual bool       setNormal(const Point3Type& nVec){return false;}
 
     virtual ColorType  getColor()const{return ColorType(255,255,255);}
-    virtual bool       setColor()const{return false;}
+    virtual bool       setColor(const ColorType& color)const{return false;}
 
     virtual bool       setDescriptor(const GImage& des){return false;}
     virtual GImage     getDescriptor()const{return GImage();}
@@ -192,6 +192,9 @@ public:
     // Tracking things for feature based methods
     virtual int     keyPointNum()const{return 0;}
     virtual bool    getKeyPoint(int idx,Point2f& pt)const{return false;}
+    virtual bool    getKeyPointColor(int idx,ColorType& color){return false;}
+    virtual bool    getKeyPointIDepthInfo(int idx,Point2d& idepth){return false;}
+    virtual PointID getKeyPointObserve(int idx){return 0;}
     virtual bool    getKeyPoints(std::vector<Point2f>& keypoints)const{return false;}
     virtual GImage  getDescriptor(int idx=-1)const{return GImage();}        // idx<0: return all descriptors
     virtual bool    setKeyPoints(const std::vector<Point2f>& keypoints,

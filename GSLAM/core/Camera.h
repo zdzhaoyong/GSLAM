@@ -147,7 +147,7 @@ private:
 class Camera
 {
 public:
-    Camera(const SPtr<CameraImpl>& Impl=SPtr<CameraImpl>());
+    Camera(const SPtr<CameraImpl>& Impl=SPtr<CameraImpl>(new CameraImpl()));
     Camera(const std::vector<double>& paras);
 
     std::string CameraType()const{return impl->CameraType();}

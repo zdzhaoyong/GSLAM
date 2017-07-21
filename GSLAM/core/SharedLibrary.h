@@ -20,6 +20,7 @@ typedef pi::SharedLibrary SharedLibrary;
 #include "Mutex.h"
 #include "SPtr.h"
 #include "Svar.h"
+#include "Glog.h"
 
 #ifdef __linux
 
@@ -104,7 +105,12 @@ public:
         /// Creates a SharedLibrary object and loads a library
         /// from the given path.
 
-    virtual ~SharedLibrary(){if(isLoaded())std::cerr<<"SharedLibrary "<<_path<<"  released.\n";std::cerr.flush();}
+    virtual ~SharedLibrary(){
+        if(isLoaded())
+        {
+            DLOG(INFO)<<"SharedLibrary "<<_path<<"  released.";
+        }
+    }
         /// Destroys the SharedLibrary. The actual library
         /// remains loaded.
 
@@ -337,6 +343,7 @@ protected:
         {
             _libraryFilePath.insert(Svar::getFolderPath(argv[0]));//application folder
         }
+        _libraryFilePath.insert(".");
 
         FilePathList envs={"GSLAM_LIBRARY_PATH","GSLAM_LD_LIBRARY_PATH"};
         FilePathList paths;

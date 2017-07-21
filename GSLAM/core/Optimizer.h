@@ -3,8 +3,13 @@
 
 #include "GSLAM.h"
 
+#define USE_OPTIMIZER_PLUGIN(OPT_CLASS) extern "C"{\
+    SPtr<GSLAM::Optimizer> createOptimizerInstance(){return SPtr<GSLAM::Optimizer>(new OPT_CLASS());}}
+
 namespace GSLAM {
 
+class Optimizer;
+typedef SPtr<Optimizer> (*funcCreateOptimizerInstance)();
 
 enum CameraProjectionType
 {
@@ -159,6 +164,18 @@ public:
     // MAPPING: Do bundle adjust with auto calibration or not: BUNDLEADJUST, INVDEPTH_BUNDLE, POSEGRAPH
     virtual bool optimize(BundleGraph& graph) {return false;}
     virtual bool magin(BundleGraph& graph){return false;}// Convert bundle graph to pose graph
+
+    static  SPtr<Optimizer> create(std::string pluginName=""){
+        if(pluginName.empty())
+        {
+            pluginName=svar.GetString("OptimizerPlugin","libgslam_optimizer");
+        }
+        SPtr<SharedLibrary> plugin=Registry::get(pluginName);
+        if(!plugin) return SPtr<Optimizer>();
+        funcCreateOptimizerInstance createFunc=(funcCreateOptimizerInstance)plugin->getSymbol("createOptimizerInstance");
+        if(!createFunc) return SPtr<Optimizer>();
+        else return createFunc();
+    }
 
     OptimzeConfig _config;
 };

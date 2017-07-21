@@ -1,5 +1,5 @@
-#ifndef ZY_SO3_H
-#define ZY_SO3_H
+#ifndef GSLAM_SO3_H
+#define GSLAM_SO3_H
 
 #include <iostream>
 #include "Point.h"
@@ -302,6 +302,20 @@ public:
         return getMatrix();
     }
 
+#endif
+
+#ifdef SOPHUS_SO3_HPP
+    SO3(const Sophus::SO3Group<Precision>& so3)
+        : x(so3.unit_quaternion().coeffs()[0]),
+          y(so3.unit_quaternion().coeffs()[1]),
+          z(so3.unit_quaternion().coeffs()[2]),
+          w(so3.unit_quaternion().coeffs()[3])
+    {}
+
+    operator Sophus::SO3Group<Precision>()
+    {
+        return *(Sophus::SO3Group<Precision>*)&x;
+    }
 #endif
 
     void FromEulerAngle(const Precision& pitch,const Precision& yaw,const Precision& roll)

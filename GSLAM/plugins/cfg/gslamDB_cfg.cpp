@@ -73,6 +73,7 @@ public:
 
         _seqTop=Svar::getFolderPath(name);
         _name  =Svar::getBaseName(name);
+        _skip  =var.GetInt("Video.Skip",0);
         _video.open(var.GetString("Video.File",""));
         _gps.open(_seqTop+"/gps.txt");
         if(!_video.is_open()) return false;
@@ -99,7 +100,8 @@ public:
     bool prepareImageFrame(){
         if(!_video.is_open()) return false;
         string line;_nextImage.data.clear();
-        if(!getline(_video,line)) { return false;}
+        for(int i=_skip;i>=0;i--)
+            if(!getline(_video,line)) { return false;}
         stringstream sst(line);
         sst>>_nextImage;
         return _nextGPS.size()==2;
