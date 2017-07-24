@@ -92,15 +92,42 @@
 #  include <android/log.h>
 #endif  // ANDROID
 
+#include <stdint.h>
+#include <stdio.h>
+#include <string.h>
+
 #include <algorithm>
 #include <ctime>
 #include <fstream>
 #include <iostream>
 #include <set>
+#include <map>
 #include <sstream>
 #include <string>
 #include <vector>
 #include <memory>
+
+
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__)
+# define OS_WINDOWS
+#elif defined(__CYGWIN__) || defined(__CYGWIN32__)
+# define OS_CYGWIN
+#elif defined(linux) || defined(__linux) || defined(__linux__)
+# ifndef OS_LINUX
+#  define OS_LINUX
+# endif
+#elif defined(macintosh) || defined(__APPLE__) || defined(__APPLE_CC__)
+# define OS_MACOSX
+#elif defined(__FreeBSD__)
+# define OS_FREEBSD
+#elif defined(__NetBSD__)
+# define OS_NETBSD
+#elif defined(__OpenBSD__)
+# define OS_OPENBSD
+#else
+// TODO(hamaji): Add other platforms.
+#endif
+
 
 #if defined(_MSC_VER)
 # define GSLAM_EXPORT __declspec(dllexport)
@@ -126,21 +153,93 @@ const int WARNING = ::WARNING;
 const int ERROR   = ::ERROR;
 const int FATAL   = ::FATAL;
 
+const int GLOG_INFO = 0, GLOG_WARNING = 1, GLOG_ERROR = 2, GLOG_FATAL = 3,
+  NUM_SEVERITIES = 4;
+
+const char*const LogSeverityNames[NUM_SEVERITIES] = {
+  "INFO", "WARNING", "ERROR", "FATAL"
+};
+
+
+
+inline void get_timeinfo(struct tm& ti)
+{
+    time_t rawtime;
+    time (&rawtime);
+
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__)
+    // On Windows, use secure localtime_s not localtime.
+    localtime_s(&ti, &rawtime);
+#else
+    // On non-Windows systems, use threadsafe localtime_r not localtime.
+    localtime_r(&rawtime, &ti);
+#endif
+}
+
+#if defined(OS_LINUX)
+    #include <unistd.h>
+#elif defined(OS_WINDOWS)
+    #include <windows.h>
+#endif
+
+// FIXME: How to get tid on Windows?
+inline int64_t GetTID()
+{
+    // If gettid() could not be used, we use one of the following.
+#if defined(OS_LINUX)
+    return getpid();  // Linux:  getpid returns thread ID when gettid is absent
+#elif defined(OS_WINDOWS)
+    return GetCurrentThreadId();
+#else
+    return 0;
+#endif
+}
+
+
 // Sink class used for integration with mock and test functions. If sinks are
 // added, all log output is also sent to each sink through the send function.
 // In this implementation, WaitTillSent() is called immediately after the send.
 // This implementation is not thread safe.
 class GSLAM_EXPORT LogSink {
- public:
-  virtual ~LogSink() {}
-  virtual void send(LogSeverity severity,
-                    const char* full_filename,
-                    const char* base_filename,
-                    int line,
-                    const struct tm* tm_time,
-                    const char* message,
-                    size_t message_len) = 0;
-  virtual void WaitTillSent() = 0;
+public:
+    virtual ~LogSink() {}
+    virtual void send(LogSeverity severity,
+                      const char* full_filename,
+                      const char* base_filename,
+                      int line,
+                      const struct tm* tm_time,
+                      const char* message,
+                      size_t message_len) = 0;
+    virtual void WaitTillSent() = 0;
+
+    static std::string ToString(LogSeverity severity, const char* file, int line,
+                                const struct ::tm* tm_time,
+                                const char* message, size_t message_len) {
+        std::ostringstream stream(std::string(message, message_len));
+        stream.fill('0');
+
+        // FIXME(jrvb): Updating this to use the correct value for usecs
+        // requires changing the signature for both this method and
+        // LogSink::send().  This change needs to be done in a separate CL
+        // so subclasses of LogSink can be updated at the same time.
+        int usecs = 0;
+
+        stream  << LogSeverityNames[severity][0]
+                << std::setw(2) << 1+tm_time->tm_mon
+                << std::setw(2) << tm_time->tm_mday
+                << ' '
+                << std::setw(2) << tm_time->tm_hour << ':'
+                << std::setw(2) << tm_time->tm_min << ':'
+                << std::setw(2) << tm_time->tm_sec << '.'
+                << std::setw(6) << usecs
+                << ' '
+                << std::setfill(' ') << std::setw(5) << GetTID() << std::setfill('0')
+                << ' '
+                << file << ':' << line << "] ";
+
+        stream << std::string(message, message_len);
+        return stream.str();
+    }
 };
 
 inline std::set<LogSink *>& getLogSinksGlobal()
@@ -162,6 +261,115 @@ inline void RemoveLogSink(LogSink *sink) {
   getLogSinksGlobal().erase(sink);
 }
 
+
+
+class LogFileSink : public LogSink
+{
+public:
+    LogFileSink(LogSeverity severity, const char* base_filename)
+    {
+        m_severity = severity;
+        m_baseFileName = base_filename;
+
+        char fname[4096];
+        struct tm ti;
+        get_timeinfo(ti);
+        sprintf(fname, "%s%04d%02d%02d-%02d%02d%02d",
+                base_filename,
+                ti.tm_year+1900, ti.tm_mon+1, ti.tm_mday,
+                ti.tm_hour, ti.tm_min, ti.tm_sec);
+        m_logFileName = fname;
+
+        m_logFile = fopen(fname, "wt+");
+    }
+
+    virtual ~LogFileSink()
+    {
+        if( m_logFile )
+        {
+            fclose(m_logFile);
+            m_logFile = NULL;
+        }
+    }
+
+    virtual void send(LogSeverity severity,
+                      const char* full_filename,
+                      const char* base_filename,
+                      int line,
+                      const struct tm* tm_time,
+                      const char* message,
+                      size_t message_len)
+    {
+        if( severity >= m_severity && m_logFile )
+        {
+            std::string ls = LogSink::ToString(severity, base_filename, line, tm_time, message, message_len);
+            fwrite(ls.c_str(), ls.size(), 1, m_logFile);
+        }
+    }
+
+    virtual void WaitTillSent()
+    {
+        return;
+    }
+
+protected:
+    LogSeverity m_severity;
+    const char* m_baseFileName;
+    std::string m_logFileName;
+    FILE*       m_logFile;
+};
+
+
+
+
+typedef std::map<LogSeverity, LogFileSink*> LogSinkMap;
+
+inline LogSinkMap& getLogSinkMapGlobal()
+{
+    static std::shared_ptr<LogSinkMap > logSinkMap(new LogSinkMap());
+    return (*logSinkMap);
+}
+
+
+inline void SetLogDestination(LogSeverity severity,
+                              const char* base_filename)
+{
+    LogSinkMap& g_logSinks = getLogSinkMapGlobal();
+
+    LogSinkMap::iterator it = g_logSinks.find(severity);
+    if( it == g_logSinks.end() )
+    {
+        if( strlen(base_filename) == 0 ) return;
+
+        // add a log file
+        LogFileSink* logFile = new LogFileSink(severity, base_filename);
+        g_logSinks[severity] = logFile;
+        AddLogSink(logFile);
+    }
+    else
+    {
+        LogFileSink* logFile = g_logSinks[severity];
+
+        // close old log file
+        if( logFile )
+        {
+            RemoveLogSink(logFile);
+            g_logSinks.erase(it);
+            delete logFile;
+        }
+
+        // open new log file
+        if( strlen(base_filename) > 0 )
+        {
+            logFile = new LogFileSink(severity, base_filename);
+            g_logSinks[severity] = logFile;
+            AddLogSink(logFile);
+        }
+    }
+}
+
+
+
 }  // namespace google
 
 // ---------------------------- Logger Class --------------------------------
@@ -176,9 +384,7 @@ class GSLAM_EXPORT MessageLogger {
  public:
   MessageLogger(const char *file, int line, const char *tag, int severity)
     : file_(file), line_(line), tag_(tag), severity_(severity) {
-    // Pre-pend the stream with the file and line number.
-    StripBasename(std::string(file), &filename_only_);
-    stream_ << filename_only_ << ":" << line << " ";
+        StripBasename(std::string(file), &filename_only_);
   }
 
   // Output the contents of the stream to the proper channel on destruction.
@@ -212,7 +418,7 @@ class GSLAM_EXPORT MessageLogger {
     }
 #else
     // If not building on Android, log all output to std::cerr.
-    std::cerr << stream_.str();
+    std::cerr << filename_only_ << ":" << line_ << " " << stream_.str();
 #endif  // ANDROID
 
     LogToSinks(severity_);
@@ -230,17 +436,8 @@ class GSLAM_EXPORT MessageLogger {
 
  private:
   void LogToSinks(int severity) {
-    time_t rawtime;
-    time (&rawtime);
-
     struct tm timeinfo;
-#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__)
-    // On Windows, use secure localtime_s not localtime.
-    localtime_s(&timeinfo, &rawtime);
-#else
-    // On non-Windows systems, use threadsafe localtime_r not localtime.
-    localtime_r(&rawtime, &timeinfo);
-#endif
+    google::get_timeinfo(timeinfo);
 
     std::set<google::LogSink*>::iterator iter;
     // Send the log message to all sinks.
