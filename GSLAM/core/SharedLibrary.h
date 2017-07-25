@@ -108,7 +108,9 @@ public:
     virtual ~SharedLibrary(){
         if(isLoaded())
         {
-            DLOG(INFO)<<"SharedLibrary "<<_path<<"  released.";
+#ifndef NDEBUG
+            std::cerr<<"SharedLibrary "<<_path<<"  released."<<std::endl;
+#endif
         }
     }
         /// Destroys the SharedLibrary. The actual library
