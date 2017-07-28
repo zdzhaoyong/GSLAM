@@ -95,7 +95,7 @@ public:
     CameraATAN(int _w,int _h,double _fx,double _fy,double _cx,double _cy,double _d);
 
     virtual std::string         CameraType()const{return "ATAN";}
-    virtual bool                isValid(){return w>0&&h>0&&fx!=0&&fy!=0;}
+    virtual bool                isValid()const{return w>0&&h>0&&fx!=0&&fy!=0;}
     virtual Point2d             Project(const Point3d& p3d)const;
     virtual Point3d             UnProject(const Point2d& p2d)const;
     virtual std::vector<double> getParameters()const{return {(double)w,(double)h,fx,fy,cx,cy,d};}

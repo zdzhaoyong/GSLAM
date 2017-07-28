@@ -1,0 +1,14 @@
+// This file is in Svar language : see more detail at https://github.com/zdzhaoyong/GSLAM
+Camera.CameraType=PinHole
+Camera.Paraments =[1241,376,718.856,718.856,607.1928,185.2157]
+
+// Camera2 Camera0 Camera3 Camera1 : four camera from left to right, Camera0 and Camera1 in gray, Camera2 and Camera3 in color
+Camera0.Translation = 0 0 0
+Camera1.Translation = 0.5371657188644179 0 0
+Camera2.Translation = -0.06313121125788754 0.0001573175990740844 -3.779761000000e-03
+Camera3.Translation = 0.4692006465829039 -0.0032955932759829508 -4.915215000000e-03
+
+SequenceFolder?=. // Current Folder
+VideoType=Monocular // Stereo, MultiCamera
+CameraIdx=2
+VideoSkip=0         // Play Every Frame

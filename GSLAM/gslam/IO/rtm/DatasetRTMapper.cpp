@@ -1,9 +1,9 @@
 
-#include "../../core/Dataset.h"
-#include "../../core/VideoFrame.h"
-#include "../../core/Svar.h"
-#include "../../core/VecParament.h"
-#include "../../core/Timer.h"
+#include "../../../core/Dataset.h"
+#include "../../../core/VideoFrame.h"
+#include "../../../core/Svar.h"
+#include "../../../core/VecParament.h"
+#include "../../../core/Timer.h"
 #undef HAS_OPENCV
 
 #ifdef HAS_OPENCV

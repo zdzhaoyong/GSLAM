@@ -83,6 +83,7 @@ endif()
 
 pi_add_target(gslam BIN GSLAM/gslam ${QRC_FILES} REQUIRED System MODULES OpenCV Qt OpenGL GLEW GLUT QGLViewer)
 pi_add_target(gslamDB_cfg SHARED GSLAM/plugins/cfg REQUIRED System MODULES OpenCV Qt)
+
 pi_report_target()
 #####################################################################
 # Now do make install

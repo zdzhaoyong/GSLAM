@@ -1,9 +1,9 @@
 #ifdef HAS_OPENCV
-#include "../../core/Dataset.h"
-#include "../../core/VideoFrame.h"
-#include "../../core/Svar.h"
-#include "../../core/VecParament.h"
-#include "../../core/Timer.h"
+#include "../../../core/Dataset.h"
+#include "../../../core/VideoFrame.h"
+#include "../../../core/Svar.h"
+#include "../../../core/VecParament.h"
+#include "../../../core/Timer.h"
 
 
 #include <opencv2/highgui/highgui.hpp>

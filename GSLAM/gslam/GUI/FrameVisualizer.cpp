@@ -164,9 +164,16 @@ class GImageWidget : public QImageWidget
 {
 public:
     GImageWidget(QWidget *parent):QImageWidget(parent){}
-    bool setImage(const GImage& gimage,bool flush=false)// flush can only called by GUI thread
+    bool setImage(const GImage& ImageInput,bool flush=false)// flush can only called by GUI thread
     {
+        GImage gimage=ImageInput;
         if(gimage.empty()) return false;
+        if(gimage.cols%4!=0)
+        {
+            cv::Mat src=gimage,dst(src.rows,src.cols-(gimage.cols%4),src.type());
+            src(cv::Rect(0,0,dst.cols,dst.rows)).copyTo(dst);
+            gimage=dst;
+        }
 
         _curGImage=gimage;
         if(gimage.type()==GSLAM::GImageType<uchar,3>::Type)
