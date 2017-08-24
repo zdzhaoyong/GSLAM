@@ -224,7 +224,7 @@ public:
         // so subclasses of LogSink can be updated at the same time.
         int usecs = 0;
 
-        stream  << LogSeverityNames[severity][0]
+        stream  << LogSeverityNames[severity+NUM_SEVERITIES-1][0]
                 << std::setw(2) << 1+tm_time->tm_mon
                 << std::setw(2) << tm_time->tm_mday
                 << ' '

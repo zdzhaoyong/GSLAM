@@ -163,7 +163,7 @@ public:
         pi::Point3d translation = centre_GPS - (so3*centre_Track)*scale;
 
         S=pi::SIM3d(so3,translation,scale);
-        return false;
+        return true;
     }
 
     bool findAffine3D(double* A,
