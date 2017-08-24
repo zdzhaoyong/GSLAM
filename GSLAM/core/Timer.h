@@ -14,6 +14,7 @@
 #include <memory>
 
 #define timer GSLAM::Timer::instance()
+#define SCOPE_TIMER ScopedTimer scopedTimer(__func__);
 
 namespace GSLAM {
 
@@ -114,6 +115,14 @@ public:
     std::string getStatsAsText(const size_t column_width=80) const; //!< Dump all stats to a multi-line text string. \sa dumpAllStats, saveToCVSFile
     void dumpAllStats(const size_t column_width=80) const; //!< Dump all stats through the CDebugOutputCapable interface. \sa getStatsAsText, saveToCVSFile
 
+};
+
+
+class ScopedTimer
+{
+    ScopedTimer(const char* func_name):_func_name(func_name){timer.enter(func_name);}
+    ~ScopedTimer(){timer.leave(_func_name);}
+    const char* _func_name;
 };
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////

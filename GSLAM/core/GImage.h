@@ -218,11 +218,12 @@ public:
             // WARNING: MAKE SURE THERE ARE NO OTHER HOLDERS
             // construct a UMat that ref to data
             cv::UMatData* u=new cv::UMatData;
-            u.origdata=u.data=data;
-            u.userdata=refCount;
+            u->origdata=u->data=data;
+            u->userdata=refCount;
             (*refCount)++;
-            u.refCount=2;
-            refCount=&u.refCount;
+            u->refCount=2;
+            refCount=&u->refCount;
+            result.u=u;
             return result;
         }
         else // OpenCV3 style => OpenCV3 style

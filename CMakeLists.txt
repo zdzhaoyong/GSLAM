@@ -83,10 +83,12 @@ endif()
 
 pi_add_target(gslam BIN GSLAM/gslam ${QRC_FILES} REQUIRED System MODULES OpenCV Qt OpenGL GLEW GLUT QGLViewer)
 pi_add_target(gslamDB_cfg SHARED GSLAM/plugins/cfg REQUIRED System MODULES OpenCV Qt)
+pi_add_target(gslam_optimizer SHARED GSLAM/plugins/optimizer_ceres REQUIRED System Eigen3 Ceres)
+pi_add_target(gslam_estimator SHARED GSLAM/plugins/estimator_opencv REQUIRED OpenCV)
 
 pi_report_target()
 #####################################################################
 # Now do make install
 pi_install(HEADERS GSLAM/core HEADER_DESTINATION include/GSLAM
-           TARGETS gslam gslamDB_cfg CMAKE "${PROJECT_SOURCE_DIR}/cmake/FindGSLAM.cmake.in")
+           TARGETS gslam gslamDB_cfg gslam_optimizer gslam_estimator CMAKE "${PROJECT_SOURCE_DIR}/cmake/FindGSLAM.cmake.in")
 
