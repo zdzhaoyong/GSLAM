@@ -1,5 +1,13 @@
+# Original code by Yong Zhao (www.zhaoyong.win)
+
+# This software is provided 'as-is', without any express or implied warranty. In no event will the authors be held liable for any damages arising from the use of this software.
+# Permission is granted to anyone to use this software for any purpose, including commercial applications, and to alter it and redistribute it freely, subject to the following restrictions:
+# 1. The origin of this software must not be misrepresented; you must not claim that you wrote the original software. If you use this software in a product, an acknowledgment in the product documentation would be appreciated but is not required.
+# 2. Altered source versions must be plainly marked as such, and must not be misrepresented as being the original software.
+# 3. This notice may not be removed or altered from any source distribution.
+
 ######################################################################################
-# PICMake VERSION 1.1.2
+# PICMake VERSION 1.2.1
 # HISTORY:
 #   1.0.0 2017.01.04 : first commit, one include for one target.
 #   1.1.0 2017.01.09 : support multi targets, reorgnized functions and macros.
@@ -7,18 +15,21 @@
 #   1.1.2 2017.01.10 : added pi_parse_arguments to support cmake version less than 3.1 
 #                      modified pi_install&pi_collect_packages&pi_add_target
 #                      fixed bug of failed make uninstall
+#   1.1.3 2017.03.05 : fixed bug of pi_install when add header files
+#   1.2.0 2017.08.30 : removed dependency of violate pi_collect_packages and auto call it when required, mv pi_add_target and pi_add_targets to macros
+#   1.2.1 2017.09.01 : added lisence and auto get PI_CMAKE_VERSION, change REQUIRED to MODULES for auto package collect
 ######################################################################################
 #                               FUNCTIONS
 # pi_collect_packagenames(<RESULT_NAME>　[VERBOSE] [path1 path2 ...])
 # pi_removesource(<VAR_NAME> <regex>)
 # pi_hasmainfunc(<RESULT_NAME> source1 [source2 ...])
-# pi_add_target(<name> <BIN | STATIC | SHARED> [src1|dir1 ...] [MODULES module1 ...] [REQUIRED module1 ...] [DEPENDENCY target1 ...])
-# pi_add_targets([name1 ...])
 # pi_report_target([LIBS2COMPILE] [APPS2COMPILE])
 # pi_install([HEADERS header1|dir1 ...] [TARGETS target1 ...] [CMAKE cmake_config] [BIN_DESTINATION dir] [LIB_DESTINATION dir] [HEADER_DESTINATION dir])
 # pi_parse_arguments(<prefix> <options> <one_value_keywords> <multi_value_keywords> args...)
 ######################################################################################
 #                               MACROS
+# pi_add_target(<name> <BIN | STATIC | SHARED> [src1|dir1 ...] [MODULES module1 ...] [REQUIRED module1 ...] [DEPENDENCY target1 ...])
+# pi_add_targets([name1 ...])
 # pi_collect_packages(<RESULT_NAME> [VERBOSE] [MODULES package1 ...] [REQUIRED package1 package2 ...])
 # pi_check_modules(module1 [module2 ...])
 # pi_report_modules(module1 [module2 ...])
@@ -33,10 +44,15 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR})
 
 set(PICMAKE_ROOT ${CMAKE_CURRENT_LIST_DIR})
 
-set(PI_CMAKE_VERSION_MAJOR 1)
-set(PI_CMAKE_VERSION_MINOR 1)
-set(PI_CMAKE_VERSION_PATCH 2)
-set(PI_CMAKE_VERSION "${PI_CMAKE_VERSION_MAJOR}.${PI_CMAKE_VERSION_MINOR}.${PI_CMAKE_VERSION_PATCH}")
+file(READ "${CMAKE_CURRENT_LIST_DIR}/PICMake.cmake" _thisfilecontext)
+string(REGEX MATCH "PICMake[ \t]+VERSION[ \t]+([0-9])+.[0-9]+.[0-9]+" _pi_cmake_version_match "${_thisfilecontext}")
+set(PICMAKE_VERSION_MAJOR "${CMAKE_MATCH_1}")
+string(REGEX MATCH "PICMake[ \t]+VERSION[ \t]+[0-9]+.([0-9])+.[0-9]+" _pi_cmake_version_match "${_thisfilecontext}")
+set(PICMAKE_VERSION_MINOR "${CMAKE_MATCH_1}")
+string(REGEX MATCH "PICMake[ \t]+VERSION[ \t]+[0-9]+.[0-9]+.([0-9])+" _pi_cmake_version_match "${_thisfilecontext}")
+set(PICMAKE_VERSION_PATCH "${CMAKE_MATCH_1}")
+set(PICMAKE_VERSION "${PICMAKE_VERSION_MAJOR}.${PICMAKE_VERSION_MINOR}.${PICMAKE_VERSION_PATCH}")
+# message("-------- Powered by PICMake ${PICMAKE_VERSION} --------")
 
 # pi_collect_packagenames(<RESULT_NAME> [path1 path2 ...])
 function(pi_collect_packagenames RESULT_NAME)
@@ -88,8 +104,167 @@ function(pi_hasmainfunc RESULT_NAME)
   set(${RESULT_NAME} ${MAIN_FILES} PARENT_SCOPE)
 endfunction()
 
+
+
+# pi_report_target([LIBS2COMPILE] [APPS2COMPILE])
+function(pi_report_target )
+  get_property(LIBS2COMPILE GLOBAL PROPERTY LIBS2COMPILE)
+  get_property(APPS2COMPILE GLOBAL PROPERTY APPS2COMPILE)
+
+  message(STATUS "The following targets will to be build:")
+  message(STATUS "LIBS(${CMAKE_LIBRARY_OUTPUT_DIRECTORY}): ${LIBS2COMPILE}")
+  message(STATUS "APPS(${CMAKE_RUNTIME_OUTPUT_DIRECTORY}): ${APPS2COMPILE}")
+
+  set(INDEX 1)
+  if(ARGV${INDEX})
+    set(${ARGV${INDEX}} ${LIBS2COMPILE} PARENT_SCOPE)
+  endif()
+  set(INDEX 2)
+  if(ARGV${INDEX})
+    set(${ARGV${INDEX}} ${APPS2COMPILE} PARENT_SCOPE)
+  endif()
+endfunction()
+
+function(pi_report_targets)
+  pi_report_target(${ARGV})
+endfunction()
+
+
+# pi_install([HEADERS header1|dir1 ...] [TARGETS target1 ...] [CMAKE cmake_config] [BIN_DESTINATION dir] [LIB_DESTINATION dir] [HEADER_DESTINATION dir])
+function(pi_install)
+  pi_parse_arguments(PI_INSTALL "VERBOSE" "BIN_DESTINATION;LIB_DESTINATION;HEADER_DESTINATION" "HEADERS;TARGETS;CMAKE" ${ARGN})
+
+  if(PI_INSTALL_VERBOSE)
+    message("PI_INSTALL_BIN_DESTINATION: ${PI_INSTALL_BIN_DESTINATION}")
+    message("PI_INSTALL_LIB_DESTINATION: ${PI_INSTALL_LIB_DESTINATION}")
+    message("PI_INSTALL_HEADER_DESTINATION: ${PI_INSTALL_HEADER_DESTINATION}")
+    message("PI_INSTALL_HEADERS: ${PI_INSTALL_HEADERS}")
+    message("PI_INSTALL_TARGETS: ${PI_INSTALL_TARGETS}")
+    message("PI_INSTALL_CMAKE: ${PI_INSTALL_CMAKE}")
+  endif()
+  
+  if(NOT PI_INSTALL_BIN_DESTINATION)
+    set(PI_INSTALL_BIN_DESTINATION bin)
+  endif()
+  
+  if(NOT PI_INSTALL_LIB_DESTINATION)
+    set(PI_INSTALL_LIB_DESTINATION lib)
+  endif()
+
+  if(NOT PI_INSTALL_HEADER_DESTINATION)
+    set(PI_INSTALL_HEADER_DESTINATION include)
+  endif()
+
+  foreach(INSTALL_HEADER ${PI_INSTALL_HEADERS})
+    #message("get_filename_component(ABSOLUTE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/${INSTALL_HEADER}" ABSOLUTE)")
+    get_filename_component(ABSOLUTE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/${INSTALL_HEADER}" ABSOLUTE)
+    if(IS_DIRECTORY ${ABSOLUTE_PATH})
+      #message("install(DIRECTORY ${INSTALL_HEADER} DESTINATION "${HEADER_DESTINATION}" FILES_MATCHING PATTERN "*.h")")
+      install(DIRECTORY ${ABSOLUTE_PATH} DESTINATION "${PI_INSTALL_HEADER_DESTINATION}" FILES_MATCHING PATTERN "*.h")
+      install(DIRECTORY ${ABSOLUTE_PATH} DESTINATION "${PI_INSTALL_HEADER_DESTINATION}" FILES_MATCHING PATTERN "*.hpp")
+    else()
+      #message("install(FILES ${ABSOLUTE_PATH} DESTINATION ${HEADER_DESTINATION} COMPONENT main) ")
+      install(FILES ${ABSOLUTE_PATH} DESTINATION ${PI_INSTALL_HEADER_DESTINATION} )      
+    endif()
+  endforeach()
+
+  foreach(TARGET ${PI_INSTALL_TARGETS})
+    if(TARGET ${TARGET})
+      install(TARGETS ${TARGET}
+          RUNTIME DESTINATION ${PI_INSTALL_BIN_DESTINATION} COMPONENT main
+          LIBRARY DESTINATION ${PI_INSTALL_LIB_DESTINATION} PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE COMPONENT main
+          ARCHIVE DESTINATION ${PI_INSTALL_LIB_DESTINATION} COMPONENT main)
+    endif()
+  endforeach()
+
+  foreach(CONFG_FILE ${PI_INSTALL_CMAKE})
+    get_filename_component(CONFIG_NAME "${CONFG_FILE}" NAME_WE)
+    configure_file("${CONFG_FILE}" "${PROJECT_BINARY_DIR}/${CONFIG_NAME}.cmake" @ONLY)
+    install(FILES "${PROJECT_BINARY_DIR}/${CONFIG_NAME}.cmake" DESTINATION ${CMAKE_ROOT}/Modules)
+  endforeach()
+  
+
+# Auto uninstall
+  if(NOT EXISTS "${PROJECT_BINARY_DIR}/cmake_uninstall.cmake")
+    file(WRITE "${PROJECT_BINARY_DIR}/cmake_uninstall.cmake" "IF(NOT EXISTS \"${CMAKE_CURRENT_BINARY_DIR}/install_manifest.txt\")
+  MESSAGE(FATAL_ERROR \"Cannot find install manifest: ${CMAKE_CURRENT_BINARY_DIR}/install_manifest.txt\")
+ENDIF()
+FILE(READ \"${CMAKE_CURRENT_BINARY_DIR}/install_manifest.txt\" files)
+STRING(REGEX REPLACE \"\\n\" \";\" files \"\${files}\")
+FOREACH(file \${files})
+  MESSAGE(STATUS \"Uninstalling \${file}\")
+  #EXECUTE_PROCESS(COMMAND rm \"\${file}\")
+  file(REMOVE \"\${file}\")
+ENDFOREACH()
+    ")
+    add_custom_target(uninstall "${CMAKE_COMMAND}" -P "${PROJECT_BINARY_DIR}/cmake_uninstall.cmake")
+  else()
+    add_custom_target(uninstall "${CMAKE_COMMAND}" -P "${PROJECT_BINARY_DIR}/cmake_uninstall.cmake")
+  endif()
+
+endfunction()
+
+# pi_parse_arguments(<prefix> <options> <one_value_keywords> <multi_value_keywords> args...)
+function(pi_parse_arguments prefix _optionNames _singleArgNames _multiArgNames)
+  # first set all result variables to empty/FALSE
+  foreach(arg_name ${_singleArgNames} ${_multiArgNames})
+    set(${prefix}_${arg_name})
+  endforeach()
+
+  foreach(option ${_optionNames})
+    set(${prefix}_${option} FALSE)
+  endforeach()
+
+  set(${prefix}_UNPARSED_ARGUMENTS)
+
+  set(insideValues FALSE)
+  set(currentArgName)
+
+  # now iterate over all arguments and fill the result variables
+  foreach(currentArg ${ARGN})
+    list(FIND _optionNames "${currentArg}" optionIndex)  # ... then this marks the end of the arguments belonging to this keyword
+    list(FIND _singleArgNames "${currentArg}" singleArgIndex)  # ... then this marks the end of the arguments belonging to this keyword
+    list(FIND _multiArgNames "${currentArg}" multiArgIndex)  # ... then this marks the end of the arguments belonging to this keyword
+
+    if(${optionIndex} EQUAL -1  AND  ${singleArgIndex} EQUAL -1  AND  ${multiArgIndex} EQUAL -1)
+      if(insideValues)
+        if("${insideValues}" STREQUAL "SINGLE")
+          set(${prefix}_${currentArgName} ${currentArg})
+          set(insideValues FALSE)
+        elseif("${insideValues}" STREQUAL "MULTI")
+          list(APPEND ${prefix}_${currentArgName} ${currentArg})
+        endif()
+      else()
+        list(APPEND ${prefix}_UNPARSED_ARGUMENTS ${currentArg})
+      endif()
+    else()
+      if(NOT ${optionIndex} EQUAL -1)
+        set(${prefix}_${currentArg} TRUE)
+        set(insideValues FALSE)
+      elseif(NOT ${singleArgIndex} EQUAL -1)
+        set(currentArgName ${currentArg})
+        set(${prefix}_${currentArgName})
+        set(insideValues "SINGLE")
+      elseif(NOT ${multiArgIndex} EQUAL -1)
+        set(currentArgName ${currentArg})
+        set(${prefix}_${currentArgName})
+        set(insideValues "MULTI")
+      endif()
+    endif()
+
+  endforeach()
+
+  # propagate the result variables to the caller:
+  foreach(arg_name ${_singleArgNames} ${_multiArgNames} ${_optionNames})
+    set(${prefix}_${arg_name}  ${${prefix}_${arg_name}} PARENT_SCOPE)
+  endforeach()
+  set(${prefix}_UNPARSED_ARGUMENTS ${${prefix}_UNPARSED_ARGUMENTS} PARENT_SCOPE)
+
+endfunction()
+######################################################################################
+#                               MACROS
 # pi_add_target(<name> <BIN | STATIC | SHARED> [src1|dir1 ...] [MODULES module1 ...] [REQUIRED module1 ...] [DEPENDENCY target1 ...])
-function(pi_add_target TARGET_NAME TARGET_TYPE)
+macro(pi_add_target TARGET_NAME TARGET_TYPE)
   if(ARGC LESS 2)
     message("command 'add_target' need more than 2 arguments")
     return()
@@ -101,6 +276,10 @@ function(pi_add_target TARGET_NAME TARGET_TYPE)
   set(TARGET_MODULES ${PI_TARGET_MODULES})
   set(TARGET_REQUIRED ${PI_TARGET_REQUIRED})
   set(TARGET_DEPENDENCY ${PI_TARGET_DEPENDENCY})
+
+  if(TARGET_MODULES OR TARGET_REQUIRED)
+    pi_collect_packages(VERBOSE MODULES ${TARGET_MODULES} ${TARGET_REQUIRED})
+  endif()
 
   set(TARGET_COMPILEFLAGS)
   set(TARGET_LINKFLAGS)
@@ -196,7 +375,7 @@ function(pi_add_target TARGET_NAME TARGET_TYPE)
       set_target_properties(${TARGET_NAME} PROPERTIES AUTOMOC TRUE)
   endif()
 
-endfunction(pi_add_target)
+endmacro(pi_add_target)
 
 # pi_add_targets([name1 ...])
 # TARGET_NAME     -- TARGET_NAME  -- Folder name
@@ -204,7 +383,7 @@ endfunction(pi_add_target)
 # TARGET_TYPE     -- TARGET_TYPE|MAKE_TYPE    -- BIN STATIC SHARED
 # TARGET_MODULES  -- TARGET_MODULES|MODULES      -- All packages available
 # TARGET_REQUIRED -- TARGET_REQUIRED|REQUIRED
-function(pi_add_targets )
+macro(pi_add_targets )
   if(ARGC LESS 2)
     if(ARGC EQUAL 1)
       set(TARGET_NAME ${ARGV})
@@ -268,165 +447,8 @@ function(pi_add_targets )
   endforeach()
 
 
-endfunction(pi_add_targets)
+endmacro(pi_add_targets)
 
-
-# pi_report_target([LIBS2COMPILE] [APPS2COMPILE])
-function(pi_report_target )
-  get_property(LIBS2COMPILE GLOBAL PROPERTY LIBS2COMPILE)
-  get_property(APPS2COMPILE GLOBAL PROPERTY APPS2COMPILE)
-
-  message(STATUS "The following targets will to be build:")
-  message(STATUS "LIBS(${CMAKE_LIBRARY_OUTPUT_DIRECTORY}): ${LIBS2COMPILE}")
-  message(STATUS "APPS(${CMAKE_RUNTIME_OUTPUT_DIRECTORY}): ${APPS2COMPILE}")
-
-  set(INDEX 1)
-  if(ARGV${INDEX})
-    set(${ARGV${INDEX}} ${LIBS2COMPILE} PARENT_SCOPE)
-  endif()
-  set(INDEX 2)
-  if(ARGV${INDEX})
-    set(${ARGV${INDEX}} ${APPS2COMPILE} PARENT_SCOPE)
-  endif()
-endfunction()
-
-function(pi_report_targets)
-  pi_report_target(${ARGV})
-endfunction()
-
-
-# pi_install([HEADERS header1|dir1 ...] [TARGETS target1 ...] [CMAKE cmake_config] [BIN_DESTINATION dir] [LIB_DESTINATION dir] [HEADER_DESTINATION dir])
-function(pi_install)
-  pi_parse_arguments(PI_INSTALL "VERBOSE" "BIN_DESTINATION;LIB_DESTINATION;HEADER_DESTINATION" "HEADERS;TARGETS;CMAKE" ${ARGN})
-
-  if(PI_INSTALL_VERBOSE)
-    message("PI_INSTALL_BIN_DESTINATION: ${PI_INSTALL_BIN_DESTINATION}")
-    message("PI_INSTALL_LIB_DESTINATION: ${PI_INSTALL_LIB_DESTINATION}")
-    message("PI_INSTALL_HEADER_DESTINATION: ${PI_INSTALL_HEADER_DESTINATION}")
-    message("PI_INSTALL_HEADERS: ${PI_INSTALL_HEADERS}")
-    message("PI_INSTALL_TARGETS: ${PI_INSTALL_TARGETS}")
-    message("PI_INSTALL_CMAKE: ${PI_INSTALL_CMAKE}")
-  endif()
-  
-  if(NOT PI_INSTALL_BIN_DESTINATION)
-    set(PI_INSTALL_BIN_DESTINATION bin)
-  endif()
-  
-  if(NOT PI_INSTALL_LIB_DESTINATION)
-    set(PI_INSTALL_LIB_DESTINATION lib)
-  endif()
-
-  if(NOT PI_INSTALL_HEADER_DESTINATION)
-    set(PI_INSTALL_HEADER_DESTINATION include)
-  endif()
-
-  foreach(INSTALL_HEADER ${PI_INSTALL_HEADERS})
-    #message("get_filename_component(ABSOLUTE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/${INSTALL_HEADER}" ABSOLUTE)")
-    get_filename_component(ABSOLUTE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/${INSTALL_HEADER}" ABSOLUTE)
-    if(IS_DIRECTORY ${ABSOLUTE_PATH})
-      #message("install(DIRECTORY ${INSTALL_HEADER} DESTINATION "${HEADER_DESTINATION}" FILES_MATCHING PATTERN "*.h")")
-      install(DIRECTORY ${ABSOLUTE_PATH} DESTINATION "${PI_INSTALL_HEADER_DESTINATION}" FILES_MATCHING PATTERN "*.h")
-      install(DIRECTORY ${ABSOLUTE_PATH} DESTINATION "${PI_INSTALL_HEADER_DESTINATION}" FILES_MATCHING PATTERN "*.hpp")
-    else()
-      #message("install(FILES ${INSTALL_HEARDERS} DESTINATION ${HEADER_DESTINATION} COMPONENT main) ")
-      install(FILES ${INSTALL_HEARDERS} DESTINATION ${PI_INSTALL_HEADER_DESTINATION} COMPONENT main)      
-    endif()
-  endforeach()
-
-  foreach(TARGET ${PI_INSTALL_TARGETS})
-    if(TARGET ${TARGET})
-      install(TARGETS ${TARGET}
-          RUNTIME DESTINATION ${PI_INSTALL_BIN_DESTINATION} COMPONENT main
-          LIBRARY DESTINATION ${PI_INSTALL_LIB_DESTINATION} PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE COMPONENT main
-          ARCHIVE DESTINATION ${PI_INSTALL_LIB_DESTINATION} COMPONENT main)
-    endif()
-  endforeach()
-
-  foreach(CONFG_FILE ${PI_INSTALL_CMAKE})
-    get_filename_component(CONFIG_NAME "${CONFG_FILE}" NAME_WE)
-    configure_file("${CONFG_FILE}" "${PROJECT_BINARY_DIR}/${CONFIG_NAME}.cmake" @ONLY)
-    install(FILES "${PROJECT_BINARY_DIR}/${CONFIG_NAME}.cmake" DESTINATION ${CMAKE_ROOT}/Modules)
-  endforeach()
-  
-
-# Auto uninstall
-  if(NOT EXISTS "${PROJECT_BINARY_DIR}/cmake_uninstall.cmake")
-    file(WRITE "${PROJECT_BINARY_DIR}/cmake_uninstall.cmake" "IF(NOT EXISTS \"${CMAKE_CURRENT_BINARY_DIR}/install_manifest.txt\")
-  MESSAGE(FATAL_ERROR \"Cannot find install manifest: ${CMAKE_CURRENT_BINARY_DIR}/install_manifest.txt\")
-ENDIF()
-FILE(READ \"${CMAKE_CURRENT_BINARY_DIR}/install_manifest.txt\" files)
-STRING(REGEX REPLACE \"\\n\" \";\" files \"\${files}\")
-FOREACH(file \${files})
-  MESSAGE(STATUS \"Uninstalling \${file}\")
-  #EXECUTE_PROCESS(COMMAND rm \"\${file}\")
-  file(REMOVE \"\${file}\")
-ENDFOREACH()
-    ")
-  else()
-    add_custom_target(uninstall "${CMAKE_COMMAND}" -P "${PROJECT_BINARY_DIR}/cmake_uninstall.cmake")
-  endif()
-
-endfunction()
-
-# pi_parse_arguments(<prefix> <options> <one_value_keywords> <multi_value_keywords> args...)
-function(pi_parse_arguments prefix _optionNames _singleArgNames _multiArgNames)
-  # first set all result variables to empty/FALSE
-  foreach(arg_name ${_singleArgNames} ${_multiArgNames})
-    set(${prefix}_${arg_name})
-  endforeach()
-
-  foreach(option ${_optionNames})
-    set(${prefix}_${option} FALSE)
-  endforeach()
-
-  set(${prefix}_UNPARSED_ARGUMENTS)
-
-  set(insideValues FALSE)
-  set(currentArgName)
-
-  # now iterate over all arguments and fill the result variables
-  foreach(currentArg ${ARGN})
-    list(FIND _optionNames "${currentArg}" optionIndex)  # ... then this marks the end of the arguments belonging to this keyword
-    list(FIND _singleArgNames "${currentArg}" singleArgIndex)  # ... then this marks the end of the arguments belonging to this keyword
-    list(FIND _multiArgNames "${currentArg}" multiArgIndex)  # ... then this marks the end of the arguments belonging to this keyword
-
-    if(${optionIndex} EQUAL -1  AND  ${singleArgIndex} EQUAL -1  AND  ${multiArgIndex} EQUAL -1)
-      if(insideValues)
-        if("${insideValues}" STREQUAL "SINGLE")
-          set(${prefix}_${currentArgName} ${currentArg})
-          set(insideValues FALSE)
-        elseif("${insideValues}" STREQUAL "MULTI")
-          list(APPEND ${prefix}_${currentArgName} ${currentArg})
-        endif()
-      else()
-        list(APPEND ${prefix}_UNPARSED_ARGUMENTS ${currentArg})
-      endif()
-    else()
-      if(NOT ${optionIndex} EQUAL -1)
-        set(${prefix}_${currentArg} TRUE)
-        set(insideValues FALSE)
-      elseif(NOT ${singleArgIndex} EQUAL -1)
-        set(currentArgName ${currentArg})
-        set(${prefix}_${currentArgName})
-        set(insideValues "SINGLE")
-      elseif(NOT ${multiArgIndex} EQUAL -1)
-        set(currentArgName ${currentArg})
-        set(${prefix}_${currentArgName})
-        set(insideValues "MULTI")
-      endif()
-    endif()
-
-  endforeach()
-
-  # propagate the result variables to the caller:
-  foreach(arg_name ${_singleArgNames} ${_multiArgNames} ${_optionNames})
-    set(${prefix}_${arg_name}  ${${prefix}_${arg_name}} PARENT_SCOPE)
-  endforeach()
-  set(${prefix}_UNPARSED_ARGUMENTS ${${prefix}_UNPARSED_ARGUMENTS} PARENT_SCOPE)
-
-endfunction()
-######################################################################################
-#                               MACROS
 
 # pi_collect_packages([RESULT_NAME] [VERBOSE] [MODULES package1 ...] [REQUIRED package1 package2 ...])
 macro(pi_collect_packages)
@@ -446,6 +468,17 @@ macro(pi_collect_packages)
   if(NOT PI_COLLECT_VERBOSE)
     set(PI_COLLECT_FLAGS QUIET)
   endif()
+  
+  if(PI_COLLECTED_PACKAGES)
+    if(PI_COLLECT_MODULES)
+      list(REMOVE_ITEM PI_COLLECT_MODULES ${PI_COLLECTED_PACKAGES})
+    endif()
+    if(PI_COLLECT_REQUIRED)
+      #message("Removing ${PI_COLLECTED_PACKAGES} from list ${PI_COLLECT_REQUIRED}")
+      list(REMOVE_ITEM PI_COLLECT_REQUIRED ${PI_COLLECTED_PACKAGES})
+      #message("PI_COLLECT_REQUIRED: ${PI_COLLECT_REQUIRED}")
+    endif()
+  endif()
 
   foreach(PACKAGE_NAME ${PI_COLLECT_REQUIRED})
     find_package(${PACKAGE_NAME} REQUIRED ${PI_COLLECT_FLAGS})
@@ -460,11 +493,13 @@ macro(pi_collect_packages)
   if(PI_COLLECT_VERBOSE)
     pi_report_modules(${PI_COLLECT_MODULES})
   else()
-    pi_check_modules(${PI_COLLECT_REQUIRED})
+    pi_check_modules(${PI_COLLECT_MODULES})
   endif()
 
   foreach(PACKAGE_NAME ${PI_COLLECT_MODULES})
     string(TOUPPER ${PACKAGE_NAME} PACKAGE_NAME_UPPER)
+    set(${PACKAGE_NAME_UPPER}_COLLECTED TRUE)
+    list(APPEND PI_COLLECTED_PACKAGES ${PACKAGE_NAME})
     if(${PACKAGE_NAME_UPPER}_FOUND)
       list(APPEND ${RESULT_NAME} ${PACKAGE_NAME})
     endif()
@@ -507,7 +542,7 @@ endmacro()
 macro(pi_report_modules)
   pi_check_modules(${ARGV})
   foreach(MODULE_NAME ${ARGV})
-    message("--------------------------------------")
+    message("------------------------------------------")
     string(TOUPPER ${MODULE_NAME} MODULE_NAME_UPPER)
     if(${MODULE_NAME_UPPER}_VERSION)
       message("--${MODULE_NAME}: VERSION ${${MODULE_NAME_UPPER}_VERSION}")

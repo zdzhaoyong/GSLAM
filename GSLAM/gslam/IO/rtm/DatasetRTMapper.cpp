@@ -1,4 +1,3 @@
-
 #include "../../../core/Dataset.h"
 #include "../../../core/VideoFrame.h"
 #include "../../../core/Svar.h"
@@ -10,8 +9,11 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #elif defined(HAS_QT)
+#include <QFileInfo>
 #include <QImage>
+#include <QDir>
 #endif
+
 using namespace std;
 using namespace GSLAM;
 
@@ -22,38 +24,130 @@ inline GSLAM::Camera camFromName(string name,Svar& var)
     return GSLAM::Camera(paras.data);
 }
 
-class ImageFrameWithGPSPYR : public GSLAM::FrameMonoGPSPYR
+
+enum RTMapperFrameStatus
+{
+    SLAMFRAME_READY,
+    SLAMFRAME_PROCESSING,
+    SLAMFRAME_PROCESSED_SUCCESS,
+    SLAMFRAME_PROCESSED_FAILED
+};
+
+class RTMapperFrame : public GSLAM::MapFrame
 {
 public:
-    ImageFrameWithGPSPYR(FrameID id,double time,const GImage& img,const Camera& camera,
-                         double longtitude,double latitude,double altitude,
-                         double sigmaHorizon,double sigmaVertical,
-                         double pitch,double yaw,double roll,
-                         double sigmaPitch,double sigmaYaw,double sigmaRoll,
-                         string imgPath="")
-        :GSLAM::FrameMonoGPSPYR(id,time,img,camera,longtitude,latitude,altitude,sigmaHorizon,sigmaVertical,
-                             pitch,yaw,roll,sigmaPitch,sigmaYaw,sigmaRoll),_imgPath(imgPath)
-    {
-    }
+    RTMapperFrame(const GSLAM::FrameID& id=0,const double& timestamp=0)
+        :GSLAM::MapFrame(id,timestamp),_status(SLAMFRAME_READY){}
 
-    virtual std::string type() const{return "ImageFrameWithGPSYRP";}
+    virtual std::string type()const{return "RTMapperFrame";}
 
-    virtual void call(const string &command, void *arg)
-    {
-        if("GetGPS"==command)
+    virtual int     cameraNum()const{return 1;}                                      // Camera number
+    virtual GSLAM::SE3     getCameraPose(int idx=0) const{return GSLAM::SE3();}                    // The transform from camera to local
+    virtual int     imageChannels(int idx=0) const{return GSLAM::IMAGE_RGBA;}               // Default is a colorful camera
+    virtual GSLAM::Camera  getCamera(int idx=0){return _camera;}                            // The camera model
+    virtual GSLAM::GImage  getImage(int idx,int channalMask){
+        if(idx==0)
         {
-            if((!arg)) return;
+            if(_image.empty())
+            {
+                using namespace GSLAM;
+                QImage qimage(_imagePath.c_str());
+                if(qimage.format()==QImage::Format_RGB32)
+                {
+                    return GImage(qimage.width(),qimage.height(),
+                               GImageType<uchar,4>::Type,qimage.bits(),true);
+                }
+                else if(qimage.format()==QImage::Format_RGB888){
+                    return GImage(qimage.width(),qimage.height(),
+                               GImageType<uchar,3>::Type,qimage.bits(),true);
+                }
+                else if(qimage.format()==QImage::Format_Indexed8)
+                {
+                    return GImage(qimage.width(),qimage.height(),
+                               GImageType<uchar,1>::Type,qimage.bits(),true);
+                }
+            }
+            else  return _image;
+        }
+        else return _thumbnail;
+    }   // Just return the image if only one channel is available
+
+    // When the frame contains IMUs or GPSs
+    virtual int     getIMUNum()const{return (_gpshpyr.size()==11||_gpshpyr.size()==12||_gpshpyr.size()==14)?1:0;}
+    virtual bool    getAcceleration(GSLAM::Point3d& acc,int idx=0)const{return false;}        // m/s^2
+    virtual bool    getAngularVelocity(GSLAM::Point3d& angularV,int idx=0)const{return false;}// rad/s
+    virtual bool    getMagnetic(GSLAM::Point3d& mag,int idx=0)const{return false;}            // gauss
+    virtual bool    getAccelerationNoise(GSLAM::Point3d& accN,int idx=0)const{return false;}
+    virtual bool    getAngularVNoise(GSLAM::Point3d& angularVN,int idx=0)const{return false;}
+    virtual bool    getPitchYawRoll(GSLAM::Point3d& pyr,int idx=0)const{
+        if(_gpshpyr.size()==11&&_gpshpyr[8]<20) {pyr=GSLAM::Point3d(_gpshpyr[5],_gpshpyr[6],_gpshpyr[7]);return true;}
+        else if(_gpshpyr.size()==14&&_gpshpyr[11]) {pyr=GSLAM::Point3d(_gpshpyr[8],_gpshpyr[9],_gpshpyr[10]);return true;}
+        else if(_gpshpyr.size()==12&&_gpshpyr[9]<20) {pyr=GSLAM::Point3d(_gpshpyr[6],_gpshpyr[7],_gpshpyr[8]);return true;}
+        return false;
+    }     // in rad
+    virtual bool    getPYRSigma(GSLAM::Point3d& pyrSigma,int idx=0)const{
+        if(_gpshpyr.size()==11&&_gpshpyr[8]<20) {pyrSigma=GSLAM::Point3d(_gpshpyr[8],_gpshpyr[9],_gpshpyr[10]);return true;}
+        else if(_gpshpyr.size()==14&&_gpshpyr[11]) {pyrSigma=GSLAM::Point3d(_gpshpyr[11],_gpshpyr[12],_gpshpyr[13]);return true;}
+        else if(_gpshpyr.size()==12&&_gpshpyr[9]<20) {pyrSigma=GSLAM::Point3d(_gpshpyr[9],_gpshpyr[10],_gpshpyr[11]);return true;}
+        return false;
+    }    // in rad
+
+    virtual int     getGPSNum()const{return (_gpshpyr.size()>=6&&_gpshpyr[3]<10)?1:0;}
+    virtual bool    getGPSLLA(GSLAM::Point3d& LonLatAlt,int idx=0)const{
+        if(getGPSNum()==0) return false;
+        LonLatAlt=GSLAM::Point3d(_gpshpyr[0],_gpshpyr[1],_gpshpyr[2]);
+        return _gpshpyr[3]<10;
+    }        // WGS84 [longtitude latitude altitude]
+    virtual bool    getGPSLLASigma(GSLAM::Point3d& llaSigma,int idx=0)const{
+        if(_gpshpyr.size()>=6||_gpshpyr.size()==8||_gpshpyr.size()==12||_gpshpyr.size()==14)
+        {llaSigma=GSLAM::Point3d(_gpshpyr[3],_gpshpyr[4],_gpshpyr[5]);return true;}
+        else if(_gpshpyr.size()==7) {llaSigma=GSLAM::Point3d(_gpshpyr[3],_gpshpyr[3],_gpshpyr[4]);return true;}
+        return false;
+    }    // meter
+    virtual bool    getGPSECEF(GSLAM::Point3d& xyz,int idx=0)const{
+        GSLAM::Point3d lla;
+        if(!getGPSLLA(lla)) return false;
+        xyz=GSLAM::GPS<>::GPS2XYZ(lla.y,lla.x,lla.z);
+        return true;
+    }             // meter
+    virtual bool    getHeight2Ground(GSLAM::Point2d& height,int idx=0)const{
+        if(_gpshpyr.size()==14||_gpshpyr.size()==8){height=GSLAM::Point2d(_gpshpyr[6],_gpshpyr[7]);return _gpshpyr[7]<100;}
+        return false;
+    }    // height against ground
+
+    virtual void call(const std::string &command, void *arg)
+    {
+        if("GetImagePath"==command)
+        {
+            if(arg) *(std::string*)arg=_imagePath;
+        }
+        else if("ReleaseImage"==command)
+        {
+            _image=GSLAM::GImage();
+        }
+        else if("GetGPS"==command)
+        {
+            if((!arg)||_gpshpyr.empty()) return;
             std::vector<double>* dest=(std::vector<double>*)arg;
-            *dest={_longtitude,_latitude,_altitude,_sigmaHorizon,_sigmaVertical,
-                   _pitch,_yaw,_roll,_sigmaPitch,_sigmaYaw,_sigmaRoll};
-        }
-        else if("GetImagePath"==command)
-        {
-            if(arg) *(std::string*)arg=_imgPath;
+            *dest=_gpshpyr;
         }
     }
-public:
-    std::string         _imgPath;
+
+    std::string imagePath(){return _imagePath;}
+    GSLAM::GImage& thumbnail(){return _thumbnail;}
+
+    std::string         _imagePath;       // where image come from or where to cache
+    std::string         _cameraName;
+    GSLAM::GImage       _image,_thumbnail;// should be RGBA
+    GSLAM::Camera       _camera;
+    GSLAM::FramePtr     _slamFrame;
+    RTMapperFrameStatus _status;
+    std::vector<double> _gpshpyr;
+    // 6 : long,lat,alt,sigmaX,sigmaY,sigmaZ
+    // 8 : long,lat,alt,sigmaX,sigmaY,sigmaZ,Height,sigmaH
+    // 11: long,lat,alt,sigmaH,sigmaV,pitch,yaw,roll,sigmaP,sigmaR,sigmaP
+    // 12: long,lat,alt,sigmaX,sigmaY,sigmaZ,pitch,yaw,roll,sigmaP,sigmaR,sigmaP
+    // 14: long,lat,alt,sigmaX,sigmaY,sigmaZ,Height,sigmaH,pitch,yaw,roll,sigmaP,sigmaR,sigmaP
 };
 
 class DatasetRTMapper : public Dataset
@@ -65,24 +159,26 @@ public:
     {
     }
 
-    std::string type() const {return "rtm";}
+    std::string type() const {return "DatasetRTMapper";}
 
     virtual bool open(const string &dataset)
     {
         Svar var;
-        if(var.ParseFile(dataset))
+        if(!var.ParseFile(dataset)) return false;
+        _seqTop=Svar::getFolderPath(dataset);
+        if(var.exist("VideoReader.VideoFile"))
             return open(var,"VideoReader");
         else
-            return open(svar,dataset);
+            return open(var,"Dataset");
     }
 
     bool open(Svar& var,const std::string& name)
     {
         if(_ifs.is_open())_ifs.close();
-        _ifs.open(var.GetString(name+".VideoFile",""));
+        _ifs.open((_seqTop+"/imageLists.txt").c_str());
         if(!_ifs.is_open()) return false;
-        _seqTop=Svar::getFolderPath(var.GetString(name+".VideoFile",""));
-        _camera=camFromName(var.GetString(name+".Camera",name+".Camera"),var);
+        _cameraName=var.GetString(name+".Camera",name+".Camera");
+        _camera=camFromName(_cameraName,var);
         if(!_camera.isValid()) return false;
         _name=name;
         _frameId=1;
@@ -91,69 +187,66 @@ public:
 
     bool isOpened(){return _ifs.is_open()&&_camera.isValid();}
 
-    GSLAM::FramePtr grabFrame()
+#if defined(HAS_QT)
+    GSLAM::GImage imread(const QString& imgFile)
     {
-        string line,lineCopy;
-        if(!getline(_ifs,line)) return GSLAM::FramePtr();
-        lineCopy=line;
-        string imgFile;
-        double timestamp;
-        vector<double> para;
-        para.resize(11);
-        int dotPosition=line.find(',');
-        imgFile=line.substr(0,dotPosition);
-
-        line=line.substr(dotPosition+1);
-        sscanf(line.c_str(),"%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf,%lf",
-               &timestamp,&para[0],&para[1],&para[2],&para[3],&para[4],
-                &para[5],&para[6],&para[7],&para[8],&para[9],&para[10]);
-        if(para[2]<100) {
-//            cout<<"ErrorHeight:"<<para[2];
-//            cout<<lineCopy<<endl;
-        }
-#ifdef HAS_OPENCV
-        cv::Mat img=cv::imread(imgFile);
-        if(img.empty())
-        {
-            imgFile=_seqTop+"/"+imgFile;
-            img=cv::imread(imgFile);
-        }
-        if(img.type()==CV_8UC3) cv::cvtColor(img,img,CV_BGR2RGB);
-//        frame->_channel=IMAGE_BGRA;
-#else
-        QImage qimage(imgFile.c_str(),"Format_RGB888");
-        GImage img;
-
-        if(qimage.isNull())
-        {
-            imgFile=_seqTop+"/"+imgFile;
-            qimage.load(imgFile.c_str(),"Format_RGB888");
-        }
-
+        GSLAM::GImage thumbnail;
+        QImage qimage(imgFile);
+        qimage=qimage.convertToFormat(QImage::Format_RGB32);
         if(qimage.format()==QImage::Format_RGB32)
         {
-            img=GImage(qimage.width(),qimage.height(),
+            thumbnail=GImage(qimage.width(),qimage.height(),
                        GImageType<uchar,4>::Type,qimage.bits(),true);
         }
         else if(qimage.format()==QImage::Format_RGB888){
-            img=GImage(qimage.width(),qimage.height(),
+            thumbnail=GImage(qimage.width(),qimage.height(),
                        GImageType<uchar,3>::Type,qimage.bits(),true);
         }
         else if(qimage.format()==QImage::Format_Indexed8)
         {
-            img=GImage(qimage.width(),qimage.height(),
+            thumbnail=GImage(qimage.width(),qimage.height(),
                        GImageType<uchar,1>::Type,qimage.bits(),true);
         }
-#endif
-        ImageFrameWithGPSPYR* frame=new ImageFrameWithGPSPYR(_frameId++,timestamp,img,_camera,para[0],para[1],para[2],para[3],
-                para[4],para[5],para[6],para[7],para[8],para[9],para[10],imgFile);
-        return SPtr<GSLAM::MapFrame>(frame);
+        return thumbnail;
     }
+
+    GSLAM::FramePtr grabFrame()
+    {
+        string line;
+        if(!getline(_ifs,line)) return GSLAM::FramePtr();
+        int dotIdx=line.find(',');
+        if(dotIdx==string::npos) return GSLAM::FramePtr();
+        string imgFile=line.substr(0,dotIdx);
+        string paras  =line.substr(dotIdx+1);
+        VecParament<double> gpsInfo;
+        gpsInfo.fromString(paras);
+        if(gpsInfo.size()<1) return GSLAM::FramePtr();
+        SPtr<RTMapperFrame> frame(new RTMapperFrame(_frameId++,gpsInfo[0]));
+        frame->_cameraName=_cameraName;
+        frame->_camera=_camera;
+        gpsInfo.data.erase(gpsInfo.data.begin());
+        frame->_gpshpyr=gpsInfo.data;
+        QFileInfo info(imgFile.c_str());
+        if(info.isAbsolute()&&info.exists())
+            frame->_imagePath=imgFile;
+        else
+        {
+            frame->_imagePath=QFileInfo(QDir(_seqTop.c_str()),imgFile.c_str()).absoluteFilePath().toStdString();
+        }
+        QDir      thumbnailDir(QString(_seqTop.c_str())+"/thumbnail");
+        QFileInfo thumbnailFile(thumbnailDir.absolutePath()+"/"+info.fileName());
+        if(thumbnailFile.exists())
+            frame->_thumbnail=imread(thumbnailFile.absoluteFilePath());
+
+        frame->_image=imread(frame->_imagePath.c_str());
+        return frame;
+    }
+#endif
 
     string           _seqTop;
     GSLAM::FrameID   _frameId;
     GSLAM::Camera    _camera;
-    string           _name;
+    string           _name,_cameraName;
     ifstream         _ifs;
 };
 
