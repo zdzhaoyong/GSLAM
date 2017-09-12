@@ -1,3 +1,4 @@
+#if defined(HAS_QT)&&defined(HAS_QGLVIEWER)
 #include "SLAMVisualizer.h"
 #include "../../core/Event.h"
 
@@ -25,3 +26,4 @@ void SLAMVisualizer::handle(const SPtr<GObject>& obj){
 }
 
 }
+#endif

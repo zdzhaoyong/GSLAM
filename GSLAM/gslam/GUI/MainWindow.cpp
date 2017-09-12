@@ -10,7 +10,10 @@
 
 #include "MainWindow.h"
 #include "FrameVisualizer.h"
+
+#if defined(HAS_QT)&&defined(HAS_QGLVIEWER)
 #include "SLAMVisualizer.h"
+#endif
 
 #include "../../core/Svar.h"
 #include "../../core/GSLAM.h"
@@ -311,6 +314,7 @@ bool MainWindow::slotStop()
 
 bool MainWindow::slotAddSLAM(QString pluginPath)
 {
+#if defined(HAS_QT)&&defined(HAS_QGLVIEWER)
     SLAMVisualizer* slamVis=new SLAMVisualizer(this,pluginPath);
     if(slamVis->slam()&&slamVis->slam()->valid())
     {
@@ -319,6 +323,7 @@ bool MainWindow::slotAddSLAM(QString pluginPath)
         return true;
     }
     delete slamVis;
+#endif
     return false;
 }
 

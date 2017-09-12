@@ -120,6 +120,7 @@ public:
 
 class ScopedTimer
 {
+public:
     ScopedTimer(const char* func_name):_func_name(func_name){timer.enter(func_name);}
     ~ScopedTimer(){timer.leave(_func_name);}
     const char* _func_name;

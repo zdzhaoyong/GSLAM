@@ -18,6 +18,7 @@
 #   1.1.3 2017.03.05 : fixed bug of pi_install when add header files
 #   1.2.0 2017.08.30 : removed dependency of violate pi_collect_packages and auto call it when required, mv pi_add_target and pi_add_targets to macros
 #   1.2.1 2017.09.01 : added lisence and auto get PI_CMAKE_VERSION, change REQUIRED to MODULES for auto package collect
+#   1.2.2 2017.09.12 : fixed bug of pi_add_target should not call return() in macros when dependency not meet
 ######################################################################################
 #                               FUNCTIONS
 # pi_collect_packagenames(<RESULT_NAME>　[VERBOSE] [path1 path2 ...])
@@ -261,13 +262,10 @@ function(pi_parse_arguments prefix _optionNames _singleArgNames _multiArgNames)
   set(${prefix}_UNPARSED_ARGUMENTS ${${prefix}_UNPARSED_ARGUMENTS} PARENT_SCOPE)
 
 endfunction()
-######################################################################################
-#                               MACROS
-# pi_add_target(<name> <BIN | STATIC | SHARED> [src1|dir1 ...] [MODULES module1 ...] [REQUIRED module1 ...] [DEPENDENCY target1 ...])
-macro(pi_add_target TARGET_NAME TARGET_TYPE)
+
+function(pi_add_target_f TARGET_NAME TARGET_TYPE)
   if(ARGC LESS 2)
-    message("command 'add_target' need more than 2 arguments")
-    return()
+    message(FATAL_ERROR "command 'pi_add_target' need more than 2 arguments")
   endif(ARGC LESS 2)
 
   string(TOUPPER ${TARGET_TYPE} TARGET_TYPE)
@@ -276,10 +274,6 @@ macro(pi_add_target TARGET_NAME TARGET_TYPE)
   set(TARGET_MODULES ${PI_TARGET_MODULES})
   set(TARGET_REQUIRED ${PI_TARGET_REQUIRED})
   set(TARGET_DEPENDENCY ${PI_TARGET_DEPENDENCY})
-
-  if(TARGET_MODULES OR TARGET_REQUIRED)
-    pi_collect_packages(VERBOSE MODULES ${TARGET_MODULES} ${TARGET_REQUIRED})
-  endif()
 
   set(TARGET_COMPILEFLAGS)
   set(TARGET_LINKFLAGS)
@@ -375,6 +369,30 @@ macro(pi_add_target TARGET_NAME TARGET_TYPE)
       set_target_properties(${TARGET_NAME} PROPERTIES AUTOMOC TRUE)
   endif()
 
+endfunction(pi_add_target_f)
+
+
+######################################################################################
+#                               MACROS
+# pi_add_target(<name> <BIN | STATIC | SHARED> [src1|dir1 ...] [MODULES module1 ...] [REQUIRED module1 ...] [DEPENDENCY target1 ...])
+macro(pi_add_target TARGET_NAME TARGET_TYPE)
+  if(ARGC LESS 2)
+    message(FATAL_ERROR "command 'pi_add_target' need more than 2 arguments")
+  endif(ARGC LESS 2)
+
+  string(TOUPPER ${TARGET_TYPE} TARGET_TYPE)
+  
+  pi_parse_arguments(PI_TARGET "" "" "MODULES;REQUIRED;DEPENDENCY" ${ARGN})
+  set(TARGET_MODULES ${PI_TARGET_MODULES})
+  set(TARGET_REQUIRED ${PI_TARGET_REQUIRED})
+  set(TARGET_DEPENDENCY ${PI_TARGET_DEPENDENCY})
+
+  if(TARGET_MODULES OR TARGET_REQUIRED)
+    pi_collect_packages(VERBOSE MODULES ${TARGET_MODULES} ${TARGET_REQUIRED})
+  endif()
+  
+  pi_add_target_f(${TARGET_NAME} ${TARGET_TYPE} ${ARGN})
+
 endmacro(pi_add_target)
 
 # pi_add_targets([name1 ...])
@@ -388,9 +406,9 @@ macro(pi_add_targets )
     if(ARGC EQUAL 1)
       set(TARGET_NAME ${ARGV})
       #message("TARGET_NAME: ${TARGET_NAME}")
-      if(TARGET_NAME STREQUAL "NO_TARGET")
-        return()
-      endif()
+      #if(TARGET_NAME STREQUAL "NO_TARGET")
+      #  return()
+      #endif()
     elseif(NOT TARGET_NAME)
             get_filename_component(TARGET_NAME ${CMAKE_CURRENT_SOURCE_DIR} NAME)
             string(REPLACE " " "_" TARGET_NAME ${TARGET_NAME})
@@ -427,24 +445,25 @@ macro(pi_add_targets )
     #message("TARGET_TYPE: ${TARGET_TYPE}")
 
     pi_add_target(${TARGET_NAME} ${TARGET_TYPE} ${TARGET_SRCS} MODULES ${TARGET_MODULES} REQUIRED ${TARGET_REQUIRED})
-    return()
+  else(ARGC LESS 2)
+    foreach(TARGET_NAME ${ARGV})
+      if(${TARGET_NAME}_SRCS)
+        if(NOT ${TARGET_NAME}_TYPE)
+          pi_hasmainfunc(MAIN_FILES ${${TARGET_NAME}_SRCS})
+          if(MAIN_FILES)
+            set(${TARGET_NAME}_TYPE BIN)
+          else()
+            set(${TARGET_NAME}_TYPE SHARED)
+          endif()
+          pi_add_target(${TARGET_NAME} ${${TARGET_NAME}_TYPE} ${${TARGET_NAME}_SRCS} MODULES ${${TARGET_NAME}_MODULES} REQUIRED ${${TARGET_NAME}_REQUIRED})
+        endif()
+      else()
+        message("Target ${TARGET_NAME} aborded since no source file found.")
+      endif()
+    endforeach()
   endif(ARGC LESS 2)
 
-  foreach(TARGET_NAME ${ARGV})
-    if(${TARGET_NAME}_SRCS)
-      if(NOT ${TARGET_NAME}_TYPE)
-        pi_hasmainfunc(MAIN_FILES ${${TARGET_NAME}_SRCS})
-        if(MAIN_FILES)
-          set(${TARGET_NAME}_TYPE BIN)
-        else()
-          set(${TARGET_NAME}_TYPE SHARED)
-        endif()
-        pi_add_target(${TARGET_NAME} ${${TARGET_NAME}_TYPE} ${${TARGET_NAME}_SRCS} MODULES ${${TARGET_NAME}_MODULES} REQUIRED ${${TARGET_NAME}_REQUIRED})
-      endif()
-    else()
-      message("Target ${TARGET_NAME} aborded since no source file found.")
-    endif()
-  endforeach()
+  
 
 
 endmacro(pi_add_targets)

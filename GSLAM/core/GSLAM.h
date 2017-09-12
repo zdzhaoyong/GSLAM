@@ -82,6 +82,8 @@ enum ImageChannelFlags{
     IMAGE_LIDAR         =1<<9,
     IMAGE_SONAR         =1<<10,
     IMAGE_SAR           =1<<11,
+
+    IMAGE_THUMBNAIL     =1<<12// The thumbnail should be in format RGBA
 };
 
 class GObject

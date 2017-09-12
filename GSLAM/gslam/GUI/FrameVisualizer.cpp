@@ -1,3 +1,4 @@
+#ifdef HAS_QT
 #include "FrameVisualizer.h"
 
 #include <QPainter>
@@ -170,9 +171,11 @@ public:
         if(gimage.empty()) return false;
         if(gimage.cols%4!=0)
         {
+#ifdef HAS_OPENCV
             cv::Mat src=gimage,dst(src.rows,src.cols-(gimage.cols%4),src.type());
             src(cv::Rect(0,0,dst.cols,dst.rows)).copyTo(dst);
             gimage=dst;
+#endif
         }
 
         _curGImage=gimage;
@@ -341,3 +344,4 @@ void FrameVisualizer::slotFrameUpdated()
 }
 
 }
+#endif
