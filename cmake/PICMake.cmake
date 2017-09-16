@@ -7,7 +7,7 @@
 # 3. This notice may not be removed or altered from any source distribution.
 
 ######################################################################################
-# PICMake VERSION 1.2.1
+# PICMake VERSION 1.2.2
 # HISTORY:
 #   1.0.0 2017.01.04 : first commit, one include for one target.
 #   1.1.0 2017.01.09 : support multi targets, reorgnized functions and macros.
@@ -583,37 +583,6 @@ macro(pi_report_modules)
     endif()
 
   endforeach()
-endmacro()
-
-
-##########################################################
-#           THINGS GOING TO REMOVE! DO NOT USE!
-macro(autosetMakeType)
-  if(BUILD_SHARED_LIBS)
-    set(MAKE_TYPE "shared")
-  else()
-    set(MAKE_TYPE "static")
-  endif()
-
-  pi_hasmainfunc(MAIN_FILES ${SOURCE_FILES_ALL})
-  
-  if(MAIN_FILES)
-    set(MAKE_TYPE  "bin")
-  endif()
-endmacro()
-
-# Results collection
-macro(PIL_CHECK_DEPENDENCY LIBNAME)
-  pi_check_modules(${LIBNAME})
-endmacro()
-
-macro(PIL_ECHO_LIBINFO LIBNAME)
-  pi_report_modules(${LIBNAME})
-endmacro()
-
-# The following things is deprected
-macro(filtSOURCE_FILES_ALL DIR)
-  pi_removesource(SOURCE_FILES_ALL ${DIR})
 endmacro()
 
 macro(reportTargets)
