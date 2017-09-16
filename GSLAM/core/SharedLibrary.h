@@ -1,38 +1,12 @@
 #ifndef GSLAM_SharedLibrary_INCLUDED
 #define GSLAM_SharedLibrary_INCLUDED
 
-#ifdef HAS_PIL0
-#include <pil/base/ClassLoader/SharedLibrary.h>
-namespace GSLAM {
-typedef pi::SharedLibrary SharedLibrary;
-}
-#else
-
 #include <iostream>
 #include <set>
 
-#if defined(WIN32) && !defined(__CYGWIN__)
+#if (defined(_WIN32) || defined(_WIN64)) && !defined(__CYGWIN__)// Windows
+
 #include <windows.h>
-#else
-#include <unistd.h>
-#endif
-
-#include "Mutex.h"
-#include "SPtr.h"
-#include "Svar.h"
-#include "Glog.h"
-
-#ifdef __linux
-
-#include <dlfcn.h>
-// Note: cygwin is missing RTLD_LOCAL, set it to 0
-#if defined(__CYGWIN__) && !defined(RTLD_LOCAL)
-#define RTLD_LOCAL 0
-#endif
-
-#elif defined(_WIN32) || defined(_WIN64)
-#include <windows.h>
-
 // A list of annoying macros to #undef.
 // Feel free to extend as required.
 #undef GetBinaryType
@@ -81,7 +55,23 @@ typedef pi::SharedLibrary SharedLibrary;
 #undef LogonUser
 #undef GetVersion
 #undef GetObject
+
+#else // Linux
+
+#include <unistd.h>
+#include <dlfcn.h>
+
+// Note: cygwin is missing RTLD_LOCAL, set it to 0
+#if defined(__CYGWIN__) && !defined(RTLD_LOCAL)
+#define RTLD_LOCAL 0
 #endif
+
+#endif
+
+#include "Mutex.h"
+#include "SPtr.h"
+#include "Svar.h"
+#include "Glog.h"
 
 
 namespace GSLAM {
@@ -124,7 +114,13 @@ public:
         if (_handle)
             return false;
 
-#ifdef __linux
+#if (defined(_WIN32) || defined(_WIN64)) && !defined(__CYGWIN__)// Windows
+        DWORD flags(0);
+
+        flags |= LOAD_WITH_ALTERED_SEARCH_PATH;
+        _handle = LoadLibraryExA(path.c_str(), 0, flags);
+        if (!_handle) return false;
+#else
         int realFlags = RTLD_LAZY;
         if (flags & SHLIB_LOCAL_IMPL)
             realFlags |= RTLD_LOCAL;
@@ -137,12 +133,7 @@ public:
             std::cerr<<"Can't open file "<<path<<" since "<<err<<std::endl;
             return false;
         }
-#else
-        DWORD flags(0);
 
-        flags |= LOAD_WITH_ALTERED_SEARCH_PATH;
-        _handle = LoadLibraryExA(path.c_str(), 0, flags);
-        if (!_handle) return false;
 #endif
         _path = path;
         return true;
@@ -159,10 +150,10 @@ public:
 
         if (_handle)
         {
-#ifdef __linux
-            dlclose(_handle);
-#else
+#if (defined(_WIN32) || defined(_WIN64)) && !defined(__CYGWIN__)// Windows
             FreeLibrary((HMODULE) _handle);
+#else
+            dlclose(_handle);
 #endif
             _handle = 0;
             _path.clear();
@@ -190,11 +181,10 @@ public:
         void* result = 0;
         if (_handle)
         {
-#ifdef __linux
-            result = dlsym(_handle, name.c_str());
-#else
-
+#if (defined(_WIN32) || defined(_WIN64)) && !defined(__CYGWIN__)// Windows
             return (void*) GetProcAddress((HMODULE) _handle, name.c_str());
+#else
+            result = dlsym(_handle, name.c_str());
 #endif
         }
         return result;
@@ -383,4 +373,3 @@ protected:
 
 
 #endif // PIL_SharedLibrary_INCLUDED
-#endif
