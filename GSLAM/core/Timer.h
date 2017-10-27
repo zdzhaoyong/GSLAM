@@ -14,7 +14,7 @@
 #include <memory>
 
 #define timer GSLAM::Timer::instance()
-#define SCOPE_TIMER ScopedTimer scopedTimer(__func__);
+#define SCOPE_TIMER GSLAM::ScopedTimer scopedTimer(__func__);
 
 namespace GSLAM {
 

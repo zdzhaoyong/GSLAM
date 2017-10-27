@@ -229,7 +229,7 @@ public:
         cv::Mat vigMat=cv::imread(vigFile, CV_LOAD_IMAGE_GRAYSCALE);
         if(!vigMat.empty()&&(vigMat.type()==CV_8U||vigMat.type()==CV_16U))
         {
-            _vignette=GSLAM::GImage(vigMat.cols,vigMat.rows,vigMat.type(),vigMat.data,true);
+            _vignette=vigMat;
         }
         else return false;
         return false;

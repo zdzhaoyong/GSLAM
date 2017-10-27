@@ -136,16 +136,16 @@ public:
 
         if(qimage.format()==QImage::Format_RGB32)
         {
-            img=GImage(qimage.width(),qimage.height(),
+            img=GImage(qimage.height(),qimage.width(),
                        GImageType<uchar,4>::Type,qimage.bits(),true);
         }
         else if(qimage.format()==QImage::Format_RGB888){
-            img=GImage(qimage.width(),qimage.height(),
+            img=GImage(qimage.height(),qimage.width(),
                        GImageType<uchar,3>::Type,qimage.bits(),true);
         }
         else if(qimage.format()==QImage::Format_Indexed8)
         {
-            img=GImage(qimage.width(),qimage.height(),
+            img=GImage(qimage.height(),qimage.width(),
                        GImageType<uchar,1>::Type,qimage.bits(),true);
         }
         SPtr<GSLAM::MapFrame> frame(new GSLAM::FrameMono(_frameId++,imageTime,img,_camera));

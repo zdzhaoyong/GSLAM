@@ -54,16 +54,16 @@ public:
                 QImage qimage(_imagePath.c_str());
                 if(qimage.format()==QImage::Format_RGB32)
                 {
-                    return GImage(qimage.width(),qimage.height(),
+                    return GImage(qimage.height(),qimage.width(),
                                GImageType<uchar,4>::Type,qimage.bits(),true);
                 }
                 else if(qimage.format()==QImage::Format_RGB888){
-                    return GImage(qimage.width(),qimage.height(),
+                    return GImage(qimage.height(),qimage.width(),
                                GImageType<uchar,3>::Type,qimage.bits(),true);
                 }
                 else if(qimage.format()==QImage::Format_Indexed8)
                 {
-                    return GImage(qimage.width(),qimage.height(),
+                    return GImage(qimage.height(),qimage.width(),
                                GImageType<uchar,1>::Type,qimage.bits(),true);
                 }
             }
@@ -195,16 +195,16 @@ public:
         qimage=qimage.convertToFormat(QImage::Format_RGB32);
         if(qimage.format()==QImage::Format_RGB32)
         {
-            thumbnail=GImage(qimage.width(),qimage.height(),
+            thumbnail=GImage(qimage.height(),qimage.width(),
                        GImageType<uchar,4>::Type,qimage.bits(),true);
         }
         else if(qimage.format()==QImage::Format_RGB888){
-            thumbnail=GImage(qimage.width(),qimage.height(),
+            thumbnail=GImage(qimage.height(),qimage.width(),
                        GImageType<uchar,3>::Type,qimage.bits(),true);
         }
         else if(qimage.format()==QImage::Format_Indexed8)
         {
-            thumbnail=GImage(qimage.width(),qimage.height(),
+            thumbnail=GImage(qimage.height(),qimage.width(),
                        GImageType<uchar,1>::Type,qimage.bits(),true);
         }
         return thumbnail;

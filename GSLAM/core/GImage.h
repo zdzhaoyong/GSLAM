@@ -119,8 +119,8 @@ public:
 
     }
 
-    GImage(int width,int height,int type=GImageType<>::Type,uchar* src=NULL,bool copy=true)
-        :cols(width),rows(height),flags(type),data(NULL),refCount(NULL)
+    GImage(int rows_,int cols_,int type=GImageType<>::Type,uchar* src=NULL,bool copy=false)
+        :cols(cols_),rows(rows_),flags(type),data(NULL),refCount(NULL)
     {
         if(data&&!copy)
         {
@@ -170,6 +170,18 @@ public:
         refCount=rhs.refCount;
         if(refCount) (*refCount)++;
         return *this;
+    }
+
+    static GImage create(int rows,int cols,int type=GImageType<>::Type,uchar* src=NULL,bool copy=false)
+    {
+        return GImage(rows,cols,type,src,copy);
+    }
+
+    static GImage zeros(int rows,int cols,int type=GImageType<>::Type,uchar* src=NULL,bool copy=false)
+    {
+        GImage result(rows,cols,type,src,copy);
+        memset(result.data,0,result.total()*result.elemSize());
+        return result;
     }
 
     bool empty()const{return !data;}
@@ -297,6 +309,13 @@ public:
             data=NULL;
         }
     }
+
+    template<typename _Tp> _Tp* ptr(int i0=0){return (_Tp*)(data+i0*cols*elemSize());}
+
+    template<typename _Tp> const _Tp* ptr(int i0=0) const{return (_Tp*)(data+i0*cols*elemSize());}
+
+    const GImage row(int idx=0)const{return GImage(1,cols,type(),data+elemSize()*cols*idx);}
+
 private:
 
     template<typename _Tp> static inline _Tp* alignPtr(_Tp* ptr, int n=(int)sizeof(_Tp))
