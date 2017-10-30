@@ -39,6 +39,12 @@ class MapFrame;
 class MapPoint;
 class Map;
 class SLAM;
+
+typedef size_t                 NodeId;
+typedef size_t                 WordId;
+typedef float                  WordValue;
+typedef std::map<WordId,float> BowVector;
+typedef std::map<WordId,std::vector<unsigned int> > FeatureVector;
 typedef pi::SO3d       SO3;
 typedef pi::SE3d       SE3;
 typedef pi::SIM3d      SIM3;
@@ -201,6 +207,8 @@ public:
     virtual GImage  getDescriptor(int idx=-1)const{return GImage();}        // idx<0: return all descriptors
     virtual bool    setKeyPoints(const std::vector<Point2f>& keypoints,
                                  const GImage& descriptors=GImage()){return false;}
+    virtual bool    getBoWVector(BowVector& bowvec)const{return false;}
+    virtual bool    getFeatureVector(FeatureVector& featvec)const{return false;}
 
     // MapPoint <-> KeyPoint  : MapPoint Observation usually comes along Mappoint::*obs*
     virtual int     observationNum()const{return 0;}
