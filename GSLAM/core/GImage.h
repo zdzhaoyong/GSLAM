@@ -194,7 +194,7 @@ public:
 
     GImage clone()const
     {
-        return GImage(cols,rows,flags,data,true);
+        return GImage(rows,cols,flags,data,true);
     }
 
     template <typename C>
