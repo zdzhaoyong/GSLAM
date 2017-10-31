@@ -16,8 +16,8 @@
 #include <fstream>
 #include <bitset>
 
-#include "GImage.h"
-#include "SPtr.h"
+#include "GSLAM/core/GImage.h"
+#include "GSLAM/core/SPtr.h"
 
 #define GSLAM_VOCABULARY_KMAX 10
 
@@ -2052,11 +2052,30 @@ inline float Vocabulary::distance(const TinyMat &a,  const TinyMat &b)
          }
          return ret;
     }
-#if defined(__SSE2__)&&defined(__SSE__)&&defined(__SSE4__)
-    else if(a.cols%16==0)
+#if defined(__AVX2__)
+    else if(a.cols%8==0&&((int64)a.data&0x1F)==0&&((int64)b.data&0x1F)==0)
     {
-        int _nwords=a.cols/16;
+        int _nwords=a.cols/8;
+        __m256 sum=_mm256_setzero_ps(), sub_mult;
+        __m256* aptr=(__m256*)a.data;
+        __m256* bptr=(__m256*)b.data;
+       for(int i=0;i<_nwords;i++){
+           sub_mult=_mm256_sub_ps(aptr[i],bptr[i]);
+           sub_mult=_mm256_mul_ps(sub_mult,sub_mult);
+           sum=_mm256_add_ps(sum,sub_mult);
+       }
+       sum=_mm256_hadd_ps(sum,sum);
+       sum=_mm256_hadd_ps(sum,sum);
+       float *sum_ptr=(float*)&sum;
+       return  sum_ptr[0]+sum_ptr[4];
+    }
+#endif
+#if defined(__SSE2__)&&defined(__SSE__)
+    else if(a.cols%4==0)
+    {
+        int _nwords=a.cols/4;
         __m128 sum=_mm_setzero_ps(), sub_mult;
+        float* sum_ptr=(float*)&sum;
        //substract, multiply and accumulate
        __m128* aptr=(__m128*)a.data;
        __m128* bptr=(__m128*)b.data;
@@ -2065,10 +2084,7 @@ inline float Vocabulary::distance(const TinyMat &a,  const TinyMat &b)
            sub_mult=_mm_mul_ps(sub_mult,sub_mult);
            sum=_mm_add_ps(sum,sub_mult);
        }
-       sum=_mm_hadd_ps(sum,sum);
-       sum=_mm_hadd_ps(sum,sum);
-       float *sum_ptr=(float*)&sum;
-       return sum_ptr[0] ;
+       return sum_ptr[0]+sum_ptr[1]+sum_ptr[2]+sum_ptr[3] ;
     }
 #endif
     else{
@@ -2088,3 +2104,4 @@ inline float Vocabulary::distance(const TinyMat &a,  const TinyMat &b)
 
 
 #endif
+
