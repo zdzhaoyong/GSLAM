@@ -254,7 +254,7 @@ public:
             return GSLAM::FramePtr();
         }
 
-        return GSLAM::FramePtr(new VideoFrameMonoWithExposure(img,camera,id,timestamp,recCamera,explosureTime,
+        return GSLAM::FramePtr(new VideoFrameMonoWithExposure(img,camera,++id,timestamp,recCamera,explosureTime,
                                                               _G,_vignette));
     }
     int id;

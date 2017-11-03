@@ -233,4 +233,17 @@ typedef Point3_<double> Point3d;
 typedef Point3_<int>    Point3i;
 }
 
+namespace GSLAM {
+using pi::Point2_;
+using pi::Point3_;
+
+typedef Point2_<int>            Point2i;
+typedef Point2_<float>          Point2f;
+typedef Point2_<double>         Point2d;
+typedef Point3_<unsigned char>  Point3ub;
+typedef Point3_<float>  Point3f;
+typedef Point3_<double> Point3d;
+typedef Point3_<int>    Point3i;
+}
+
 #endif // POINT_H

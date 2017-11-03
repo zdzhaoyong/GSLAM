@@ -15,6 +15,7 @@
 #include <map>
 
 #include "SIM3.h"
+#include "KeyPoint.h"
 #include "GImage.h"
 #include "Camera.h"
 #include "Mutex.h"
@@ -22,7 +23,7 @@
 #include "SharedLibrary.h"
 
 #define GSLAM_VERSION_MAJOR 2
-#define GSLAM_VERSION_MINOR 2
+#define GSLAM_VERSION_MINOR 3
 #define GSLAM_VERSION_PATCH 0
 #define GSLAM_COMMAND_STRHELPER(COMMAND) #COMMAND
 #define GSLAM_COMMAND_STR(COMMAND) GSLAM_COMMAND_STRHELPER(COMMAND)
@@ -153,6 +154,24 @@ private:
     Point3Type              _pt;
 };
 
+// MapFrame <-> MapFrame  : MapFrame connections for Pose Graph
+class FrameConnection : public GObject
+{
+public:
+    virtual std::string type()const{return "FrameConnection";}
+    virtual int  matchesNum(){return 0;}
+
+    virtual bool getMatches(std::vector<std::pair<int,int> >& matches){return false;}
+    virtual bool getChild2Parent(GSLAM::SIM3& sim3){return false;}
+    virtual bool getChild2Parent(GSLAM::SE3& se3){return false;}
+    virtual bool getInformation(double* info){return false;}
+
+    virtual bool setMatches(std::vector<std::pair<int,int> >& matches){return false;}
+    virtual bool setChild2Parent(GSLAM::SIM3& sim3){return false;}
+    virtual bool setChild2Parent(GSLAM::SE3& se3){return false;}
+    virtual bool setInformation(double* info){return false;}
+};
+
 class MapFrame : public GObject
 {
 public:
@@ -176,8 +195,9 @@ public:
     virtual SE3     getCameraPose(int idx=0) const{return SE3();}                    // The transform from camera to local
     virtual int     imageChannels(int idx=0) const{return IMAGE_RGBA;}               // Default is a colorful camera
     virtual Camera  getCamera(int idx=0){return Camera();}                           // The camera model
-    virtual GImage  getImage(int idx,int channalMask){return GImage();}              // Just return the image if only one channel is available
-    GImage          getImage(int idx=0){return getImage(idx,IMAGE_UNDEFINED);}
+    virtual GImage  getImage(int idx=0,int channalMask=IMAGE_UNDEFINED){return GImage();}              // Just return the image if only one channel is available
+    virtual bool    setImage(const GImage& img,int idx=0,int channalMask=IMAGE_UNDEFINED){return false;}
+    virtual bool    setCamera(const Camera& camera,int idx=0){return false;}
 
     // When the frame contains IMUs or GPSs
     virtual int     getIMUNum()const{return 0;}
@@ -199,16 +219,19 @@ public:
 
     // Tracking things for feature based methods
     virtual int     keyPointNum()const{return 0;}
-    virtual bool    getKeyPoint(int idx,Point2f& pt)const{return false;}
+    virtual bool    setKeyPoints(const std::vector<GSLAM::KeyPoint>& keypoints,
+                                 const GSLAM::GImage& descriptors=GSLAM::GImage()){return false;}
+    virtual bool    getKeyPoint(int idx, Point2f& pt)const{return false;}
+    virtual bool    getKeyPoint(int idx, KeyPoint &pt) const{return false;}
+    virtual bool    getKeyPoints(std::vector<Point2f>& keypoints)const{return false;}
     virtual bool    getKeyPointColor(int idx,ColorType& color){return false;}
     virtual bool    getKeyPointIDepthInfo(int idx,Point2d& idepth){return false;}
     virtual PointID getKeyPointObserve(int idx){return 0;}
-    virtual bool    getKeyPoints(std::vector<Point2f>& keypoints)const{return false;}
     virtual GImage  getDescriptor(int idx=-1)const{return GImage();}        // idx<0: return all descriptors
-    virtual bool    setKeyPoints(const std::vector<Point2f>& keypoints,
-                                 const GImage& descriptors=GImage()){return false;}
     virtual bool    getBoWVector(BowVector& bowvec)const{return false;}
     virtual bool    getFeatureVector(FeatureVector& featvec)const{return false;}
+    virtual std::vector<size_t> getFeaturesInArea(const float& x,const float& y,
+                                          const float& r,bool precisely=true)const{return std::vector<size_t>();}
 
     // MapPoint <-> KeyPoint  : MapPoint Observation usually comes along Mappoint::*obs*
     virtual int     observationNum()const{return 0;}
@@ -216,23 +239,6 @@ public:
     virtual bool    addObservation(const GSLAM::PointPtr& pt,size_t featId,bool add2Point=false){return false;}
     virtual bool    eraseObservation(const GSLAM::PointPtr& pt,bool erasePoint=false){return false;}
     virtual bool    clearObservations(){return false;}
-
-    // MapFrame <-> MapFrame  : MapFrame connections for Pose Graph
-    class FrameConnection : public GObject
-    {
-        virtual std::string type()const{return "FrameConnection";}
-        virtual int  matchesNum(){return 0;}
-
-        virtual bool getMatches(std::vector<std::pair<int,int> >& matches){return false;}
-        virtual bool getChild2Parent(GSLAM::SIM3& sim3){return false;}
-        virtual bool getChild2Parent(GSLAM::SE3& se3){return false;}
-        virtual bool getInformation(double* info){return false;}
-
-        virtual bool setMatches(std::vector<std::pair<int,int> >& matches){return false;}
-        virtual bool setChild2Parent(GSLAM::SIM3& sim3){return false;}
-        virtual bool setChild2Parent(GSLAM::SE3& se3){return false;}
-        virtual bool setInformation(double* info){return false;}
-    };
 
     virtual SPtr<FrameConnection> getParent(GSLAM::FrameID parentId)const{return SPtr<FrameConnection>();}
     virtual SPtr<FrameConnection> getChild(GSLAM::FrameID childId)const{return SPtr<FrameConnection>();}

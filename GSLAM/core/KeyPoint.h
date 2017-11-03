@@ -1,7 +1,7 @@
 #ifndef GSLAM_KEYPOINT_H
 #define GSLAM_KEYPOINT_H
 
-#include <GSLAM/core/GSLAM.h>
+#include "Point.h"
 
 namespace GSLAM{
 
