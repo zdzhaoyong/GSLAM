@@ -305,6 +305,7 @@ bool MainWindow::slotStop()
 {
     if(_d->status==STOP) return false;
     _d->status=STOP;
+    while(!_d->threadPlay.joinable()) GSLAM::Rate::sleep(0.01);
     _d->threadPlay.join();
     _d->startAction->setDisabled(false);
     _d->pauseAction->setDisabled(true);

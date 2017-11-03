@@ -318,25 +318,33 @@ public:
                          int minInliersCount = 100,
                          std::vector<int>* inliers = NULL,
                          int flags=ITERATIVE)const{
-        std::vector<Point2d> planePoints=imagePoints;
+        std::vector<cv::Point2f> planePoints;
+        std::vector<cv::Point3f> objectPointsCV;
+        planePoints.reserve(imagePoints.size());
+        objectPointsCV.reserve(objectPoints.size());
+
+        for(const auto& pt:imagePoints) planePoints.push_back(cv::Point2f(pt.x,pt.y));
+        for(const auto& pt:objectPoints) objectPointsCV.push_back(cv::Point3f(pt.x,pt.y,pt.z));
+
         if(camera.isValid())
         {
             reprojectionError/=camera.getParameters()[2];
-            for(Point2d& pt:planePoints)
+            for(cv::Point2f& pt:planePoints)
             {
-                Point3d p2d=camera.UnProject(pt);
+                Point3d p2d=camera.UnProject(pt.x,pt.y);
                 pt.x=p2d.x;pt.y=p2d.y;
             }
         }
+
         cv::Mat R,t;
         cv::Mat             k=cv::Mat::eye(3,3,CV_32F),distCoeff=cv::Mat::zeros(5,1,CV_32F);
-        cv::solvePnPRansac(toInputArray(objectPoints),toInputArray(imagePoints),k,
+        cv::solvePnPRansac(objectPointsCV,planePoints,k,
                            distCoeff,R,t,useExtrinsicGuess,iterationsCount,reprojectionError,
                            minInliersCount,inliers?(*inliers):cv::noArray(),flags);
         world2camera=pi::SE3d(pi::SO3d::exp(pi::Point3d(R.at<double>(0),R.at<double>(1),R.at<double>(2))),
                       pi::Point3d(t.at<double>(0),t.at<double>(1),t.at<double>(2)));
 
-        return false;
+        return true;
     }
 
 };
