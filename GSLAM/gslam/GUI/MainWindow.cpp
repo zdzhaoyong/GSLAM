@@ -342,7 +342,7 @@ bool MainWindow::slotStartDataset(QString dataset)
 
 void MainWindow::runSLAMMain()
 {
-    Rate rate(svar.GetInt("Frequency",30));
+    Rate rate(svar.GetInt("Frequency",100));
     while(_d->status!=STOP)
     {
         rate.sleep();

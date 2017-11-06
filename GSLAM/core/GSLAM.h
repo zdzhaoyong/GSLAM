@@ -264,6 +264,30 @@ private:
     SIM3                    _c2w;//worldPt=c2w*cameraPt;
 };
 
+struct LoopCandidate
+{
+    LoopCandidate(const FrameID& frameId_,const double& score_)
+        :frameId(frameId_),score(score_){}
+
+    FrameID  frameId;
+    double   score;
+    friend bool operator<(const LoopCandidate& l,const LoopCandidate& r)
+    {
+        return l.score<r.score;
+    }
+};
+typedef std::vector<LoopCandidate> LoopCandidates;
+
+// The LoopDetector is used to detect loops with Poses or Descriptors information
+class LoopDetector: public GObject
+{
+public:
+    virtual std::string type()const{return "LoopDetector";}
+    virtual bool insertMapFrame(const FramePtr& frame){return false;}
+    virtual bool eraseMapFrame(const FrameID& frame){return false;}
+    virtual bool obtainCandidates(const FramePtr& frame,LoopCandidates& candidates){return false;}
+};
+typedef SPtr<LoopDetector> LoopDetectorPtr;
 
 class Map : public GObject
 {
@@ -286,6 +310,10 @@ public:
     virtual PointPtr getPoint(const PointID& id)const{return PointPtr();}
     virtual bool     getFrames(FrameArray& frames)const{return false;}
     virtual bool     getPoints(PointArray& points)const{return false;}
+
+    virtual bool     setLoopDetector(const LoopDetectorPtr& loopdetector){return false;}
+    virtual LoopDetectorPtr getLoopDetector()const{return LoopDetectorPtr();}
+    virtual bool     obtainCandidates(const FramePtr& frame,LoopCandidates& candidates){return false;}
 
     /// Save or load the map from/to the file
     virtual bool save(std::string path)const{return false;}
