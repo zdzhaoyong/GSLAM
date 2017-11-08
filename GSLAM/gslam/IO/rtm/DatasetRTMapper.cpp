@@ -159,6 +159,12 @@ public:
     {
     }
 
+    ~DatasetRTMapper(){
+        _shouldStop=true;
+        while(!_prepareThread.joinable()) GSLAM::Rate::sleep(0.01);
+        _prepareThread.join();
+    }
+
     std::string type() const {return "DatasetRTMapper";}
 
     virtual bool open(const string &dataset)
@@ -182,6 +188,9 @@ public:
         if(!_camera.isValid()) return false;
         _name=name;
         _frameId=1;
+
+        _shouldStop=false;
+        _prepareThread=std::thread(&DatasetRTMapper::run,this);
         return true;
     }
 
@@ -210,7 +219,34 @@ public:
         return thumbnail;
     }
 
+    void run()
+    {
+        while (!_shouldStop) {
+            if(_preparedFrames.size()>=2) Rate::sleep(0.001);
+            auto fr=prepareFrame();
+            if(!fr) break;
+            _preparedFrames.push_back(fr);
+            _eventPrepared.set();
+        }
+        _shouldStop=true;
+    }
+
     GSLAM::FramePtr grabFrame()
+    {
+        if(_preparedFrames.size())
+        {
+            auto ret=_preparedFrames.front();
+            _preparedFrames.pop_front();
+            return ret;
+        }
+        if(_shouldStop) return GSLAM::FramePtr();
+        _eventPrepared.wait();
+        auto ret=_preparedFrames.front();
+        _preparedFrames.pop_front();
+        return ret;
+    }
+
+    GSLAM::FramePtr prepareFrame()
     {
         string line;
         if(!getline(_ifs,line)) return GSLAM::FramePtr();
@@ -248,6 +284,10 @@ public:
     GSLAM::Camera    _camera;
     string           _name,_cameraName;
     ifstream         _ifs;
+    std::thread      _prepareThread;
+    bool             _shouldStop;
+    GSLAM::Event     _eventPrepared;
+    std::list<GSLAM::FramePtr> _preparedFrames;
 };
 
 REGISTER_DATASET(DatasetRTMapper,rtm)
