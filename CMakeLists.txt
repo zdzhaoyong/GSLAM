@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 2.8.6)
 project(GSLAM)
+set(CMAKE_FIND_ROOT_PATH C:/msys64)
 
 macro(GSLAM_FIND_VERSION)
   file(READ "${PROJECT_SOURCE_DIR}/GSLAM/core/GSLAM.h" _gslam_version_header)

@@ -1,4 +1,4 @@
-#ifdef HAS_OPENCV
+//#ifdef HAS_OPENCV
 #include "../../../core/Dataset.h"
 #include "../../../core/VideoFrame.h"
 #include "../../../core/Svar.h"
@@ -69,5 +69,5 @@ public:
 REGISTER_DATASET(DatasetOpenCVMono,cvmono)
 
 
-#endif // HAS_OPENCV
+//#endif // HAS_OPENCV
 
