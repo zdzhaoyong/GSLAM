@@ -42,7 +42,7 @@ public:
                       const std::vector<Point2d>& srcPoints,
                       const std::vector<Point2d>& dstPoints,
                       bool fullAffine)const{
-        return toReturn(A,cv::estimateRigidTransform(toInputArray(srcPoints),toInputArray(dstPoints),fullAffine));
+        return false; //toReturn(A,cv::estimateRigidTransform(toInputArray(srcPoints),toInputArray(dstPoints),fullAffine));
     }
 
     bool findFundamental(double* F,//3x3

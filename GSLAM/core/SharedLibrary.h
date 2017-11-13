@@ -7,6 +7,7 @@
 #if (defined(_WIN32) || defined(_WIN64)) && !defined(__CYGWIN__)// Windows
 
 #include <windows.h>
+#include <io.h>
 // A list of annoying macros to #undef.
 // Feel free to extend as required.
 #undef GetBinaryType
@@ -115,7 +116,6 @@ public:
             return false;
 
 #if (defined(_WIN32) || defined(_WIN64)) && !defined(__CYGWIN__)// Windows
-        DWORD flags(0);
 
         flags |= LOAD_WITH_ALTERED_SEARCH_PATH;
         _handle = LoadLibraryExA(path.c_str(), 0, flags);
