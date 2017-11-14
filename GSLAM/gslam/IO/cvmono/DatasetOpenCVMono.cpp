@@ -30,8 +30,9 @@ public:
         ifstream ifs(dataset.c_str());
         if(ifs.is_open())// is a file
         {
+            ifs.close();
             Svar var;
-            var.ParseStream(ifs);
+            var.ParseFile(dataset.c_str());
             return open(var,"Dataset");
         }
         return open(svar,dataset);
@@ -39,7 +40,7 @@ public:
 
     bool open(Svar& var,const std::string& name)
     {
-        if(!video.open(var.s[name+".VideoFile"])) return false;
+        if(!video.open(var.GetString(name+".VideoFile",""))) return false;
         camera=camFromName(name+".Camera",var);
         if(!camera.isValid()) return false;
         skip=var.GetInt(name+".Skip",0);
@@ -55,7 +56,7 @@ public:
         //        double timestamp=video.get(CV_CAP_PROP_POS_MSEC)*0.001;
         double timestamp=GSLAM::TicToc::timestamp();
         video>>img;
-        GSLAM::GImage gimg(img.cols,img.rows,img.type(),img.data,true);
+        GSLAM::GImage gimg(img.rows,img.cols,img.type(),img.data,true);
         return SPtr<GSLAM::FrameMono>(new GSLAM::FrameMono(frameId++,timestamp,gimg,camera,IMAGE_BGRA));
     }
 

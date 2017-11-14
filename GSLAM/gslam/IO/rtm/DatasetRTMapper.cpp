@@ -43,7 +43,7 @@ public:
 
     virtual int     cameraNum()const{return 1;}                                      // Camera number
     virtual GSLAM::SE3     getCameraPose(int idx=0) const{return GSLAM::SE3();}                    // The transform from camera to local
-    virtual int     imageChannels(int idx=0) const{return GSLAM::IMAGE_RGBA;}               // Default is a colorful camera
+    virtual int     imageChannels(int idx=0) const{return GSLAM::IMAGE_BGRA;}               // Default is a colorful camera
     virtual GSLAM::Camera  getCamera(int idx=0){return _camera;}                            // The camera model
     virtual GSLAM::GImage  getImage(int idx,int channalMask){
         if(idx==0)
@@ -201,7 +201,7 @@ public:
     {
         GSLAM::GImage thumbnail;
         QImage qimage(imgFile);
-        qimage=qimage.convertToFormat(QImage::Format_RGB32);
+//        qimage=qimage.convertToFormat(QImage::Format_RGB32);
         if(qimage.format()==QImage::Format_RGB32)
         {
             thumbnail=GImage(qimage.height(),qimage.width(),
@@ -222,7 +222,7 @@ public:
     void run()
     {
         while (!_shouldStop) {
-            if(_preparedFrames.size()>=2) Rate::sleep(0.001);
+            if(_preparedFrames.size()>=2) {Rate::sleep(0.001);continue;}
             auto fr=prepareFrame();
             if(!fr) break;
             _preparedFrames.push_back(fr);

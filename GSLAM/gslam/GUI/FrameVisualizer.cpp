@@ -321,24 +321,36 @@ void FrameVisualizer::slotFrameUpdated()
         }
         GImageWidget* gimageW=_images[camIdx];
         int channelFlags=_curFrame->imageChannels();
-        if(channelFlags&IMAGE_RGBA)
-        {
-            gimageW->setImage(_curFrame->getImage(camIdx,IMAGE_RGBA),true);
-        }
-        else if(channelFlags&IMAGE_BGRA)
+        auto img=_curFrame->getImage(camIdx);
+        if((channelFlags&IMAGE_BGRA)&&img.channels()==3)
         {
 #ifdef HAS_OPENCV
             cv::Mat img=_curFrame->getImage(camIdx,IMAGE_BGRA);
             if(img.empty()) return;
             cv::cvtColor(img,img,CV_BGR2RGB);
-            gimageW->setImage(img);
+            gimageW->setImage(img,true);
 #else
             gimageW->setImage(_curFrame->getImage(camIdx,IMAGE_BGRA),true);
+#endif
+        }
+        else if((channelFlags&IMAGE_RGBA)&&img.channels()==4)
+        {
+#ifdef HAS_OPENCV
+            cv::Mat img=_curFrame->getImage(camIdx,IMAGE_RGBA);
+            if(img.empty()) return;
+            cv::cvtColor(img,img,CV_BGRA2RGBA);
+            gimageW->setImage(img,true);
+#else
+            gimageW->setImage(_curFrame->getImage(camIdx,IMAGE_RGBA),true);
 #endif
         }
         else if(channelFlags&IMAGE_DEPTH)
         {
             gimageW->setImage(_curFrame->getImage(camIdx,IMAGE_DEPTH),true);
+        }
+        else
+        {
+            gimageW->setImage(img);
         }
     }
 }
