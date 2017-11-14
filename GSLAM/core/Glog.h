@@ -137,7 +137,9 @@
 #else
 # define GSLAM_EXPORT
 #endif
-
+#ifdef ERROR
+#undef ERROR
+#endif
 // Log severity level constants.
 const int FATAL   = -3;
 const int ERROR   = -2;

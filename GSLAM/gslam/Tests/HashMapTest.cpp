@@ -2,6 +2,7 @@
 #include "../../core/HashMap.h"
 #include "../../core/Svar.h"
 #include "../../core/Random.h"
+#include  "../../core/Timer.h"
 
 using namespace GSLAM;
 
@@ -25,7 +26,7 @@ public:
             GSLAM::FrameID pid=Random::RandomInt(1,_maxID);
             if(_map->getPoint(pid))
                 _map->eraseMapPoint(pid);
-            usleep(10);
+            Rate::sleep(0.001);
         }
     }
 
@@ -46,7 +47,7 @@ public:
                 GSLAM::PointPtr pt(new GSLAM::MapPoint(pid));
                 _map->insertMapPoint(pt);
             }
-            usleep(10);
+            Rate::sleep(0.001);
         }
     }
 
@@ -59,7 +60,7 @@ TEST_F(HashMapTest,MultiThreadReadWrite)
 {
     std::thread addT(&HashMapTest::addThread,this);
     std::thread eraseT(&HashMapTest::eraseThread,this);
-    usleep(svar.GetInt("HashMapTest.MutiThreadUSeconds",1000));
+    Rate::sleep(svar.GetDouble("HashMapTest.MutiThreadSeconds",0.001));
     _shouldStop=true;
     addT.join();
     eraseT.join();

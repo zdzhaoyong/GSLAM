@@ -1,4 +1,6 @@
 #define GSLAM_MINIGLOG_GLOG_LOGGING_H_
+#undef __STRICT_ANSI__
+#include <math.h>
 #include "AutoDiffFactor.hpp"
 #include "../../core/Optimizer.h"
 
