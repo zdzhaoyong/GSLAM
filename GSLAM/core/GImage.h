@@ -210,8 +210,11 @@ public:
     {
         if(empty()) return cv::Mat();
         cv::Mat result(rows,cols,type(),data);
-        result.refcount=refCount;
-        (*refCount)++;
+        if(refCount)
+        {
+            result.refcount=refCount;
+            (*refCount)++;
+        }
         return result;
     }
     GImage(const cv::Mat& mat)
