@@ -3,9 +3,56 @@
 #include <stdint.h>
 #include <string.h>
 #include <assert.h>
+#include <atomic>
 
 #if defined(HAS_OPENCV) || defined(HAS_OPENCV3)
 #include <opencv2/core/core.hpp>
+#endif
+
+#ifndef CV_XADD
+
+/////// exchange-add operation for atomic operations on reference counters ///////
+#if defined __INTEL_COMPILER && !(defined WIN32 || defined _WIN32)   // atomic increment on the linux version of the Intel(tm) compiler
+  #define CV_XADD(addr,delta) _InterlockedExchangeAdd(const_cast<void*>(reinterpret_cast<volatile void*>(addr)), delta)
+#elif defined __GNUC__
+
+  #if defined __clang__ && __clang_major__ >= 3 && !defined __ANDROID__ && !defined __EMSCRIPTEN__
+    #ifdef __ATOMIC_SEQ_CST
+        #define CV_XADD(addr, delta) __c11_atomic_fetch_add((_Atomic(int)*)(addr), (delta), __ATOMIC_SEQ_CST)
+    #else
+        #define CV_XADD(addr, delta) __atomic_fetch_add((_Atomic(int)*)(addr), (delta), 5)
+    #endif
+  #elif __GNUC__*10 + __GNUC_MINOR__ >= 42
+
+    #if !(defined WIN32 || defined _WIN32) && (defined __i486__ || defined __i586__ || \
+        defined __i686__ || defined __MMX__ || defined __SSE__  || defined __ppc__) || \
+        (defined __GNUC__ && defined _STLPORT_MAJOR) || \
+        defined __EMSCRIPTEN__
+
+      #define CV_XADD __sync_fetch_and_add
+    #else
+      #include <ext/atomicity.h>
+      #define CV_XADD __gnu_cxx::__exchange_and_add
+    #endif
+
+  #else
+    #include <bits/atomicity.h>
+    #if __GNUC__*10 + __GNUC_MINOR__ >= 34
+      #define CV_XADD __gnu_cxx::__exchange_and_add
+    #else
+      #define CV_XADD __exchange_and_add
+    #endif
+  #endif
+
+#elif defined WIN32 || defined _WIN32 || defined WINCE
+  namespace cv { CV_EXPORTS int _interlockedExchangeAdd(int* addr, int delta); }
+  #define CV_XADD cv::_interlockedExchangeAdd
+
+#else
+  static inline int CV_XADD(int* addr, int delta)
+  { int tmp = *addr; *addr += delta; return tmp; }
+#endif
+
 #endif
 
 namespace GSLAM{
@@ -122,7 +169,7 @@ public:
     GImage(int rows_,int cols_,int type=GImageType<>::Type,uchar* src=NULL,bool copy=false)
         :cols(cols_),rows(rows_),flags(type),data(NULL),refCount(NULL)
     {
-        if(data&&!copy)
+        if(src&&!copy)
         {
             data=src;
             return;
@@ -145,18 +192,17 @@ public:
           data(ref.data),refCount(ref.refCount)
     {
         if(refCount)
-            (*refCount)++;
+            CV_XADD(refCount,1);
     }
 
     ~GImage()
     {
         if(data&&refCount)
         {
-            if((*refCount)==1)
+            if(CV_XADD(refCount,-1)==1)
             {
                 release();
             }
-            else (*refCount)--;
         }
     }
 
@@ -168,7 +214,7 @@ public:
         flags=rhs.flags;
         data=rhs.data;
         refCount=rhs.refCount;
-        if(refCount) (*refCount)++;
+        if(refCount) CV_XADD(refCount,1);
         return *this;
     }
 
@@ -213,7 +259,7 @@ public:
         if(refCount)
         {
             result.refcount=refCount;
-            (*refCount)++;
+            CV_XADD(refCount,1);
         }
         return result;
     }
@@ -221,7 +267,7 @@ public:
         : cols(mat.cols),rows(mat.rows),flags(mat.type()),
           data(mat.data),refCount(mat.refcount)
     {
-        if(refCount) (*refCount)++;
+        if(refCount) CV_XADD(refCount,1);
     }
 #elif CV_VERSION_MAJOR == 3
     inline operator cv::Mat()const
@@ -235,7 +281,7 @@ public:
             cv::UMatData* u=new cv::UMatData;
             u->origdata=u->data=data;
             u->userdata=refCount;
-            (*refCount)++;
+            CV_XADD(refCount,1);
             u->refCount=2;
             refCount=&u->refCount;
             result.u=u;
@@ -243,7 +289,7 @@ public:
         }
         else // OpenCV3 style => OpenCV3 style
         {
-            (*refCount)++;
+            CV_XADD(refCount,1);
             cv::UMatData* u=(cv::UMatData*)(((uchar*)refCount)-sizeof(int)-sizeof(cv::MatAllocator*)*2);
             result.u=u;
             return result;
@@ -259,7 +305,7 @@ public:
             // try to maintain the refcount things, but this need the mat is allocated by default StdAllocator
         {
             refCount=(&mat.u->refcount);
-            (*refCount)++;
+            CV_XADD(refCount,1);
         }
         else if(0)// copy the data: SAFE but SLOW
         {

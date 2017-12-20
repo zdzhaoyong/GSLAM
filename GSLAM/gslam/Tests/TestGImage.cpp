@@ -42,6 +42,8 @@ void testGImageType(int type,int cols=1000,int rows=2000)
     EXPECT_TRUE(memcmp(img1.data,mat1.data,img1.total()*img1.elemSize())==0);
 
     img=img1=img1.clone();
+
+    GSLAM::GImage imageEmptyClone=GSLAM::GImage().clone();
 }
 
 TEST(GImageTest,CheckGImageType)

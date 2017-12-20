@@ -10,7 +10,7 @@ namespace GSLAM{
     extern "C" SPtr<GSLAM::Dataset> create##D##E(){ return SPtr<GSLAM::Dataset>(new D());}\
     class D##E##_Register{ \
     public: D##E##_Register(){\
-    DatasetFactory::instance()._ext2creator.insert(#E,create##D##E);\
+    GSLAM::DatasetFactory::instance()._ext2creator.insert(#E,create##D##E);\
 }}D##E##_instance;
 
 /// create
