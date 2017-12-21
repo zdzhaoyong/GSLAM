@@ -2,7 +2,9 @@
 
 #include "../../core/Timer.h"
 #include "../../core/GImage.h"
+#include "GSLAM/core/Random.h"
 #include "gtest.h"
+
 using namespace std;
 
 #ifdef HAS_OPENCV
@@ -44,6 +46,77 @@ void testGImageType(int type,int cols=1000,int rows=2000)
     img=img1=img1.clone();
 
     GSLAM::GImage imageEmptyClone=GSLAM::GImage().clone();
+}
+
+void readWriteThread(GSLAM::GImage& image,int& shouldStop)
+{
+    while(!shouldStop)
+    {
+        GSLAM::Rate::sleep(GSLAM::Random::RandomValue<double>(0.0001,0.0002));
+        switch (GSLAM::Random::RandomInt(0,4)) {
+        case 0:
+        {
+            GSLAM::GImage img=image;
+        }
+            break;
+        case 1:
+        {
+            GSLAM::GImage imgClone=image.clone();
+        }
+            break;
+        case 2:
+        {
+            GSLAM::GImage  matShot(image.rows,image.cols,image.type(),image.data);
+        }
+            break;
+        case 3:
+        {
+            cv::Mat       matClone=image.clone();
+        }
+            break;
+        case 4:
+        {
+            cv::Mat       mat=image;
+        }
+            break;
+        case 5:
+        {
+            GSLAM::GImage img(256,256,CV_8UC4);
+            image=img;
+        }
+            break;
+        default:
+            break;
+        }
+    }
+}
+
+void testGImageReadThreadSafe(int threadNumber=4,double seconds=1)
+{
+    std::vector<std::thread> threads;
+
+    int shouldStop=0;
+    GSLAM::GImage image(256,256,CV_8UC4);
+    for(int i=0;i<threadNumber;i++)
+    {
+        threads.push_back(std::thread(&readWriteThread,
+                                      std::ref(image),
+                                      std::ref(shouldStop)));
+    }
+
+    GSLAM::Rate::sleep(seconds);
+    shouldStop=1;
+
+    for(int i=0;i<threads.size();i++)
+    {
+        while(!threads[i].joinable()) GSLAM::Rate::sleep(0.01);
+        threads[i].join();
+    }
+}
+
+TEST(GImageTest,GImageReadThreadSafe)
+{
+    testGImageReadThreadSafe(4,1);
 }
 
 TEST(GImageTest,CheckGImageType)

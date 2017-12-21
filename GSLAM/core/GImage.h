@@ -176,6 +176,7 @@ public:
         }
 
         int byteNum=total()*elemSize();
+        if(byteNum<=0) return;
         data=(uchar*)fastMalloc(byteNum+sizeof(int*));
         if(!data)
         {
