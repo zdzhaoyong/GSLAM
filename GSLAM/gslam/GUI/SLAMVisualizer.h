@@ -21,7 +21,11 @@ public:
     bool open(QString pluginPath){
         _slam=SLAM::create(pluginPath.toStdString());
 
-        if(_slam) _slam->setCallback(this);
+        if(_slam)
+        {
+            _slam->call("SetSvar",&svar);
+            _slam->setCallback(this);
+        }
         return _slam.get();
     }
 

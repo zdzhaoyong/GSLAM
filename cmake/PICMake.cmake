@@ -19,6 +19,7 @@
 #   1.2.0 2017.08.30 : removed dependency of violate pi_collect_packages and auto call it when required, mv pi_add_target and pi_add_targets to macros
 #   1.2.1 2017.09.01 : added lisence and auto get PI_CMAKE_VERSION, change REQUIRED to MODULES for auto package collect
 #   1.2.2 2017.09.12 : fixed bug of pi_add_target should not call return() in macros when dependency not meet
+#   1.2.3 2017.12.27 : fixed bug of multi pi_install
 ######################################################################################
 #                               FUNCTIONS
 # pi_collect_packagenames(<RESULT_NAME>　[VERBOSE] [path1 path2 ...])
@@ -185,22 +186,25 @@ function(pi_install)
   endforeach()
   
 
-# Auto uninstall
-  if(NOT EXISTS "${PROJECT_BINARY_DIR}/cmake_uninstall.cmake")
-    file(WRITE "${PROJECT_BINARY_DIR}/cmake_uninstall.cmake" "IF(NOT EXISTS \"${CMAKE_CURRENT_BINARY_DIR}/install_manifest.txt\")
-  MESSAGE(FATAL_ERROR \"Cannot find install manifest: ${CMAKE_CURRENT_BINARY_DIR}/install_manifest.txt\")
-ENDIF()
-FILE(READ \"${CMAKE_CURRENT_BINARY_DIR}/install_manifest.txt\" files)
-STRING(REGEX REPLACE \"\\n\" \";\" files \"\${files}\")
-FOREACH(file \${files})
-  MESSAGE(STATUS \"Uninstalling \${file}\")
-  #EXECUTE_PROCESS(COMMAND rm \"\${file}\")
-  file(REMOVE \"\${file}\")
-ENDFOREACH()
-    ")
-    add_custom_target(uninstall "${CMAKE_COMMAND}" -P "${PROJECT_BINARY_DIR}/cmake_uninstall.cmake")
-  else()
-    add_custom_target(uninstall "${CMAKE_COMMAND}" -P "${PROJECT_BINARY_DIR}/cmake_uninstall.cmake")
+  # Auto uninstall
+
+  if(NOT TARGET uninstall)
+      if(NOT EXISTS "${PROJECT_BINARY_DIR}/cmake_uninstall.cmake")
+          file(WRITE "${PROJECT_BINARY_DIR}/cmake_uninstall.cmake" "IF(NOT EXISTS \"${CMAKE_CURRENT_BINARY_DIR}/install_manifest.txt\")
+              MESSAGE(FATAL_ERROR \"Cannot find install manifest: ${CMAKE_CURRENT_BINARY_DIR}/install_manifest.txt\")
+              ENDIF()
+              FILE(READ \"${CMAKE_CURRENT_BINARY_DIR}/install_manifest.txt\" files)
+              STRING(REGEX REPLACE \"\\n\" \";\" files \"\${files}\")
+              FOREACH(file \${files})
+              MESSAGE(STATUS \"Uninstalling \${file}\")
+              #EXECUTE_PROCESS(COMMAND rm \"\${file}\")
+              file(REMOVE \"\${file}\")
+              ENDFOREACH()
+              ")
+          add_custom_target(uninstall "${CMAKE_COMMAND}" -P "${PROJECT_BINARY_DIR}/cmake_uninstall.cmake")
+      else()
+          add_custom_target(uninstall "${CMAKE_COMMAND}" -P "${PROJECT_BINARY_DIR}/cmake_uninstall.cmake")
+      endif()
   endif()
 
 endfunction()

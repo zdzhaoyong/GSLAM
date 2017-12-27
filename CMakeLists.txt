@@ -1,6 +1,5 @@
 cmake_minimum_required(VERSION 2.8.6)
 project(GSLAM)
-set(CMAKE_FIND_ROOT_PATH C:/msys64)
 
 macro(GSLAM_FIND_VERSION)
   file(READ "${PROJECT_SOURCE_DIR}/GSLAM/core/GSLAM.h" _gslam_version_header)
@@ -84,7 +83,7 @@ endif()
 
 include_directories(.)
 
-pi_add_target(gslam BIN GSLAM/gslam ${QRC_FILES} REQUIRED System MODULES OpenCV Qt OpenGL GLEW GLUT QGLViewer)
+pi_add_target(gslam BIN GSLAM/gslam ${QRC_FILES} REQUIRED System MODULES QGLViewer OpenCV Qt OpenGL GLEW GLUT)
 pi_add_target(gslamDB_cfg SHARED GSLAM/plugins/cfg REQUIRED System MODULES OpenCV Qt)
 pi_add_target(gslam_optimizer SHARED GSLAM/plugins/optimizer_ceres REQUIRED System Eigen3 Ceres)
 pi_add_target(gslam_estimator SHARED GSLAM/plugins/estimator_opencv REQUIRED OpenCV)

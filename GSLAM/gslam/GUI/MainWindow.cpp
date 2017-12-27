@@ -13,6 +13,8 @@
 
 #if defined(HAS_QT)&&defined(HAS_QGLVIEWER)
 #include "SLAMVisualizer.h"
+#else
+class SLAMVisualizer;
 #endif
 
 #include "../../core/Svar.h"
@@ -353,6 +355,7 @@ void MainWindow::runSLAMMain()
 
         FramePtr frame=_d->frameVis->curFrame();
         if(!frame) break;
+#if defined(HAS_QT)&&defined(HAS_QGLVIEWER)
         for(SLAMVisualizer* vis:_d->slamVis)
         {
             string str=vis->slam()->type()+"::Track";
@@ -360,6 +363,7 @@ void MainWindow::runSLAMMain()
             vis->slam()->track(frame);
             timer.leave(str.c_str());
         }
+#endif
         _d->frameVis->setFrame(_d->dataset.grabFrame());
     }
     std::cerr<<"Play thread stoped."<<endl;

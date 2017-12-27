@@ -18,7 +18,7 @@ get_filename_component(QGLVIEWER_INC2 "${QGLVIEWER_INC1}/../" ABSOLUTE)
 SET(QGLVIEWER_INCLUDES ${QGLVIEWER_INC1} ${QGLVIEWER_INC2})
 
 
-FIND_LIBRARY(QGLVIEWER_LIBRARIES NAMES  qglviewer-qt4 QGLViewer-qt4 QGLViewer QGLViewer2
+FIND_LIBRARY(QGLVIEWER_LIBRARIES NAMES QGLViewer-qt4 qglviewer-qt4 QGLViewer QGLViewer2
     PATHS
     $ENV{QGLViewer_DIR}/lib
     /opt/libQGLViewer/lib
@@ -26,14 +26,10 @@ FIND_LIBRARY(QGLVIEWER_LIBRARIES NAMES  qglviewer-qt4 QGLViewer-qt4 QGLViewer QG
     /usr/local/lib
     /opt/local/lib
     /sw/lib
-    NO_DEFAULT_PATH
-    NO_SYSTEM_ENVIRONMENT_PATH
     )
 
 # FIXME: if under windows, use static lib
 IF( WIN32 )
-    SET(QGLVIEWER_DEFINITIONS -DQGLVIEWER_STATIC)
-ELSE( WIN32 )
     SET(QGLVIEWER_DEFINITIONS -DQGLVIEWER_STATIC)
 ENDIF( WIN32 )
 
