@@ -349,6 +349,11 @@ SLAMPtr SLAMVisualizer::slam(){
     return impl->_slam;
 }
 
+void SLAMVisualizer::releaseSLAM()
+{
+    impl->_slam=SLAMPtr();
+}
+
 void SLAMVisualizer::draw(){
     if(!impl->_slam) return;
     if(impl->_slam->isDrawable()) impl->_slam->draw();

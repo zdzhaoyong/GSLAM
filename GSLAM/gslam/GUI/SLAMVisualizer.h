@@ -16,6 +16,7 @@ public:
 
     SLAMPtr slam();
 
+    void releaseSLAM();
     virtual void draw();
     virtual void handle(const SPtr<GObject>& obj);
 

@@ -312,6 +312,13 @@ bool MainWindow::slotStop()
     _d->startAction->setDisabled(false);
     _d->pauseAction->setDisabled(true);
     _d->stopAction->setDisabled(true);
+
+#if defined(HAS_QT)&&defined(HAS_QGLVIEWER)
+        for(SLAMVisualizer* vis:_d->slamVis)
+        {
+            vis->releaseSLAM();
+        }
+#endif
     return true;
 }
 
