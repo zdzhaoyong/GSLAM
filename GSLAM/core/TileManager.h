@@ -148,6 +148,8 @@ public:
 
     virtual TilePtr getTile(int x,int y,int z){return TilePtr();}
     virtual bool    setTile(int x,int y,int z, const TilePtr& tile){return false;}
+    virtual int     maxZoomLevel()const{return -1;}
+    virtual int     minZoomLevel()const{return -1;}
 };
 typedef SPtr<TileManager> TileManagerPtr;
 
