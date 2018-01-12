@@ -349,6 +349,7 @@ public:
     }
 
     SLAMPtr         _slam;
+    MapPtr          _map;
     std::string     _slamplugin;
     MapVisualizer   _vis;
     bool            _firstFrame;
@@ -383,23 +384,26 @@ void SLAMVisualizer::releaseSLAM()
 }
 
 void SLAMVisualizer::draw(){
-    if(!impl->_slam) return;
-    if(impl->_slam->isDrawable()) impl->_slam->draw();
+    if(impl->_slam&&impl->_slam->isDrawable()) impl->_slam->draw();
     else impl->_vis.draw();
 }
 
 void SLAMVisualizer::handle(const SPtr<GObject>& obj){
     if(!obj) return;
-    if(FramePtr e=std::dynamic_pointer_cast<MapFrame>(obj))
+    if(auto e=std::dynamic_pointer_cast<Map>(obj))
+    {
+        impl->_map=e;
+    }
+    else if(FramePtr e=std::dynamic_pointer_cast<MapFrame>(obj))
     {
         e->setImage(GImage());
-        if(!impl->_slam) return;
-        impl->_vis.update(impl->_slam->getMap());
-        Point3d center=impl->_vis._scenceCenter;
-        setSceneCenter(qglviewer::Vec(center.x,center.y,center.z));
+        if(impl->_slam&&!impl->_map) impl->_map=impl->_slam->getMap();
+        impl->_vis.update(impl->_map);
         if(impl->_vis._scenceRadius>0)
         {
-            setScenceRadius(impl->_vis._scenceRadius*10);
+            Point3d center=impl->_vis._scenceCenter;
+            setSceneCenter(qglviewer::Vec(center.x,center.y,center.z));
+            setSceneRadius(impl->_vis._scenceRadius*10);
             if(impl->_firstFrame)
             {
                 impl->_firstFrame=false;
@@ -415,6 +419,7 @@ void SLAMVisualizer::handle(const SPtr<GObject>& obj){
     else if(auto e=std::dynamic_pointer_cast<CurrentFrameEvent>(obj))
     {
         if(!impl->_slam) return;
+        if(impl->_slam&&!impl->_map) impl->_map=impl->_slam->getMap();
         impl->_vis.update(impl->_slam->getMap(),e->_frame);
         update();
     }
