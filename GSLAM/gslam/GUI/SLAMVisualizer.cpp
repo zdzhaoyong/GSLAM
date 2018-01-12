@@ -16,7 +16,11 @@ public:
 
     virtual void draw()
     {
+        if(!svar.GetInt("SLAM.All",1)) return;
+
         GSLAM::ReadMutex lock(_mutex);
+        glPushMatrix();
+        glTranslated(_scenceOrigin.x,_scenceOrigin.y,_scenceOrigin.z);
 
         double& trajectoryWidth=svar.GetDouble("MainWindow.TrajectoryWidth",2.5);
         double& connectionWidth=svar.GetDouble("MainWindow.ConnectionWidth",1.);
@@ -81,7 +85,7 @@ public:
             _curFrameUpdated=false;
         }
 
-        if(svar.GetInt("MainWindow.DrawTrajectory",1))
+        if(svar.GetInt("SLAM.Trajectory",1))
         {
             glDisable(GL_LIGHTING);
             glBindBuffer(GL_ARRAY_BUFFER,_vetexTrajBuffer);
@@ -93,7 +97,7 @@ public:
             glDisableClientState(GL_VERTEX_ARRAY);
         }
 
-        if(svar.GetInt("MainWindow.DrawGPSTraj",1))
+        if(svar.GetInt("SLAM.GPSOffset",1))
         {
             glDisable(GL_LIGHTING);
             glBindBuffer(GL_ARRAY_BUFFER,_gpsTrajBuffer);
@@ -105,7 +109,7 @@ public:
             glDisableClientState(GL_VERTEX_ARRAY);
         }
 
-        if(svar.GetInt("MainWindow.DrawConnection",1))
+        if(svar.GetInt("SLAM.Connects",1))
         {
             glBindBuffer(GL_ARRAY_BUFFER,_vetexConnectionBuffer);
             glVertexPointer(3, GL_DOUBLE, 0, 0);
@@ -117,7 +121,7 @@ public:
         }
 
 
-        if(svar.GetInt("MainWindow.DrawPointCloud",1))
+        if(svar.GetInt("SLAM.PointCloud",1))
         {
             glBindBuffer(GL_ARRAY_BUFFER,_pointCloudVertexBuffer);
             glVertexPointer(3, GL_FLOAT, 0, 0);
@@ -131,7 +135,7 @@ public:
             glDisableClientState(GL_VERTEX_ARRAY);
         }
 
-        if(svar.GetInt("MainWindow.DrawFrames",1))
+        if(svar.GetInt("SLAM.Frames",1))
         {
             for(auto sim3:_keyframes)
             {
@@ -139,7 +143,8 @@ public:
             }
         }
 
-        if(svar.GetInt("MainWindow.DrawCurrentFrame",1))
+        glPopMatrix();
+        if(svar.GetInt("SLAM.CurrentFrame",1))
         {
             drawRect(_curFrame,curFrameColor);
 
@@ -150,7 +155,6 @@ public:
             glDrawArrays(GL_LINES,0,_curConnection.size());
             glDisableClientState(GL_VERTEX_ARRAY);
         }
-
     }
 
     void glVertex(const GSLAM::Point3f& p){glVertex3f(p.x,p.y,p.z);}
@@ -199,15 +203,30 @@ public:
         std::vector<GSLAM::SIM3> keyframes;
         std::vector<Point3f> vetexTraj,gpsTraj;
         std::vector<Point3d> vetexConnection,gpsError;
+        GSLAM::Point3d       boxMin(1e10,1e10,1e10),boxMax(-1e10,-1e10,-1e10);
+        bool                 centerSeted=false;
+        Point3d              center;
         for(GSLAM::FramePtr& fr:mapFrames)
         {
-            keyframes.push_back(GSLAM::SIM3(fr->getPose(),fr->getMedianDepth()*0.1));
-            Point3d t=fr->getPose().get_translation();
+            if(!centerSeted)
+            {
+                center=fr->getPose().get_translation();
+                centerSeted=true;
+            }
+            Point3d t=fr->getPose().get_translation()-center;
+            keyframes.push_back(GSLAM::SIM3(fr->getPose().get_rotation(),
+                                            t,
+                                            fr->getMedianDepth()*0.1));
+
             vetexTraj.push_back(t);
+            boxMin.x=std::min(boxMin.x,t.x);boxMax.x=std::max(boxMax.x,t.x);
+            boxMin.y=std::min(boxMin.y,t.y);boxMax.y=std::max(boxMax.y,t.y);
+            boxMin.z=std::min(boxMin.z,t.z);boxMax.z=std::max(boxMax.z,t.z);
 
             Point3d ecef;
             if(fr->getGPSECEF(ecef))
             {
+                ecef=ecef-center;
                 gpsTraj.push_back(ecef);
                 gpsError.push_back(t);
                 gpsError.push_back(ecef);
@@ -220,7 +239,7 @@ public:
                 GSLAM::FramePtr ch=_map->getFrame(child.first);
                 if(!ch) continue;
                 vetexConnection.push_back(t);
-                vetexConnection.push_back(ch->getPoseScale().get_translation());
+                vetexConnection.push_back(ch->getPoseScale().get_translation()-center);
             }
         }
 
@@ -232,7 +251,7 @@ public:
             pointCloudColors.reserve(mapPoints.size());
             for(GSLAM::PointPtr& pt:mapPoints)
             {
-                pointCloudVertex.push_back(pt->getPose());
+                pointCloudVertex.push_back(pt->getPose()-center);
                 auto color=pt->getColor();
                 pointCloudColors.push_back(color);
             }
@@ -253,7 +272,7 @@ public:
                     if(!fr->getKeyPointColor(i,color)) break;
                     if(idepth.y>1000)
                     {
-                        pointCloudVertex.push_back(sim3*(cam.UnProject(pt)/idepth.x));
+                        pointCloudVertex.push_back(sim3*(cam.UnProject(pt)/idepth.x)-center);
                         pointCloudColors.push_back(color);//osg::Vec4(color.x/255.,color.y/255.,color.z/255.,1));
                     }
                 }
@@ -270,6 +289,12 @@ public:
             _pointCloudVertex=pointCloudVertex;
             _pointCloudColors=pointCloudColors;
             _mapUpdated=true;
+            _scenceCenter=(boxMax+boxMin)/2.+center;
+            _scenceRadius=(boxMax-boxMin).norm()/2;
+            _viewPoint.get_rotation()=_curFrame.get_rotation();
+            double r[9];_viewPoint.get_rotation().getMatrix(r);
+            _viewPoint.get_translation()=_scenceCenter-_scenceRadius*Point3d(r[2],r[5],r[8]);
+            _scenceOrigin=center;
         }
     }
 
@@ -310,6 +335,9 @@ public:
     uint                    _pointCloudVertexBuffer;
     uint                    _pointCloudColorsBuffer;
     bool                    _mapUpdated,_curFrameUpdated;
+    GSLAM::Point3d          _scenceCenter,_scenceOrigin;
+    float                   _scenceRadius;
+    GSLAM::SE3              _viewPoint;
 };
 
 class SLAMVisualizerImpl
@@ -367,14 +395,20 @@ void SLAMVisualizer::handle(const SPtr<GObject>& obj){
         e->setImage(GImage());
         if(!impl->_slam) return;
         impl->_vis.update(impl->_slam->getMap());
-        if(impl->_firstFrame)
+        Point3d center=impl->_vis._scenceCenter;
+        setSceneCenter(qglviewer::Vec(center.x,center.y,center.z));
+        if(impl->_vis._scenceRadius>0)
         {
-            impl->_firstFrame=false;
-            SE3 pose=e->getPose();
-            const pi::Point3f& t=pose.get_translation();
-            const pi::SO3f& r=pose.get_rotation();
-            camera()->setPosition(qglviewer::Vec(t.x,t.y,t.z));
-            camera()->setOrientation(qglviewer::Quaternion(r.w,r.z,-r.y,-r.x));
+            setScenceRadius(impl->_vis._scenceRadius*10);
+            if(impl->_firstFrame)
+            {
+                impl->_firstFrame=false;
+                SE3 pose=impl->_vis._viewPoint;
+                const pi::Point3f& t=pose.get_translation();
+                const pi::SO3f& r=pose.get_rotation();
+                camera()->setPosition(qglviewer::Vec(t.x,t.y,t.z));
+                camera()->setOrientation(qglviewer::Quaternion(r.w,r.z,-r.y,-r.x));
+            }
         }
         update();
     }
