@@ -209,7 +209,7 @@ public:
         return ".dylib";
 #elif defined(hpux) || defined(_hpux)
         return ".sl";
-#elif defined(__CYGWIN__)
+#elif defined(WIN32) || defined(WIN64)
         return ".dll";
 #else
         return ".so";
@@ -227,6 +227,7 @@ private:
     std::string _path;
     void*       _handle;
 };
+typedef SPtr<SharedLibrary> SharedLibraryPtr;
 
 
 class Registry

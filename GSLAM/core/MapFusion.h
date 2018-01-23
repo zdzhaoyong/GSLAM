@@ -22,6 +22,7 @@ public:
     virtual bool valid(){return false;}                         // whether if this Map2DFusion usable
     virtual void draw(){}                                       // Plot things with OpenGL
     virtual bool feed(FramePtr frame){return false;}
+    virtual bool feed(MapPtr   map){return false;}
     virtual bool save(const std::string& filePath){return false;}
 
     virtual bool setCallBack(GObjectHandle* callback=NULL){cbk=callback;return true;}

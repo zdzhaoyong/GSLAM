@@ -1780,7 +1780,7 @@ inline bool Vocabulary::load(const std::string &filename)
 {
     // try binary formats : *.gbow
     {
-        std::ifstream ifile(filename);
+        std::ifstream ifile(filename,std::ios::in|std::ios::binary);
         if (!ifile)
         {
             std::cerr<<("Vocabulary::load Could not open file :"+filename+" for reading")<<std::endl;

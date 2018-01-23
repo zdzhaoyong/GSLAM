@@ -140,6 +140,9 @@
 #ifdef ERROR
 #undef ERROR
 #endif
+#ifdef LOG
+#undef LOG
+#endif
 // Log severity level constants.
 const int FATAL   = -3;
 const int ERROR   = -2;

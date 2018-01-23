@@ -7,21 +7,21 @@
 namespace GSLAM{
 
 #define REGISTER_DATASET(D,E) \
-    extern "C" SPtr<GSLAM::Dataset> create##D##E(){ return SPtr<GSLAM::Dataset>(new D());}\
+    extern "C" SPtr<GSLAM::Dataset> createDataset##E(){ return SPtr<GSLAM::Dataset>(new D());}\
     class D##E##_Register{ \
     public: D##E##_Register(){\
-    GSLAM::DatasetFactory::instance()._ext2creator.insert(#E,create##D##E);\
+    GSLAM::DatasetFactory::instance()._ext2creator.insert(#E,createDataset##E);\
 }}D##E##_instance;
 
 /// create
 class Dataset;
+typedef SPtr<Dataset> DatasetPtr;
 typedef SPtr<Dataset> (*funcCreateDataset)();
 
 // A dataset configuration file : DatasetName.DatasetType --eg. Sequence1.kitti desk.tumrgbd
 class Dataset : public GSLAM::GObject
 {
 public:
-    typedef SPtr<Dataset> DatasetPtr;
     typedef std::vector<std::string> StrVec;
     Dataset():_name("Untitled"){}
     virtual ~Dataset(){}
@@ -58,7 +58,7 @@ inline bool Dataset::open(const std::string& dataset){
     return false;
 }
 
-inline SPtr<Dataset> DatasetFactory::create(std::string dataset)
+inline DatasetPtr DatasetFactory::create(std::string dataset)
 {
     std::string extension;
     // The input path could be dataset configuration file or just a folder path
@@ -71,7 +71,10 @@ inline SPtr<Dataset> DatasetFactory::create(std::string dataset)
 
     if(!instance()._ext2creator.exist(extension))
     {
-        if(!Registry::get("libgslamDB_"+extension).get()) return DatasetPtr();
+        SharedLibraryPtr plugin=Registry::get("libgslamDB_"+extension);
+        if(!plugin.get()) return DatasetPtr();
+        funcCreateDataset createFunc=(funcCreateDataset)plugin->getSymbol("createDataset"+extension);
+        if(createFunc) return createFunc();
     }
 
     if(!instance()._ext2creator.exist(extension)) return DatasetPtr();
