@@ -189,7 +189,7 @@ inline bool UndistorterImpl::undistortFast(const GImage& image, GImage& result)
     int wh=width_out*height_out;
     int c=image.channels();
 
-    result=GImage(width_out,height_out,image.type());
+    result=GImage(height_out,width_out,image.type());
 
     if(c==1)
     {
@@ -216,6 +216,7 @@ inline bool UndistorterImpl::undistortFast(const GImage& image, GImage& result)
     }
     else
     {
+        int eleSize=image.elemSize();
         Byte<1>* p_out=(Byte<1>*)result.data;
         Byte<1>* p_img=(Byte<1>*)image.data;
 //        #pragma omp parallel for
@@ -223,8 +224,7 @@ inline bool UndistorterImpl::undistortFast(const GImage& image, GImage& result)
         {
             if(remapX[i]>0)
             {
-                for(int j=0;j<c;j++)
-                    p_out[i*c+j]=p_img[remapFast[i]*c+j];
+                memcpy(p_out+eleSize*i,p_img+eleSize*remapFast[i],eleSize);
             }
         }
     }
@@ -254,7 +254,7 @@ inline bool UndistorterImpl::undistort(const GImage& image, GImage& result)
     int wh=width_out*height_out;
     int c=image.channels();
 
-    result=GImage(width_out,height_out,image.type());
+    result=GImage(height_out,width_out,image.type());
 
     if(c==1)
     {

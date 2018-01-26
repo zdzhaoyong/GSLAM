@@ -514,7 +514,7 @@ class GSLAM_EXPORT LoggerVoidify {
 #  define LG      LOG_IF(INFO, INFO <= MAX_LOG_LEVEL)
 #  define VLOG_IF(n, condition) LOG_IF(n, (n <= MAX_LOG_LEVEL) && condition)
 #else
-#  define LOG(n)  MessageLogger((char *)__FILE__, __LINE__, "native", n).stream()    // NOLINT
+#  define LOG(n)  MessageLogger("RTMapper", 3 , "native", INFO).stream() //MessageLogger((char *)__FILE__, __LINE__, "native", n).stream()    // NOLINT
 #  define VLOG(n) MessageLogger((char *)__FILE__, __LINE__, "native", n).stream()    // NOLINT
 #  define LG      MessageLogger((char *)__FILE__, __LINE__, "native", INFO).stream() // NOLINT
 #  define VLOG_IF(n, condition) LOG_IF(n, condition)
