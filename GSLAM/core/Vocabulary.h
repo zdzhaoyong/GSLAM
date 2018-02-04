@@ -103,6 +103,9 @@ public:
      */
     bool load(const std::string &filename);
 
+
+    bool load(std::istream& ifs);
+
     /**
      * Returns the number of words in the vocabulary
      * @return number of words
@@ -1775,73 +1778,79 @@ inline bool Vocabulary::save(const std::string &filename,  bool compressed) cons
 
 // --------------------------------------------------------------------------
 
+inline bool Vocabulary::load(std::istream& ifile)
+{
+    uint64_t sig;//magic number describing the file
+    ifile.read((char*)&sig,sizeof(sig));
+    if (sig==88877711233) {//it is a binary file. read from it
+        bool compressed;
+        uint32_t nnodes;
+        ifile.read((char*)&compressed,sizeof(compressed));
+        ifile.read((char*)&nnodes,sizeof(nnodes));
+        if(nnodes==0) return false;
+        std::istream *_used_str=0;
+        if (compressed){
+            return false;
+        }
+        else
+        {
+            _used_str=&ifile;
+        }
+
+        _used_str->read((char*)&m_k,sizeof(m_k));
+        _used_str->read((char*)&m_L,sizeof(m_L));
+        _used_str->read((char*)&m_scoring,sizeof(m_scoring));
+        _used_str->read((char*)&m_weighting,sizeof(m_weighting));
+
+        createScoringObject();
+
+        int type,cols,rows;
+        _used_str->read((char*)&cols,sizeof(cols));
+        _used_str->read((char*)&rows,sizeof(rows));
+        _used_str->read((char*)&type,sizeof(type));
+        m_nodes.resize(nnodes);
+        m_nodeDescriptors=TinyMat(m_nodes.size(),cols,type);
+
+        for(size_t i = 1; i < m_nodes.size(); ++i)
+        {
+            Node& node = m_nodes[i];
+            node.id=i;
+            _used_str->read((char*)&node.parent,sizeof(node.parent));
+            _used_str->read((char*)&node.weight,sizeof(node.weight));
+            m_nodes[node.parent].addChild(node.id);
+
+            TinyMat m=m_nodeDescriptors.row(i);
+            _used_str->read((char*)m.ptr<char>(0),m.elemSize()*m.cols);
+            node.descriptor=m;
+         }
+         //  words
+        uint32_t m_words_size;
+        _used_str->read((char*)&m_words_size,sizeof(m_words_size));
+        m_words.resize(m_words_size);
+        for(unsigned int i = 0; i < m_words.size(); ++i)
+        {
+            NodeId nid;
+            _used_str->read((char*)&nid,sizeof(nid));
+            m_words[i] = &m_nodes[nid];
+            m_nodes[nid].word_id=i;
+        }
+        return true;
+    }
+    std::cerr<<"Vocabulary: Wrong signature.";
+    return false;
+}
 
 inline bool Vocabulary::load(const std::string &filename)
 {
     // try binary formats : *.gbow
     {
         std::ifstream ifile(filename,std::ios::in|std::ios::binary);
-        if (!ifile)
+        if (!ifile.is_open())
         {
-            std::cerr<<("Vocabulary::load Could not open file :"+filename+" for reading")<<std::endl;
+            std::cerr<<"Vocabulary::load Could not open file "<<filename<<" for reading"<<std::endl;
             return false;
         }
-        uint64_t sig;//magic number describing the file
-        ifile.read((char*)&sig,sizeof(sig));
-        if (sig==88877711233) {//it is a binary file. read from it
-            bool compressed;
-            uint32_t nnodes;
-            ifile.read((char*)&compressed,sizeof(compressed));
-            ifile.read((char*)&nnodes,sizeof(nnodes));
-            if(nnodes==0) return false;
-            std::istream *_used_str=0;
-            if (compressed){
-                return false;
-            }
-            else
-            {
-                _used_str=&ifile;
-            }
-
-            _used_str->read((char*)&m_k,sizeof(m_k));
-            _used_str->read((char*)&m_L,sizeof(m_L));
-            _used_str->read((char*)&m_scoring,sizeof(m_scoring));
-            _used_str->read((char*)&m_weighting,sizeof(m_weighting));
-
-            createScoringObject();
-
-            int type,cols,rows;
-            _used_str->read((char*)&cols,sizeof(cols));
-            _used_str->read((char*)&rows,sizeof(rows));
-            _used_str->read((char*)&type,sizeof(type));
-            m_nodes.resize(nnodes);
-            m_nodeDescriptors=TinyMat(m_nodes.size(),cols,type);
-
-            for(size_t i = 1; i < m_nodes.size(); ++i)
-            {
-                Node& node = m_nodes[i];
-                node.id=i;
-                _used_str->read((char*)&node.parent,sizeof(node.parent));
-                _used_str->read((char*)&node.weight,sizeof(node.weight));
-                m_nodes[node.parent].addChild(node.id);
-
-                TinyMat m=m_nodeDescriptors.row(i);
-                _used_str->read((char*)m.ptr<char>(0),m.elemSize()*m.cols);
-                node.descriptor=m;
-             }
-             //  words
-            uint32_t m_words_size;
-            _used_str->read((char*)&m_words_size,sizeof(m_words_size));
-            m_words.resize(m_words_size);
-            for(unsigned int i = 0; i < m_words.size(); ++i)
-            {
-                NodeId nid;
-                _used_str->read((char*)&nid,sizeof(nid));
-                m_words[i] = &m_nodes[nid];
-                m_nodes[nid].word_id=i;
-            }
-            return true;
-        }
+        return load(ifile);
     }
 
     // other formats

@@ -89,7 +89,7 @@ inline bool UndistorterImpl::prepareReMap()
     if( !(camera_in.isValid() && camera_out.isValid()) )
     {
         valid = false;
-        cout<<("Undistorter does not get vallid camera.");
+//        cout<<("Undistorter does not get vallid camera.");
         return false;
     }
     // Prepare remap
