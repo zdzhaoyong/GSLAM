@@ -7,6 +7,8 @@
 
 #if defined(HAS_OPENCV) || defined(HAS_OPENCV3)
 #include <opencv2/core/core.hpp>
+#else
+typedef unsigned char uchar;
 #endif
 
 #ifndef CV_XADD
@@ -44,10 +46,6 @@
     #endif
   #endif
 
-#elif defined WIN32 || defined _WIN32 || defined WINCE
-  namespace cv { CV_EXPORTS int _interlockedExchangeAdd(int* addr, int delta); }
-  #define CV_XADD cv::_interlockedExchangeAdd
-
 #else
   static inline int CV_XADD(int* addr, int delta)
   { int tmp = *addr; *addr += delta; return tmp; }
@@ -57,7 +55,6 @@
 
 namespace GSLAM{
 
-typedef uint8_t uchar;
 
 enum GElementType{
     GElementType_8U =0,

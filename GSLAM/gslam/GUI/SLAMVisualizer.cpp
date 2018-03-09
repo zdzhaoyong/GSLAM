@@ -6,7 +6,7 @@
 namespace GSLAM{
 bool compareFr(GSLAM::FramePtr a,GSLAM::FramePtr b)
 {
-    return a->id()<b->id();   //升序排列，如果改为return a>b，则为降序
+    return a->id()<b->id();
 }
 
 class MapVisualizer : public GSLAM::GObject

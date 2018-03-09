@@ -33,8 +33,8 @@ struct PlyObject
 
     void addLine(Point3d first,Point3d second,Color3b color=Color3b(255,255,255),pi::Point3f normal=Point3f(0,0,1))
     {
-        edges.push_back(vertices.size());
-        edges.push_back(vertices.size()+1);
+        edges.push_back((uint32_t)vertices.size());
+        edges.push_back((uint32_t)vertices.size()+1);
         addPoint(first,color,normal);
         addPoint(second,color,normal);
     }
@@ -49,7 +49,7 @@ struct PlyObject
             return false;
         }
 
-        int _verticesPerFace=3;
+        uint32_t _verticesPerFace=3;
         bool binary=false;
 
         file << "ply";

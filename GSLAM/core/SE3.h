@@ -171,7 +171,12 @@ public:
 #ifdef SOPHUS_SE3_HPP
     operator Sophus::SE3Group<Precision>()
     {
-        return *(Sophus::SE3Group<Precision>*)&my_rotation;
+        assert(sizeof(Sophus::SE3Group<Precision>) != sizeof(*this));
+//        return *(Sophus::SE3Group<Precision>*)&my_rotation;// FIXME: segment fault occurs
+
+        Sophus::SE3Group<Precision> sophusSE3;
+        for(int i=0;i<7;i++) sophusSE3.data()[i]=((double*)this)[i];
+        return sophusSE3;
     }
 
     SE3<Precision>(const Sophus::SE3Group<Precision>& sophus)

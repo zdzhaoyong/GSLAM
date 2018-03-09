@@ -69,7 +69,7 @@ private:
     Event& operator = (const Event&);
 
     bool            _auto;
-    std::atomic<bool> _state; // 件事的状态
+    std::atomic<bool> _state; 
     std::mutex      _mutex;
     std::condition_variable _cond;
 };

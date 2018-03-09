@@ -130,9 +130,9 @@
 #endif
 
 
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) && 0
 # define GSLAM_EXPORT __declspec(dllexport)
-#elif defined(_MSC_VER)
+#elif defined(_MSC_VER) && 0
 # define GSLAM_EXPORT __declspec(dllimport)
 #else
 # define GSLAM_EXPORT

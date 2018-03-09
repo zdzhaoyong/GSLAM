@@ -180,7 +180,7 @@ inline std::string CameraImpl::info()const{
     return sst.str();
 }
 
-inline bool CameraPinhole::applyScale(double scale) { w*=scale; h*=scale; fx*=scale;fy*=scale;cx*=scale;cy*=scale; refreshParaments(); return true; }
+inline bool CameraPinhole::applyScale(double scale) { w=(int32_t)(w*scale); h=(int32_t)(h*scale); fx*=scale;fy*=scale;cx*=scale;cy*=scale; refreshParaments(); return true; }
 
 inline Point2d CameraPinhole::Project(const Point3d& p3d)const
 {
@@ -250,7 +250,7 @@ inline int CameraATAN::refreshParaments()
 }
 
 inline bool CameraATAN::applyScale(double scale)
-{ w*=scale; h*=scale; fx*=scale; fy*=scale; cx*=scale; cy*=scale; refreshParaments(); return true;}
+{ w=(int32_t)(w*scale); h=(int32_t)(h*scale); fx*=scale; fy*=scale; cx*=scale; cy*=scale; refreshParaments(); return true;}
 
 inline Point2d CameraATAN::Project(const Point3d& p3d)const
 {
@@ -343,7 +343,7 @@ inline Point3d CameraATAN::UnProject(const Point2d& p2d)const
     else return Point3d((p2d.x-cx)*fx_inv,(p2d.y-cy)*fy_inv,1.);
 }
 
-inline bool CameraOpenCV::applyScale(double scale){ w*=scale; h*=scale; fx*=scale;fy*=scale;cx*=scale;cy*=scale; refreshParaments(); return true;}
+inline bool CameraOpenCV::applyScale(double scale){ w=(int32_t)(w*scale); h=(int32_t)(h*scale); fx*=scale;fy*=scale;cx*=scale;cy*=scale; refreshParaments(); return true;}
 
 inline int CameraOpenCV::refreshParaments()
 {
@@ -407,10 +407,10 @@ inline Camera::Camera(const SPtr<CameraImpl>& Impl):impl(Impl)
 inline Camera::Camera(const std::vector<double> &p)
 {
     CameraImpl* cam;
-    if(p.size()==2) cam=new CameraIdeal(p[0],p[1]);
-    else if(p.size()==6) cam=new CameraPinhole(p[0],p[1],p[2],p[3],p[4],p[5]);
-    else if(p.size()==7) cam=new CameraATAN(p[0],p[1],p[2],p[3],p[4],p[5],p[6]);
-    else if(p.size()==11) cam=new CameraOpenCV(p[0],p[1],p[2],p[3],p[4],p[5],p[6],p[7],p[8],p[9],p[10]);
+    if(p.size()==2) cam=new CameraIdeal((int)p[0],(int)p[1]);
+    else if(p.size()==6) cam=new CameraPinhole((int)p[0],(int)p[1],p[2],p[3],p[4],p[5]);
+    else if(p.size()==7) cam=new CameraATAN((int)p[0],(int)p[1],p[2],p[3],p[4],p[5],p[6]);
+    else if(p.size()==11) cam=new CameraOpenCV((int)p[0],(int)p[1],p[2],p[3],p[4],p[5],p[6],p[7],p[8],p[9],p[10]);
     else cam=new CameraImpl();
     impl=SPtr<CameraImpl>(cam);
 }

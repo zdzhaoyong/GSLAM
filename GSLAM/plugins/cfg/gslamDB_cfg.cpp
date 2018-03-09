@@ -1,7 +1,9 @@
 #include "../../core/Dataset.h"
 #include "../../core/VecParament.h"
 #include "../../core/VideoFrame.h"
+#ifdef HAS_OPENCV
 #include <opencv2/highgui/highgui.hpp>
+#endif
 
 
 using namespace std;
@@ -130,7 +132,7 @@ public:
         SPtr<GSLAM::MapFrame> frame(new GSLAM::FrameMono(_frameId++,imageTime,img,_camera,IMAGE_BGRA));
         prepareImageFrame();
         return frame;
-#else
+#elif defined(HAS_QT)
         QImage qimage(imgFile.c_str(),"Format_RGB888");
         GImage img;
 

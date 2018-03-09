@@ -68,13 +68,13 @@ inline bool HashMap::insertMapFrame(const FramePtr& frame)
 inline bool HashMap::eraseMapPoint(const PointID& pointId)
 {
     WriteMutex lock(_mutexPoints);
-    return _points.erase(pointId);
+    return _points.erase(pointId)!=0;
 }
 
 inline bool HashMap::eraseMapFrame(const FrameID& frameId)
 {
     WriteMutex lock(_mutexFrames);
-    return _frames.erase(frameId);
+    return _frames.erase(frameId)!=0;
 }
 
 inline void  HashMap::clear()

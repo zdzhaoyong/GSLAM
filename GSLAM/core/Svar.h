@@ -1479,7 +1479,7 @@ inline bool Scommand::Call(std::string sCommand, std::string sParams)
  */
 inline bool Scommand::Call(const std::string& sCommand)
 {
-    unsigned int found=sCommand.find_first_of(" ");
+    size_t found=sCommand.find_first_of(" ");
 //    cout<<"sCommand="<<sCommand<<"\nFound="<<found<<"\nCommand="<<sCommand.substr(0,found)<<"\nParaments="<<sCommand.substr(found+1);
     if(found<sCommand.size())
         return Call(sCommand.substr(0,found),sCommand.substr(found+1));

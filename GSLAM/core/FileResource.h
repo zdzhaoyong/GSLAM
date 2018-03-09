@@ -10,7 +10,7 @@
 public:\
     ResourceRegister##R(){GSLAM::FileResource::Register(resource_names,resource_index,resource_data);}\
 }ResourceRegister##R##inst;
-
+typedef unsigned char u_char;
 namespace GSLAM{
 
 class FileResource{

@@ -1,7 +1,7 @@
 #ifndef SPTR_H
 #define SPTR_H
 
-#if __cplusplus >= 201103L
+#if 1//__cplusplus >= 201103L
 #include <memory>
 
 #define SPtr std::shared_ptr

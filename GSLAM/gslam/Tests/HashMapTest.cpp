@@ -51,7 +51,7 @@ public:
         }
     }
 
-    GSLAM::FrameID _maxID;
+    int            _maxID;
     bool           _shouldStop;
     GSLAM::MapPtr  _map;
 };

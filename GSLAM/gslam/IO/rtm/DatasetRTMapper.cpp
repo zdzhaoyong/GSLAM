@@ -3,16 +3,14 @@
 #include "../../../core/Svar.h"
 #include "../../../core/VecParament.h"
 #include "../../../core/Timer.h"
+#include <list>
+
 #undef HAS_OPENCV
 
-#ifdef HAS_OPENCV
-#include <opencv2/highgui/highgui.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
-#elif defined(HAS_QT)
+#ifdef HAS_QT
 #include <QFileInfo>
 #include <QImage>
 #include <QDir>
-#endif
 
 using namespace std;
 using namespace GSLAM;
@@ -48,6 +46,7 @@ public:
     virtual GSLAM::GImage  getImage(int idx,int channalMask){
         if(idx==0)
         {
+#ifdef HAS_QT
             if(_image.empty())
             {
                 using namespace GSLAM;
@@ -67,7 +66,9 @@ public:
                                GImageType<uchar,1>::Type,qimage.bits(),true);
                 }
             }
-            else  return _image;
+            else  
+#endif
+				return _image;
         }
         else return _thumbnail;
     }   // Just return the image if only one channel is available
@@ -178,25 +179,25 @@ public:
             return open(var,"Dataset");
     }
 
-    bool open(Svar& var,const std::string& name)
-    {
-        if(_ifs.is_open())_ifs.close();
-        _ifs.open((_seqTop+"/imageLists.txt").c_str());
-        if(!_ifs.is_open()) return false;
-        _cameraName=var.GetString(name+".Camera",name+".Camera");
-        _camera=camFromName(_cameraName,var);
-        if(!_camera.isValid()) return false;
-        _name=name;
-        _frameId=1;
-
-        _shouldStop=false;
-        _prepareThread=std::thread(&DatasetRTMapper::run,this);
-        return true;
-    }
 
     bool isOpened(){return _ifs.is_open()&&_camera.isValid();}
 
 #if defined(HAS_QT)
+	bool open(Svar& var, const std::string& name)
+	{
+		if (_ifs.is_open())_ifs.close();
+		_ifs.open((_seqTop + "/imageLists.txt").c_str());
+		if (!_ifs.is_open()) return false;
+		_cameraName = var.GetString(name + ".Camera", name + ".Camera");
+		_camera = camFromName(_cameraName, var);
+		if (!_camera.isValid()) return false;
+		_name = name;
+		_frameId = 1;
+
+		_shouldStop = false;
+		_prepareThread = std::thread(&DatasetRTMapper::run, this);
+		return true;
+	}
     GSLAM::GImage imread(const QString& imgFile)
     {
         GSLAM::GImage thumbnail;
@@ -292,3 +293,5 @@ public:
 
 REGISTER_DATASET(DatasetRTMapper,rtm)
 
+
+#endif

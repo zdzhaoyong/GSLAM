@@ -200,7 +200,7 @@ inline double Timer::do_leave(const char *func_name)
 inline double Timer::getMeanTime(const std::string &name)  const
 {
     using namespace std;
-    std::unique_lock<std::mutex> lock(mutex);
+    std::unique_lock<std::mutex> lock(mMutex);
     map<string,TCallData>::const_iterator it = m_data.find(name);
     if (it==m_data.end())
          return 0;

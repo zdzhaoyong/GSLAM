@@ -62,7 +62,7 @@ inline DatasetPtr DatasetFactory::create(std::string dataset)
 {
     std::string extension;
     // The input path could be dataset configuration file or just a folder path
-    int dotPosition=dataset.find_last_of('.');
+    size_t dotPosition=dataset.find_last_of('.');
     if(dotPosition!=std::string::npos)// call by extension
     {
         extension=dataset.substr(dotPosition+1);
