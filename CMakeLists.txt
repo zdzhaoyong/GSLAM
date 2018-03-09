@@ -77,8 +77,10 @@ message("----------------------------------------------------------")
 # Now do build things
 #set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin)
 #set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/libs)
-if(QT_FOUND)
-qt4_add_resources(QRC_FILES GSLAM/gslam/GUI/res.qrc)
+if(QT4_FOUND)
+    qt4_add_resources(QRC_FILES GSLAM/gslam/GUI/res.qrc)
+elseif(QT5_FOUND)
+    qt5_add_resources(QRC_FILES GSLAM/gslam/GUI/res.qrc)
 endif()
 
 include_directories(.)

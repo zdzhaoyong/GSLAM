@@ -1,17 +1,16 @@
 find_package(Qt4)
-include(${QT_USE_FILE})
-add_definitions(${QT_DEFINITIONS})
-include_directories(${QT_INCLUDE_DIR})
 
-if( WIN32)     
-    set(QT_LIBRARIES QtGui4 QtCore4 QtXml4 QtOpenGL4 QtSql4 QtNetwork4 QtSvg4)
-    
-    # FIXME: 
-    set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} /mingw64/lib)
-	
-	message(STATUS "QT_LIBRARIES = ${QT_LIBRARIES}")
-else( WIN32 )
-    set(QT_LIBRARIES QtGui QtCore QtXml QtOpenGL QtSql QtNetwork QtSvg)
-endif( WIN32)
-
-set(QT_FOUND 1)
+if(QT4_FOUND)
+    set(QT_INCLUDES ${QT_INCLUDE_DIR})
+    set(QT_LIBRARIES Qt4::QtCore Qt4::QtGui Qt4::QtNetwork Qt4::QtOpenGL Qt4::QtSvg Qt4::QtSql Qt4::QtXml)
+    set(QT_FOUND true)
+    set(QT4_FOUND true)
+    set(QT_VERSION 4)
+else()
+    find_package(Qt5 COMPONENTS Core Gui Widgets Network OpenGL Svg Sql Xml REQUIRED)
+    set(QT_INCLUDES ${_qt5Core_install_prefix}/include)
+    set(QT_LIBRARIES Qt5::Core Qt5::Gui Qt5::Widgets Qt5::Network Qt5::OpenGL Qt5::Svg Qt5::Sql Qt5::Xml)
+    set(QT_FOUND true)
+    set(QT5_FOUND true)
+    set(QT_VERSION "${PACKAGE_VERSION}")
+endif()

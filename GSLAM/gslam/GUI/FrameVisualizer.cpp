@@ -207,8 +207,11 @@ InfomationViewer::InfomationViewer(QWidget* parent)
     setHorizontalHeaderLabels({"name","value"});
 
     QHeaderView *HorzHdr = horizontalHeader();
-    HorzHdr->setResizeMode(QHeaderView::Stretch);
-    verticalHeader()->setResizeMode(QHeaderView::ResizeToContents);
+#if QT_VERSION>=0x050000
+    HorzHdr->setSectionResizeMode(QHeaderView::Interactive);
+#else
+    HorzHdr->setResizeMode(QHeaderView::Interactive);
+#endif
 }
 
 QTableWidgetItem* InfomationViewer::setValue(int row,int col,QString val)
