@@ -60,7 +60,7 @@ ceres::Solver::Options getOption(const OptimzeConfig& _config)
         ceres_config_options.sparse_linear_algebra_library_type = ceres::CX_SPARSE;
         ceres_config_options.linear_solver_type  = ceres::SPARSE_SCHUR;
     }
-#if CERES_VERSION_MINOR==13
+#if CERES_VERSION_MINOR>=12
     else if (ceres::IsSparseLinearAlgebraLibraryTypeAvailable(ceres::EIGEN_SPARSE))
     {
         ceres_config_options.sparse_linear_algebra_library_type = ceres::EIGEN_SPARSE;
@@ -126,7 +126,7 @@ bool OptimizerAutoDiffCeres::optimizePose(std::vector<std::pair<CameraAnchor,Cam
         std::cout << summary.FullReport() << std::endl;
 
     // If no error, get back refined parameters
-#if CERES_VERSION_MINOR==13
+#if CERES_VERSION_MINOR>=12
     if (!summary.IsSolutionUsable())
 #else
     if(summary.error.size())
@@ -193,7 +193,7 @@ bool OptimizerAutoDiffCeres::optimizePnP(const std::vector<std::pair<GSLAM::Poin
         std::cout << summary.FullReport() << std::endl;
 
     // If no error, get back refined parameters
-#if CERES_VERSION_MINOR==13
+#if CERES_VERSION_MINOR>=12
     if (!summary.IsSolutionUsable())
 #else
     if(summary.error.size())

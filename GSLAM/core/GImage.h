@@ -280,8 +280,8 @@ public:
             u->origdata=u->data=data;
             u->userdata=refCount;
             CV_XADD(refCount,1);
-            u->refCount=2;
-            refCount=&u->refCount;
+            u->refcount=2;
+            refCount=&u->refcount;
             result.u=u;
             return result;
         }
