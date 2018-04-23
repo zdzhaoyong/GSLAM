@@ -131,6 +131,7 @@ public:
                      evec.at<double>(0,2),
                      evec.at<double>(0,3),
                      evec.at<double>(0,0));
+        so3=so3.inv();
 
         cv::Mat mR12i(3,3,CV_64F);
         pi::Point3d vec_p=so3.inv().ln();

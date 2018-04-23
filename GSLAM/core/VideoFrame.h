@@ -39,10 +39,11 @@ public:
     virtual GImage getImage(int idx,int channels) // 0:RGB 1:Depth CV16UC1-factor 1000, CV32FC1-factor 1.f
     {
         GSLAM::ReadMutex lock(_mutexPose);
-        if(channels&&IMAGE_DEPTH) return _depth;
+        if(channels&IMAGE_DEPTH) return _depth;
         else return _img;
     }
     virtual Camera getCamera(int idx=0);// The RGB and Depth are treated as unified
+    virtual int    imageChannels(int idx) const{return IMAGE_DEPTH|IMAGE_BGRA;}
 
 protected:
     GImage       _img,_depth;

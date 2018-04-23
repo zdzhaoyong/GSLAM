@@ -18,8 +18,9 @@ public:
     InfomationViewer(QWidget* parent);
     QTableWidgetItem* setValue(int row,int col,QString val);
     QTableWidgetItem* setValue(int row,int col,double  val);
-    void              update(const FramePtr& frame);
+    void              update(const FramePtr& frame,bool flush=true);
     std::map<QString,QString>   vars;
+    double                      lastUpdateTime;
 };
 
 class FrameVisualizer: public QWidget,public GObjectHandle
@@ -36,16 +37,18 @@ public:
     }
     virtual ~FrameVisualizer(){}
 
-    void setFrame(const FramePtr& frame){
+    void showFrame(const FramePtr& frame){
+        if(!frame) return;
+
         {
             GSLAM::WriteMutex lock(_mutex);
             _curFrame=frame;
+            if(frame->cameraNum())
+                _lastImageFrame=frame;
         }
-        if(!frame) return;
+
         emit signalFrameUpdated();
     }
-
-    FramePtr curFrame(){return _curFrame;}
 
 signals:
     void signalFrameUpdated();
@@ -54,7 +57,7 @@ public slots:
 
 protected:
     GSLAM::MutexRW              _mutex;
-    FramePtr                    _curFrame;
+    FramePtr                    _curFrame,_lastImageFrame;
     std::vector<GImageWidget*>  _images;
     InfomationViewer*           _infos;
     QVBoxLayout*                _imageLayout;

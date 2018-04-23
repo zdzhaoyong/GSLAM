@@ -1,5 +1,5 @@
-#ifndef CAMERA_H
-#define CAMERA_H
+#ifndef GSLAM_CAMERA_H
+#define GSLAM_CAMERA_H
 
 #include <vector>
 #include <sstream>

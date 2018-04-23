@@ -1,5 +1,9 @@
 # OPENCV2_LIBS the list of OpenCV 2.2 or greater libs (WIN32 MINGW compiler only)
 
+#include(/opt/opencv-3.2/share/OpenCV/OpenCVConfig.cmake)
+#set(OpenCV_INCLUDES ${OpenCV_INCLUDE_DIRS})
+#return()
+
 IF(WIN32)
 
 	FIND_PATH( OPENCV2_PATH include/opencv2/opencv.hpp

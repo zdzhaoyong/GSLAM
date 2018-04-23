@@ -1,6 +1,6 @@
 #ifdef HAS_QT
 #include "FrameVisualizer.h"
-
+#include <GSLAM/core/Timer.h>
 #include <QPainter>
 #include <QWheelEvent>
 #include <QVBoxLayout>
@@ -202,15 +202,15 @@ public:
 };
 
 InfomationViewer::InfomationViewer(QWidget* parent)
-    :QTableWidget(parent){
+    :QTableWidget(parent),lastUpdateTime(0){
     setColumnCount(2);
     setHorizontalHeaderLabels({"name","value"});
 
     QHeaderView *HorzHdr = horizontalHeader();
 #if QT_VERSION>=0x050000
-    HorzHdr->setSectionResizeMode(QHeaderView::Interactive);
+    HorzHdr->setSectionResizeMode(QHeaderView::Stretch);
 #else
-    HorzHdr->setResizeMode(QHeaderView::Interactive);
+    HorzHdr->setResizeMode(QHeaderView::Stretch);
 #endif
 }
 
@@ -246,8 +246,12 @@ QTableWidgetItem* InfomationViewer::setValue(int row,int col,double  val)
     }
 }
 
-void InfomationViewer::update(const FramePtr& frame)
+void InfomationViewer::update(const FramePtr& frame,bool flush)
 {
+    double curTime=GSLAM::TicToc::timestamp();
+    if(!flush&&curTime-lastUpdateTime<0.033) return;
+    lastUpdateTime=curTime;
+
     vars["id"]=QString("%1").arg(frame->id());
     vars["type"]=frame->type().c_str();
     vars["timestamp"]=QString("%1").arg(frame->timestamp(),0,'g',13);
@@ -257,7 +261,7 @@ void InfomationViewer::update(const FramePtr& frame)
         vars["cameraNum"]=QString("%1").arg(frame->cameraNum());
         for(int i=0;i<frame->cameraNum();i++)
         {
-            vars[QString("Camera%1.Channels").arg(i)]=QString("%1").arg(frame->imageChannels(i));
+            vars[QString("Camera%1.Channels").arg(i)]=QString("%1").arg(frame->channelString(i).c_str());
             vars[QString("Camera%1.Info").arg(i)]=frame->getCamera(i).info().c_str();
         }
     }
@@ -312,11 +316,14 @@ void InfomationViewer::update(const FramePtr& frame)
 
 void FrameVisualizer::slotFrameUpdated()
 {
-    if(!_curFrame) return;
     GSLAM::ReadMutex lock(_mutex);
+    if(!_curFrame) return;
     _infos->update(_curFrame);
-    for(int camIdx=0;camIdx<_curFrame->cameraNum();camIdx++)
+    if(!_lastImageFrame) return;
+//    GSLAM::ScopedTimer tm("FrameVisualizer::slotFrameUpdated");
+    for(int camIdx=0;camIdx<_lastImageFrame->cameraNum();camIdx++)
     {
+        GSLAM::FramePtr _curFrame=_lastImageFrame;
         if(_images.size()==camIdx)
         {
             _images.push_back(new GImageWidget(_splitter));
@@ -356,6 +363,7 @@ void FrameVisualizer::slotFrameUpdated()
             gimageW->setImage(img);
         }
     }
+    _lastImageFrame=FramePtr();
 }
 
 }

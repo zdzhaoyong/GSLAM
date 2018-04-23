@@ -253,6 +253,10 @@ public:
 
     // Extra utils
     virtual double  getMedianDepth(){return getPoseScale().get_scale();}
+
+    static std::string channelTypeString(const int channels);
+    std::string	       channelString(int idx=0) const{return channelTypeString(imageChannels(idx));}
+
 public:
     const FrameID           _id;
     double                  _timestamp;
@@ -404,6 +408,28 @@ inline void MapFrame::setPose(const SIM3& pose)
     WriteMutex lock(_mutexPose);
     _c2w=pose;
 }
+
+inline std::string MapFrame::channelTypeString(const int channels)
+{
+    static std::string _type[32]={"RGBA","BGRA","GRAY","DEPTH","IDEPTH","GRE","NIR","RED","REG","LIDAR","SONAR","SAR","THUMBNAIL"};
+    std::string type="";
+    if(channels == 0) {
+        return "IMAGE_UNDEFINED";
+    }
+    else
+    {
+        for(int i=0; i<sizeof(channels)*8;i++)
+        {
+            int j = channels & (0x00000001<<i);
+            if(j !=0)
+            {
+                type+=(type.empty()?"":"|")+_type[i];
+            }
+        }
+        return type;
+    }
+}
+
 
 inline Map::Map():_ptId(1),_frId(1)
 {

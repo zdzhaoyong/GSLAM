@@ -344,34 +344,59 @@ bool MainWindow::slotStartDataset(QString dataset)
         slotShowMessage(tr("Failed to open dataset ")+dataset);
         return false;
     }
-    _d->frameVis->setFrame(_d->dataset.grabFrame());
     _d->startAction->setEnabled(true);
     return true;
 }
 
 void MainWindow::runSLAMMain()
 {
-    Rate rate(svar.GetInt("Frequency",100));
+    double speed=svar.GetDouble("PlaySpeed",1.);
+    double startTime=-1;
+    double& playSpeedWarningTime=svar.GetDouble("PlaySpeedWarning",5);
+    GSLAM::TicToc tictoc,tictocWarning;
+    GSLAM::FramePtr frame;
     while(_d->status!=STOP)
     {
-        rate.sleep();
         if(_d->status==PAUSE)
         {
+            GSLAM::Rate::sleep(0.001);
+            startTime=-1;
             continue;
         }
 
-        FramePtr frame=_d->frameVis->curFrame();
+        {
+            GSLAM::ScopedTimer mt("Dataset::grabFrame");
+            frame=_d->dataset.grabFrame();
+        }
+
         if(!frame) break;
+
+        if(startTime<0){
+            startTime=frame->timestamp();
+            tictoc.Tic();
+        }
+        else{
+            double shouldSleep=(frame->timestamp()-startTime)/speed-tictoc.Tac();
+            if(shouldSleep<-2){
+                if(tictocWarning.Tac()>playSpeedWarningTime)// Don't bother
+                {
+                    LOG(WARNING)<<"Play speed not realtime! Speed approximate "
+                               <<(frame->timestamp()-startTime)/tictoc.Tac();
+                    tictocWarning.Tic();
+                }
+            }
+            else GSLAM::Rate::sleep(shouldSleep);
+        }
+
 #if defined(HAS_QT)&&defined(HAS_QGLVIEWER)
         for(SLAMVisualizer* vis:_d->slamVis)
         {
             string str=vis->slam()->type()+"::Track";
-            timer.enter(str.c_str());
+            GSLAM::ScopedTimer mt(str.c_str());
             vis->slam()->track(frame);
-            timer.leave(str.c_str());
         }
 #endif
-        _d->frameVis->setFrame(_d->dataset.grabFrame());
+        _d->frameVis->showFrame(frame);
     }
     std::cerr<<"Play thread stoped."<<endl;
     emit signalStop();
