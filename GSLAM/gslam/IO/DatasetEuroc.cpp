@@ -3,6 +3,11 @@
 #include <GSLAM/core/VideoFrame.h>
 #include <opencv2/highgui/highgui.hpp>
 
+/**
+ * 1. Download dataset from : https://projects.asl.ethz.ch/datasets/doku.php?id=kmavvisualinertialdatasets
+ * 2. Play dataset with gslam Dataset=<dir>/MH_01_easy/mav0/mono.euroc
+ */
+
 namespace GSLAM {
 
 class FrameIMUEuroc : public MapFrame
@@ -80,7 +85,10 @@ public:
     {
         svar.ParseFile(dataset);
         dirtop=Svar::getFolderPath(dataset);
+        std::string basename=Svar::getBaseName(dataset);
         // load camera data
+        checkHeader(dirtop+"/cam0/sensor.yaml");
+        checkHeader(dirtop+"/cam1/sensor.yaml");
 
         cv::FileStorage cam0Sensor(dirtop+"/cam0/sensor.yaml", cv::FileStorage::READ);
         cv::FileStorage cam1Sensor(dirtop+"/cam1/sensor.yaml", cv::FileStorage::READ);
@@ -92,7 +100,8 @@ public:
         }
 
         cam0 =loadCamera(cam0Sensor);
-        cam1 =loadCamera(cam1Sensor);
+        if(basename!="mono"&&basename!="Monocular")
+            cam1 =loadCamera(cam1Sensor);
 
         cam0P=loadPose(cam0Sensor);
         cam1P=loadPose(cam1Sensor);
@@ -105,6 +114,7 @@ public:
 
         if(ifs1.is_open()) getline(ifs1,line);
 
+        checkHeader(dirtop+"/imu0/sensor.yaml");
         cv::FileStorage imu0Sensor(dirtop+"/imu0/sensor.yaml", cv::FileStorage::READ);
         if(!imu0Sensor.isOpened()) {
             LOG(ERROR)<<"Can't load imu sensor data.";
@@ -137,7 +147,24 @@ public:
         if(wh.isNone()||k.isNone()) return Camera();
 
         return Camera({wh[0],wh[1],k[0],k[1],k[2],k[3],
-                              d[0],d[1],d[2],d[3],1.});
+                              d[0],d[1],d[2],d[3],0.});
+    }
+
+    bool   checkHeader(std::string file){
+        using namespace std;
+        std::ifstream ifs(file.c_str());
+        if(!ifs.is_open()) return false;
+        std::vector<std::string> lines;
+        std::string line;
+        if(getline(ifs,line)&&line=="%YAML:1.0") return true;
+
+        while(getline(ifs,line)) lines.push_back(line);
+        ifs.close();
+
+        std::ofstream ofs(file.c_str());
+        ofs<<"%YAML:1.0\n";
+        for(auto line:lines) ofs<<line<<endl;
+        return true;
     }
 
     SE3    loadPose(cv::FileStorage& fs){

@@ -1,25 +1,34 @@
-#include "../../../core/Dataset.h"
-#include "../../../core/VideoFrame.h"
-#include "../../../core/VecParament.h"
 #include <iterator>
 #include <sstream>
 #include <fstream>
-#ifdef HAS_OPENCV
-#include <opencv2/highgui/highgui.hpp>
+
+#include "GSLAM/core/Dataset.h"
+#include "GSLAM/core/VecParament.h"
+#include "GSLAM/core/Undistorter.h"
+#include "IO.h"
+
+/**
+ * 1. Download dataset from : https://vision.in.tum.de/data/datasets/mono-dataset
+ * 2. Play dataset with gslam Dataset=<dir>/all_calib_sequences/calib_narrowGamma_scene1/.tummono
+ */
+
 using namespace std;
 using namespace GSLAM;
 
-class VideoFrameMonoWithExposure : public GSLAM::FrameMono
+class VideoFrameMonoWithExposure : public GSLAM::MapFrame
 {
 public:
-    VideoFrameMonoWithExposure(const GImage& img, const Camera& camera, FrameID id, double time,const Camera& recCamera=Camera(),
+    VideoFrameMonoWithExposure(const GImage& img, const Camera& camera, FrameID id, double time,
                                float explosure_time=0,const GImage& G=GImage(),const GImage& vignetteMap=GImage())
-        : FrameMono(id,time,img,camera,GSLAM::IMAGE_RGBA,recCamera),
+        : MapFrame(id,time),_img(img),_camera(camera),
           _explosureTime(explosure_time),_G(G),_vignetteMap(vignetteMap){
 
     }
-
     virtual std::string type() const{return "VideoFrameMonoWithExposure";}
+
+    virtual int    imageChannels(int idx) const{return IMAGE_GRAY;}
+    virtual int    cameraNum()const{return 1;}     // Camera number
+    virtual Camera getCamera(int idx=0){return _camera;}
 
     virtual void  call(const std::string& command,void* arg=NULL)
     {
@@ -27,65 +36,94 @@ public:
         {
             *(float*)arg=_explosureTime;
         }
+        else if("getG"==command){
+            *(GImage*)arg=_G;
+        }
+        else if("getVignetteMap"){
+            *(GImage*)arg=_vignetteMap;
+        }
     }
 
     virtual GImage getImage(int idx,int channels)
     {
         ReadMutex lock(_mutexPose);
-        if(idx==1) return _G;
-        else if(idx==2) return _vignetteMap;
-        else   return _img;// FIXME: .clone()?
+        return _img;
     }
+
     float  _explosureTime;
-    GImage _G,_vignetteMap;
-};
-
-class DatasetTUMRGBD : public GSLAM::Dataset
-{
-public:
-    DatasetTUMRGBD(Svar& var){}
-    virtual std::string type() const{return "DatasetTUMRGBD";}
-
-    virtual bool        isOpened(){return camera.isValid();}
-
-    virtual GSLAM::FramePtr    grabFrame(){
-
-        return GSLAM::FramePtr();
-    }
-
-    GSLAM::FramePtr grabMono()
-    {
-    }
-
-    GSLAM::FramePtr grabRGBD()
-    {
-    }
-
-    GSLAM::Camera   camera;
+    GImage _img,_G,_vignetteMap;
+    Camera _camera;
 };
 
 class DatasetTUMMono : public GSLAM::Dataset
 {
 public:
-    DatasetTUMMono(Svar& var)
-        : id(0),datasetPath(var.GetString("SequenceFolder","")),
-          skip(var.GetInt("Video.Skip",5))
+    DatasetTUMMono()
+        : id(0)
+    {        
+    }
+
+    virtual std::string type() const {return "DatasetTUMMono";}
+
+    virtual bool open(const string &dataset)
     {
+        Svar var;
+        var.ParseFile(dataset);
+
+        datasetPath=var.GetString("SequenceFolder",Svar::getFolderPath(dataset));
+        skip=var.GetInt("Video.Skip",0);
+
         // load camera
-        cerr<<"Loading camera...\n";
         if(!loadCamera((datasetPath+"/camera.txt")))
         {
-            return;
+            LOG(ERROR)<<"Failed to read camera.";
+            return false;
         }
 
         if(loadVignette(datasetPath+"/vignette.png")&&loadG(datasetPath+"/pcalib.txt"))
-              cerr<<"Photometric calibrated!\n";
+            LOG(INFO)<<"Photometric calibrated!\n";
 
 
         times.open((datasetPath+"/times.txt").c_str());
         imgFolder=datasetPath+"/images/";
+        return isOpened();
     }
-    std::string type() const {return "DatasetTUMMono";}
+
+    virtual bool isOpened(){return times.is_open();}
+
+    virtual GSLAM::FramePtr grabFrame()
+    {
+        string line;
+        for(int i=-1;i<skip;i++) getline(times,line);
+        if(line.empty()) return GSLAM::FramePtr();
+
+        stringstream sst(line);
+        string imgName;
+        double timestamp,explosureTime;
+
+        sst>>imgName>>timestamp>>explosureTime;
+        GImage img=imread(imgFolder+imgName+ext);
+        if(img.empty()&&ext==".jpg") {
+            ext=".png";
+            img=imread(imgFolder+imgName+ext);
+        }
+        if(img.empty()||img.cols!=camera.width()||img.rows!=camera.height())
+        {
+            LOG(ERROR)<<"img size:"<<img.cols<<","<<img.rows;
+            return GSLAM::FramePtr();
+        }
+
+        if(undis.valid()){
+            GImage imgUn;
+            undis.undistortFast(img,imgUn);
+            return GSLAM::FramePtr(new VideoFrameMonoWithExposure(imgUn,recCamera,++id,timestamp,explosureTime,
+                                                                  _G,_vignette));
+
+        }
+
+        return GSLAM::FramePtr(new VideoFrameMonoWithExposure(img,camera,++id,timestamp,explosureTime,
+                                                              _G,_vignette));
+    }
 
     bool loadCamera(const string& calibrationFile)
     {
@@ -177,6 +215,9 @@ public:
             return false;
         }
 
+        undis=Undistorter(camera,recCamera);
+
+
         return true;
     }
 
@@ -234,55 +275,17 @@ public:
         else return false;
         return false;
     }
-    bool isOpened(){return times.is_open();}
 
-    GSLAM::FramePtr grabFrame()
-    {
-        string line;
-        for(int i=-1;i<skip;i++) getline(times,line);
-        if(line.empty()) return GSLAM::FramePtr();
 
-        stringstream sst(line);
-        string imgName;
-        double timestamp,explosureTime;
-
-        sst>>imgName>>timestamp>>explosureTime;
-        cv::Mat img=cv::imread(imgFolder+imgName+".jpg",CV_LOAD_IMAGE_GRAYSCALE);
-        if(img.empty()||img.cols!=camera.width()||img.rows!=camera.height())
-        {
-            LOG(ERROR)<<"img size:"<<img.cols<<","<<img.rows;
-            return GSLAM::FramePtr();
-        }
-
-        return GSLAM::FramePtr(new VideoFrameMonoWithExposure(img,camera,++id,timestamp,recCamera,explosureTime,
-                                                              _G,_vignette));
-    }
     int id;
     int skip;
+    string ext=".jpg";
     string datasetPath,imgFolder;
     Camera camera,recCamera;
+    Undistorter   undis;
     GSLAM::GImage _G,_vignette;
     ifstream times;
 };
 
-class DatasetTUM : public GSLAM::Dataset
-{
-public:
-    DatasetTUM(){}
+REGISTER_DATASET(DatasetTUMMono,tummono);
 
-    virtual bool open(const string &dataset)
-    {
-        Svar var;
-        if(!var.ParseFile(dataset)) return false;
-        string folder=var.GetString("SequenceFolder","");
-        if(access( (folder+"/times.txt").c_str(), F_OK )==0)
-            _impl=DatasetPtr(new DatasetTUMMono(var));
-        else _impl=DatasetPtr(new DatasetTUMRGBD(var));
-        return _impl->isOpened();
-    }
-};
-
-REGISTER_DATASET(DatasetTUM,tum);
-
-
-#endif
