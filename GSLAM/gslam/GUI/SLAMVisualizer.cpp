@@ -300,18 +300,20 @@ public:
 
     void update(GSLAM::MapPtr map,const GSLAM::FramePtr& curFrame)
     {
-        std::map<GSLAM::FrameID,SPtr<GSLAM::FrameConnection> > parents;
-        if(!curFrame->getParents(parents)) return;
         _curFrame=GSLAM::SIM3(curFrame->getPose(),curFrame->getMedianDepth()*0.1);
         Point3d t=_curFrame.get_translation();
+        std::map<GSLAM::FrameID,SPtr<GSLAM::FrameConnection> > parents;
         std::vector<Point3d> curConnection;
-        curConnection.reserve(parents.size()*2);
-        for(auto parent:parents)
+        if(curFrame->getParents(parents))
         {
-            GSLAM::FramePtr fr=map->getFrame(parent.first);
-            if(!fr) continue;
-            curConnection.push_back(t);
-            curConnection.push_back(fr->getPose().get_translation());
+            curConnection.reserve(parents.size()*2);
+            for(auto parent:parents)
+            {
+                GSLAM::FramePtr fr=map->getFrame(parent.first);
+                if(!fr) continue;
+                curConnection.push_back(t);
+                curConnection.push_back(fr->getPose().get_translation());
+            }
         }
         {
             GSLAM::WriteMutex lock(_mutex);

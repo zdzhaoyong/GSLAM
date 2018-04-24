@@ -1,3 +1,6 @@
+#ifndef GSLAM_GPS_H
+#define GSLAM_GPS_H
+
 #include <vector>
 #include <iomanip>
 #include <iostream>
@@ -183,3 +186,4 @@ T GPSArray<T>::atTime(const double& time,bool nearist)
 }
 
 }
+#endif

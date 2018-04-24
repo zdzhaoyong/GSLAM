@@ -193,7 +193,7 @@ public:
     // When the frame contains one or more images captured from cameras
     virtual int     cameraNum()const{return 0;}                                      // Camera number
     virtual SE3     getCameraPose(int idx=0) const{return SE3();}                    // The transform from camera to local
-    virtual int     imageChannels(int idx=0) const{return IMAGE_RGBA;}               // Default is a colorful camera
+    virtual int     imageChannels(int idx=0) const{return IMAGE_BGRA;}               // Default is a colorful camera
     virtual Camera  getCamera(int idx=0){return Camera();}                           // The camera model
     virtual GImage  getImage(int idx=0,int channalMask=IMAGE_UNDEFINED){return GImage();}              // Just return the image if only one channel is available
     virtual bool    setImage(const GImage& img,int idx=0,int channalMask=IMAGE_UNDEFINED){return false;}
