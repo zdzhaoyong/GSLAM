@@ -5,9 +5,6 @@
 #include <QWheelEvent>
 #include <QVBoxLayout>
 #include <QHeaderView>
-#ifdef HAS_OPENCV
-#include <opencv2/imgproc/imgproc.hpp>
-#endif
 using namespace std;
 
 namespace GSLAM
@@ -36,7 +33,7 @@ public:
             }
             else
             {
-                setImage(QImage(imageFile),true);
+                setQImage(QImage(imageFile),true);
             }
             imageUpdated=false;
         }
@@ -51,7 +48,7 @@ public:
         mouseDoubleClickEvent(NULL);
     }
 
-    bool setImage(const QImage& qimage,bool flush=false)
+    bool setQImage(const QImage& qimage,bool flush=false)
     {
         if(qimage.isNull()) return false;
 
@@ -182,17 +179,17 @@ public:
         if(gimage.type()==GSLAM::GImageType<uchar,3>::Type)
         {
             QImage qimage(gimage.data,gimage.cols,gimage.rows,QImage::Format_RGB888);
-            return QImageWidget::setImage(qimage,flush);
+            return QImageWidget::setQImage(qimage,flush);
         }
         else if(gimage.type()==GSLAM::GImageType<uchar,4>::Type)
         {
             QImage qimage(gimage.data,gimage.cols,gimage.rows,QImage::Format_RGB32);
-            return QImageWidget::setImage(qimage,flush);
+            return QImageWidget::setQImage(qimage,flush);
         }
         else if(gimage.type()==GSLAM::GImageType<uchar,1>::Type)
         {
             QImage qimage(gimage.data,gimage.cols,gimage.rows,QImage::Format_Indexed8);
-            return QImageWidget::setImage(qimage,flush);
+            return QImageWidget::setQImage(qimage,flush);
         }
         // don't support other format yet
         return false;
@@ -331,36 +328,29 @@ void FrameVisualizer::slotFrameUpdated()
         }
         GImageWidget* gimageW=_images[camIdx];
         int channelFlags=_curFrame->imageChannels();
-        auto img=_curFrame->getImage(camIdx);
-        if((channelFlags&IMAGE_BGRA)&&img.channels()==3)
+        GImage img=_curFrame->getImage(camIdx);
+        if(img.empty()) continue;
+
+        if(img.cols%4!=0)
         {
 #ifdef HAS_OPENCV
-            cv::Mat img=_curFrame->getImage(camIdx,IMAGE_BGRA);
-            if(img.empty()) return;
-            cv::cvtColor(img,img,CV_BGR2RGB);
-            gimageW->setImage(img,true);
-#else
-            gimageW->setImage(_curFrame->getImage(camIdx,IMAGE_BGRA),true);
+            cv::Mat src=img,dst(src.rows,src.cols-(img.cols%4),src.type());
+            src(cv::Rect(0,0,dst.cols,dst.rows)).copyTo(dst);
+            img=dst;
 #endif
+        }
+
+        if((channelFlags&IMAGE_BGRA)&&img.channels()==3)
+        {
+            gimageW->setQImage(QImage(img.data,img.cols,img.rows,QImage::Format_RGB888).rgbSwapped(),true);
         }
         else if((channelFlags&IMAGE_RGBA)&&img.channels()==4)
         {
-#ifdef HAS_OPENCV
-            cv::Mat img=_curFrame->getImage(camIdx,IMAGE_RGBA);
-            if(img.empty()) return;
-            cv::cvtColor(img,img,CV_BGRA2RGBA);
-            gimageW->setImage(img,true);
-#else
-            gimageW->setImage(_curFrame->getImage(camIdx,IMAGE_RGBA),true);
-#endif
-        }
-        else if(channelFlags&IMAGE_DEPTH)
-        {
-            gimageW->setImage(_curFrame->getImage(camIdx,IMAGE_DEPTH),true);
+            gimageW->setQImage(QImage(img.data,img.cols,img.rows,QImage::Format_RGB32).rgbSwapped(),true);
         }
         else
         {
-            gimageW->setImage(img);
+            gimageW->setImage(img,true);
         }
     }
     _lastImageFrame=FramePtr();

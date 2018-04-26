@@ -66,7 +66,12 @@ public:
         if(img.empty()) return GSLAM::FramePtr();
         GSLAM::FramePtr result(new GSLAM::FrameMono(curIdx,timestamps[curIdx],img,camera[cameraIdx],
                                                     (img.channels()==1?GSLAM::IMAGE_GRAY:GSLAM::IMAGE_BGRA)));
+        if(groundPose.size()==timestamps.size())
+        {
+            result->setPose(groundPose[curIdx]);
+        }
         curIdx++;
+
         return result;
     }
 
@@ -88,9 +93,15 @@ public:
             if(images.size()==2&&datasetType==STEREO_MODE) break;
         }
         if(images.size()<2) return GSLAM::FramePtr();
-        return GSLAM::FramePtr(new GSLAM::FrameStereo(images[0],images[1],
+        GSLAM::FramePtr result(new GSLAM::FrameStereo(images[0],images[1],
                 cameras[0],cameras[1],camPoses[0].inverse()*camPoses[1],
-                curIdx,timestamps[curIdx++]));
+                curIdx,timestamps[curIdx]));
+        if(groundPose.size()==timestamps.size())
+        {
+            result->setPose(groundPose[curIdx]);
+        }
+        curIdx++;
+        return result;
     }
 
     bool loadCameras(){
