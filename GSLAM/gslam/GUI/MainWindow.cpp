@@ -11,7 +11,7 @@
 #include "MainWindow.h"
 #include "FrameVisualizer.h"
 
-#if defined(HAS_QT)&&defined(HAS_QGLVIEWER)
+#if defined(HAS_QT)
 #include "SLAMVisualizer.h"
 #else
 class SLAMVisualizer;
@@ -313,7 +313,7 @@ bool MainWindow::slotStop()
     _d->pauseAction->setDisabled(true);
     _d->stopAction->setDisabled(true);
 
-#if defined(HAS_QT)&&defined(HAS_QGLVIEWER)
+#if defined(HAS_QT)
         for(SLAMVisualizer* vis:_d->slamVis)
         {
             vis->releaseSLAM();
@@ -324,7 +324,7 @@ bool MainWindow::slotStop()
 
 bool MainWindow::slotAddSLAM(QString pluginPath)
 {
-#if defined(HAS_QT)&&defined(HAS_QGLVIEWER)
+#if defined(HAS_QT)
     SLAMVisualizer* slamVis=new SLAMVisualizer(this,pluginPath);
     if(slamVis->slam()&&slamVis->slam()->valid())
     {
@@ -388,7 +388,7 @@ void MainWindow::runSLAMMain()
             else GSLAM::Rate::sleep(shouldSleep);
         }
 
-#if defined(HAS_QT)&&defined(HAS_QGLVIEWER)
+#if defined(HAS_QT)
         for(SLAMVisualizer* vis:_d->slamVis)
         {
             string str=vis->slam()->type()+"::Track";

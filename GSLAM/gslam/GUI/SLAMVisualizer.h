@@ -2,7 +2,7 @@
 #define SLAMVISUALIZER_H
 
 #include <QWidget>
-#include <qglviewer.h>
+#include "QGLViewer/qglviewer.h"
 
 #include "../../core/GSLAM.h"
 

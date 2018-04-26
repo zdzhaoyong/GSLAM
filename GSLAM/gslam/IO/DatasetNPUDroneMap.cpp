@@ -8,6 +8,11 @@ using namespace std;
 
 namespace GSLAM {
 
+/**
+ * 1. Download dataset from : http://zhaoyong.adv-ci.com/downloads/npu-dronemap-dataset/
+ * 2. Play dataset with gslam Dataset=<dir>/DroneMap/gopro-npu/gopro-npu-unified/mono.npudronemap
+ *    or Dataset=<dir>/DroneMap/gopro-npu/gopro-npu-kfs/mono.npudronemap
+ */
 class RTMapperFrame : public GSLAM::MapFrame
 {
 public:
@@ -245,11 +250,25 @@ public:
 
     virtual bool open(const string &dataset)
     {
+        string folderPath=Svar::getFolderPath(dataset);
         Svar var;
-        if(var.ParseFile(dataset))
-            return open(var,dataset);
-        else
-            return false;
+        if(!var.ParseFile(dataset)) var.ParseFile(folderPath+"/config.cfg");
+
+        _seqTop=var.GetString("DatasetPath",folderPath);
+
+        _name  =Svar::getBaseName(dataset);
+        _skip  =var.GetInt("Video.Skip",0);
+        _video.open(var.GetString("Video.File",_seqTop+"/frames.txt"));
+        if(!_video.is_open()) return false;
+
+        if(_name.find("mono")==std::string::npos)
+            _gps.open(_seqTop+"/gps.txt");
+        _camera=camFromName(var.GetString("Video.CameraInName","Video.CameraInName"),var);
+
+        prepareGPSFrame();
+        prepareImageFrame();
+
+        return true;
     }
 
     inline GSLAM::Camera camFromName(string name,Svar& var)
@@ -257,29 +276,6 @@ public:
         VecParament<double> paras;
         paras=var.get_var(name+".Paraments",paras);
         return GSLAM::Camera(paras.data);
-    }
-
-    bool open(Svar& var,const std::string& name)
-    {
-        if(var.exist("Video.File")&&var.GetString("Video.Type","")=="GSLAM")
-            _type="GSLAM";
-
-        if(_type.empty()) return false;
-
-
-        _seqTop=Svar::getFolderPath(name);
-        _name  =Svar::getBaseName(name);
-        _skip  =var.GetInt("Video.Skip",0);
-        _video.open(var.GetString("Video.File",""));
-        if(_name.find("mono")==std::string::npos)
-            _gps.open(_seqTop+"/gps.txt");
-        if(!_video.is_open()) return false;
-        _camera=camFromName(var.GetString("Video.CameraInName","Video.CameraInName"),var);
-
-        prepareGPSFrame();
-        prepareImageFrame();
-
-        return true;
     }
 
     bool isOpened(){return _video.is_open()&&_camera.isValid();}
@@ -353,7 +349,7 @@ public:
         if(ifs.is_open())
         {
             _impl=DatasetPtr(new DatasetDroneMapUnified());
-            return _impl->open(datasetFolder+"/config.cfg");
+            return _impl->open(dataset);
         }
     }
 };

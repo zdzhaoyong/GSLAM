@@ -1,4 +1,4 @@
-#if defined(HAS_QT)&&defined(HAS_QGLVIEWER)
+#if defined(HAS_QT)
 #include <GL/glew.h>
 #include "SLAMVisualizer.h"
 #include "../../core/Event.h"
@@ -216,7 +216,7 @@ public:
             Point3d t=fr->getPose().get_translation()-center;
             keyframes.push_back(GSLAM::SIM3(fr->getPose().get_rotation(),
                                             t,
-                                            fr->getMedianDepth()*0.1));
+                                            fabs(fr->getMedianDepth())*0.1));
 
             vetexTraj.push_back(t);
             boxMin.x=std::min(boxMin.x,t.x);boxMax.x=std::max(boxMax.x,t.x);
@@ -300,7 +300,7 @@ public:
 
     void update(GSLAM::MapPtr map,const GSLAM::FramePtr& curFrame)
     {
-        _curFrame=GSLAM::SIM3(curFrame->getPose(),curFrame->getMedianDepth()*0.1);
+        _curFrame=GSLAM::SIM3(curFrame->getPose(),fabs(curFrame->getMedianDepth())*0.1);
         Point3d t=_curFrame.get_translation();
         std::map<GSLAM::FrameID,SPtr<GSLAM::FrameConnection> > parents;
         std::vector<Point3d> curConnection;

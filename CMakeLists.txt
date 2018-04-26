@@ -67,7 +67,7 @@ message("----------------------------------------------------------")
 # The GSLAM core need only -std-c++11 and no extra dependency, to build gslam with Util, GUI and IO things, please install the following dependencies.
 pi_collect_packages(VERBOSE REQUIRED System MODULES # System dependency -dl is essential
                     Eigen3 Ceres                    # Dependency for Optimizer
-                    Qt OpenGL GLEW GLUT QGLViewer   # Dependency for GUI
+                    Qt OpenGL GLEW GLUT             # Dependency for GUI
                     OpenCV                          # Dependency for IO
                     )
 
@@ -85,7 +85,7 @@ endif()
 
 include_directories(.)
 
-pi_add_target(gslam BIN GSLAM/gslam ${QRC_FILES} REQUIRED System MODULES QGLViewer OpenCV Qt OpenGL GLEW GLUT)
+pi_add_target(gslam BIN GSLAM/gslam ${QRC_FILES} REQUIRED System MODULES OpenCV Qt OpenGL GLEW GLUT)
 pi_add_target(gslamDB_cfg SHARED GSLAM/plugins/cfg REQUIRED System MODULES OpenCV Qt)
 pi_add_target(gslam_optimizer SHARED GSLAM/plugins/optimizer_ceres REQUIRED System Eigen3 Ceres)
 pi_add_target(gslam_estimator SHARED GSLAM/plugins/estimator_opencv REQUIRED OpenCV)

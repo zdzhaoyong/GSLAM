@@ -1,0 +1,5 @@
+QMAKE_PRL_BUILD_DIR = D:/vs/build-libQGLViewer-2.7.1-Desktop_Qt_5_6_3_MSVC2015_64bit-Debug/QGLViewer
+QMAKE_PRO_INPUT = QGLViewer.pro
+QMAKE_PRL_TARGET = QGLViewer2.lib
+QMAKE_PRL_CONFIG = lex yacc exceptions depend_includepath testcase_targets import_plugins import_qpa_plugin incremental_off windows file_copies qt warn_on release link_prl incremental flat precompile_header autogen_precompile_source debug_and_release debug_and_release_target embed_manifest_dll embed_manifest_exe c++11 release shared rtti no_plugin_manifest directwrite qpa win32 msvc copy_dir_files release ReleaseBuild Release build_pass c++11 qml_debug release ReleaseBuild Release build_pass opengl thread create_prl no_keywords build_all release ReleaseBuild Release build_pass have_target dll exclusive_builds no_autoqmake uic opengl moc resources
+QMAKE_PRL_VERSION = 2
