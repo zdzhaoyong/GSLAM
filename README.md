@@ -30,8 +30,8 @@ GSLAM is aimed to provide a general open-source SLAM framework and benchmark wit
 ### 1.4. Implemented SLAM plugin
 | SLAM Plugin Name        |  Plugin Authers  | Demostration  |
 | ------- |:------:|:-------------:|
-| DSO     | Yong Zhao | ![DSO](./doc/images/gslam_dso_calib_wideGamma_scene1.small.png) |
-| ORBSLAM | Yong Zhao | ![ORBSLAM](./doc/images/gslam_orbslam_calib_wideGamma_scene1.small.png) |
+| DSO     | Yong Zhao | ![DSO](./doc/images/gslam_dso.gif) |
+| ORBSLAM | Yong Zhao | ![ORBSLAM](./doc/images/gslam_orbslam.gif) |
 
 
 ## 2. Compilation and Install
