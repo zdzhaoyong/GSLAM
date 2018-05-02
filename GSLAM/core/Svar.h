@@ -968,14 +968,15 @@ T Svar::get_var(const std::string& name, const T& def)
         //First: Use the var from SvarWithType
     SvarIter it;
     it=data.find(name);
-    if(it==data.end())
+    char* envStr=getenv(name.c_str());
+    if(it==data.end()&&!envStr)
     {
         return *(typed_map.get_ptr(name,def));
         //Third: Both did not get the var need,insert defaut var to SvarWithType
     }
     else
     {
-        std::string& str_var=it->second;
+        std::string str_var=it==data.end()?envStr:it->second;
         std::istringstream istr_var(str_var);
         T var;
         istr_var>>var;
@@ -1162,9 +1163,11 @@ inline int& Svar::GetInt(const std::string& name, int def, SVARMODE mode)
 
     SvarIter it;
     it=data.find(name);
+    char* envStr=NULL;
+    if(it==data.end()) envStr=getenv(name.c_str());
     if(it!=data.end()) //Second: Use the var from Svar
     {
-        string& str_var=it->second;
+        string str_var=envStr?envStr:it->second;
         istringstream istr_var(str_var);
         istr_var>>def;
         while(!ptr)
@@ -1203,9 +1206,11 @@ inline double& Svar::GetDouble(const std::string& name, double def, SVARMODE mod
 
     SvarIter it;
     it=data.find(name);
+    char* envStr=NULL;
+    if(it==data.end()) envStr=getenv(name.c_str());
     if(it!=data.end()) //Second: Use the var from Svar
     {
-        string& str_var=it->second;
+        string str_var=envStr?envStr:it->second;
         istringstream istr_var(str_var);
         istr_var>>def;
         while(!ptr)
