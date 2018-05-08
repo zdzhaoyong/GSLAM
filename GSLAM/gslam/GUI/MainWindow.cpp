@@ -398,6 +398,15 @@ void MainWindow::runSLAMMain()
 #endif
         _d->frameVis->showFrame(frame);
     }
+
+#if defined(HAS_QT)
+        for(SLAMVisualizer* vis:_d->slamVis)
+        {
+            string str=vis->slam()->type()+"::Finalize";
+            GSLAM::ScopedTimer mt(str.c_str());
+            vis->slam()->finalize();
+        }
+#endif
     std::cerr<<"Play thread stoped."<<endl;
     emit signalStop();
 }

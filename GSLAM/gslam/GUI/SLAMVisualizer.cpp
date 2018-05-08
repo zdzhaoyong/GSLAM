@@ -395,6 +395,23 @@ void SLAMVisualizer::handle(const SPtr<GObject>& obj){
     if(auto e=std::dynamic_pointer_cast<Map>(obj))
     {
         impl->_map=e;
+        impl->_vis.update(impl->_map);
+        if(impl->_vis._scenceRadius>0)
+        {
+            Point3d center=impl->_vis._scenceCenter;
+            setSceneCenter(qglviewer::Vec(center.x,center.y,center.z));
+            setSceneRadius(impl->_vis._scenceRadius*10);
+            if(impl->_firstFrame)
+            {
+                impl->_firstFrame=false;
+                SE3 pose=impl->_vis._viewPoint;
+                const pi::Point3f& t=pose.get_translation();
+                const pi::SO3f& r=pose.get_rotation();
+                camera()->setPosition(qglviewer::Vec(t.x,t.y,t.z));
+                camera()->setOrientation(qglviewer::Quaternion(r.w,r.z,-r.y,-r.x));
+            }
+        }
+        update();
     }
     else if(FramePtr e=std::dynamic_pointer_cast<MapFrame>(obj))
     {

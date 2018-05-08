@@ -346,14 +346,16 @@ public:
     bool    setMap(const MapPtr& map);
     MapPtr  getMap()const;
 
+    virtual bool    setCallback(GObjectHandle* cbk){_handle=cbk;return true;}
     virtual bool    track(FramePtr& frame){return false;}
-    virtual bool    setCallback(GObjectHandle* cbk){return false;}
+    virtual bool    finalize(){return false;}
 
     static SLAMPtr create(const std::string& slamPlugin);
 
 protected:
     MapPtr          _curMap;
     mutable MutexRW _mutexMap;
+    GObjectHandle*  _handle;
 };
 
 inline MapPoint::MapPoint(const PointID& id,const Point3Type& position)
