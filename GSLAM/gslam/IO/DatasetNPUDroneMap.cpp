@@ -225,6 +225,7 @@ public:
         DroneMapFrame& df=frames[frameId];
         SPtr<RTMapperFrame> fr(new RTMapperFrame(frameId,df.timestamp));
 
+        fr->_imagePath=df.imagePath;
         fr->_image=imread(df.imagePath);
         fr->_camera=camera;
         GSLAM::SE3 pose=local2ECEF*df.pose;

@@ -107,6 +107,7 @@ Users can also [implement dataset plugins by own](./doc/md/dataset.md).
 | [DSO](https://github.com/JakobEngel/dso)     |  <img src="./doc/images/gslam_dso.gif" width = "50%" /> | [code](https://github.com/pi-gslam/GSLAM-DSO) |
 | [ORBSLAM](https://github.com/raulmur/ORB_SLAM) |  <img src="./doc/images/gslam_orbslam.gif" width = "50%" />| [code](https://github.com/pi-gslam/GSLAM-ORBSLAM) |
 | [SVO](https://github.com/uzh-rpg/rpg_svo) |  <img src="./doc/images/gslam_svo.gif" width = "50%" />| [code](https://github.com/pi-gslam/GSLAM-SVO) |
+| [TheiaSfM](http://www.theia-sfm.org/) |  <img src="./doc/images/gslam_theiaSfM.png" width = "25%" />| [code](https://github.com/zdzhaoyong/GSLAM-TheiaSfM) |
 
 ### 3.4. Configuration with Svar
 More parameters can be setted with Svar at file *.cfg.
