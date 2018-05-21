@@ -319,6 +319,7 @@ bool MainWindow::slotStop()
             vis->releaseSLAM();
         }
 #endif
+    if(svar.GetInt("AutoClose")) close();
     return true;
 }
 
@@ -345,6 +346,7 @@ bool MainWindow::slotStartDataset(QString dataset)
         return false;
     }
     _d->startAction->setEnabled(true);
+    if(svar.GetInt("AutoStart",1)) slotStart();
     return true;
 }
 

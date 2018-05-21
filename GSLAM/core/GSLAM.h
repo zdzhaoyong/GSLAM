@@ -35,7 +35,7 @@
     GSLAM::SLAMPtr createSLAMInstance(){return GSLAM::SLAMPtr(new SLAMCLASS());}}
 #define USE_GSLAM_PLUGIN(SLAMCLASS) USE_GSLAM_PLUGIN_(SLAMCLASS)
 namespace GSLAM {
-
+class GObject;
 class MapFrame;
 class MapPoint;
 class Map;
@@ -59,6 +59,7 @@ typedef pi::Point3d    Point3Type;
 typedef Point3ub       ColorType;
 typedef size_t         PointID;
 typedef size_t         FrameID;
+typedef SPtr<GObject>  GObjectPtr;
 typedef SPtr<MapFrame> FramePtr;
 typedef SPtr<MapPoint> PointPtr;
 typedef SPtr<Map>      MapPtr;
@@ -242,10 +243,10 @@ public:
 
     virtual SPtr<FrameConnection> getParent(GSLAM::FrameID parentId)const{return SPtr<FrameConnection>();}
     virtual SPtr<FrameConnection> getChild(GSLAM::FrameID childId)const{return SPtr<FrameConnection>();}
-    virtual bool    getParents(std::map<GSLAM::FrameID,SPtr<FrameConnection> >& parents)const{return false;}
-    virtual bool    getChildren(std::map<GSLAM::FrameID,SPtr<FrameConnection> >& children)const{return false;}
-    virtual bool    addParent(GSLAM::FrameID parentId,SPtr<FrameConnection>& parent){return false;}
-    virtual bool    addChildren(GSLAM::FrameID childId,SPtr<FrameConnection>& child){return false;}
+    virtual bool    getParents(std::map<GSLAM::FrameID, SPtr<FrameConnection> >& parents)const{return false;}
+    virtual bool    getChildren(std::map<GSLAM::FrameID, SPtr<FrameConnection> >& children)const{return false;}
+    virtual bool    addParent(GSLAM::FrameID parentId, const SPtr<FrameConnection>& parent){return false;}
+    virtual bool    addChildren(GSLAM::FrameID childId, const SPtr<FrameConnection>& child){return false;}
     virtual bool    eraseParent(GSLAM::FrameID parentId){return false;}
     virtual bool    eraseChild(GSLAM::FrameID  childId){return false;}
     virtual bool    clearParents(){return false;}
@@ -327,7 +328,7 @@ public:
     PointID getPid(){return _ptId++;}//obtain an unique point id
     FrameID getFid(){return _frId++;}//obtain an unique frame id
 
-private:
+protected:
     PointID _ptId;
     FrameID _frId;
 };

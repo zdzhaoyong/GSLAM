@@ -142,12 +142,13 @@ public:
 
         int byteNum=total()*elemSize();
         if(byteNum<=0) return;
-        data=(uchar*)fastMalloc(byteNum+sizeof(int*));
+        int alignBytes=alignSize(byteNum, (int)sizeof(*refCount));
+        data=(uchar*)fastMalloc(alignBytes+sizeof(int*));
         if(!data)
         {
             cols=0;rows=0;return ;
         }
-        refCount=(int*)(data+byteNum);
+        refCount=(int*)(data+alignBytes);
         *refCount=1;
         if(src)
             memcpy(data,src,byteNum);
@@ -294,7 +295,8 @@ public:
     void release()
     {
         int totalBytes=total()*elemSize();
-        if(((uchar*)refCount)==data+totalBytes) // OpenCV2 style
+        int alignBytes=alignSize(totalBytes, (int)sizeof(*refCount));
+        if(refCount==((int*)(data+alignBytes))) // OpenCV2 style
         {
             cols=rows=0;
             refCount=NULL;
@@ -303,7 +305,6 @@ public:
         }
         else// OpenCV3 style
         {
-            cols=rows=0;
 #if false// use opencv's default deallocate
             cv::UMatData* u=(cv::UMatData*)(((uchar*)refCount)-sizeof(int)-sizeof(void*)*2);
             u->refcount--;
@@ -320,6 +321,7 @@ public:
             u->refcount--;
             deallocate(u);
 #endif
+            cols=rows=0;
             refCount=NULL;
             data=NULL;
         }
@@ -355,6 +357,12 @@ private:
             uchar* udata = ((uchar**)ptr)[-1];
             free(udata);
         }
+    }
+
+    static inline size_t alignSize(size_t sz, int n)
+    {
+        assert((n & (n - 1)) == 0); // n is a power of 2
+        return (sz + n-1) & -n;
     }
 
     void deallocate(GSLAM::UMatData* u) const// for OpenCV Version 3
