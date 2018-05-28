@@ -225,6 +225,7 @@ public:
     virtual bool    getKeyPoint(int idx, Point2f& pt)const{return false;}
     virtual bool    getKeyPoint(int idx, KeyPoint &pt) const{return false;}
     virtual bool    getKeyPoints(std::vector<Point2f>& keypoints)const{return false;}
+    virtual bool    getKeyPoints(std::vector<KeyPoint>& keypoints) const{return false;}
     virtual bool    getKeyPointColor(int idx,ColorType& color){return false;}
     virtual bool    getKeyPointIDepthInfo(int idx,Point2d& idepth){return false;}
     virtual PointID getKeyPointObserve(int idx){return 0;}

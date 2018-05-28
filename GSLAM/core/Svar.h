@@ -1121,7 +1121,41 @@ inline bool Svar::ParseMain(int argc, char** argv, PARSEMODE mode)
     // parse main cmd
     int beginIdx=(mode==DEFAULT_CMD1?1:2);
     for(int i=beginIdx; i<argc; i++)
-        setvar(argv[i]);
+    {
+        string str=argv[i];
+        bool foundPrefix=false;
+        int j=0;
+        for(;j<2&&j<str.size()&&str.at(j)=='-';j++)
+            foundPrefix=true;
+
+        if(!foundPrefix)
+        {
+            if(!setvar(str))
+                cerr<<"Failed to parse argument "<<str<<", do you forgot '-"<<str<<"'?\n";
+            continue;
+        }
+
+        str=str.substr(j);
+        if(str.find('=')!=string::npos)
+        {
+            setvar(str);
+            continue;
+        }
+
+        if(i+1>=argc) {
+            insert(str,"1",true);
+            continue;
+        }
+        string str2=argv[i+1];
+        if(str2.front()=='-'){
+            insert(str,"1",true);
+            continue;
+        }
+
+        i++;
+        insert(str,argv[i]);
+        continue;
+    }
 
     // parse default config file
     string cfg_File=argv[0];
