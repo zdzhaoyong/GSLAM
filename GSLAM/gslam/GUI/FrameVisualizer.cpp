@@ -5,6 +5,7 @@
 #include <QWheelEvent>
 #include <QVBoxLayout>
 #include <QHeaderView>
+#include <QDateTime>
 using namespace std;
 
 namespace GSLAM
@@ -251,7 +252,8 @@ void InfomationViewer::update(const FramePtr& frame,bool flush)
 
     vars["id"]=QString("%1").arg(frame->id());
     vars["type"]=frame->type().c_str();
-    vars["timestamp"]=QString("%1").arg(frame->timestamp(),0,'g',13);
+    QDateTime tm=QDateTime::fromMSecsSinceEpoch(frame->timestamp()*1e3);
+    vars["time"]=tm.toString("yyyy.MM.dd-hh:mm:ss.zzz");
 
     if(frame->cameraNum())
     {

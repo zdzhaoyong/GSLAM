@@ -22,15 +22,15 @@ int main(int argc,char** argv)
             QApplication app(svar.i["argc"],(char**)svar.GetPointer("argv"));
             GSLAM::MainWindow mainwindow;
             mainwindow.show();
-            for(int i=1;i<argc;i++)
-            {
-                string arg=argv[i];
-                if(arg.find('=')==string::npos&&arg.front()!='-')
-                {
-                    mainwindow.slotOpen(arg.c_str());
-                }
+//            for(int i=1;i<argc;i++)
+//            {
+//                string arg=argv[i];
+//                if(arg.find('=')==string::npos&&arg.front()!='-')
+//                {
+//                    mainwindow.slotOpen(arg.c_str());
+//                }
 
-            }
+//            }
             ret=app.exec();
         }
     }
