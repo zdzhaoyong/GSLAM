@@ -47,7 +47,7 @@ REG_EVENT(ScenceCenterEvent,Point3d,center);
 REG_EVENT(ScenceRadiusEvent,double,radius);
 REG_EVENT(SetViewPoseEvent,SE3,pose);
 REG_EVENT(CurrentFrameEvent,FramePtr,frame);
-REG_EVENT(DrawableEvent,GObject,obj);
+REG_EVENT2(DrawableEvent,GObjectPtr,obj,std::string,name);
 REG_EVENT2(DebugImageEvent,GImage,img,std::string,name);
 
 

@@ -12,7 +12,17 @@ bool compareFr(GSLAM::FramePtr a,GSLAM::FramePtr b)
 class MapVisualizer : public GSLAM::GObject
 {
 public:
-    MapVisualizer():_vetexTrajBuffer(0),_mapUpdated(false),_curFrameUpdated(false){}
+    MapVisualizer(std::string name="")
+        :_name(name),_vetexTrajBuffer(0),_mapUpdated(false),_curFrameUpdated(false){
+        if(!name.empty())
+        {
+            scommand.Call("AddLayer",name+".Trajectory");
+            scommand.Call("AddLayer",name+".Connects");
+            scommand.Call("AddLayer",name+".PointCloud");
+            scommand.Call("AddLayer",name+".Frames");
+            scommand.Call("AddLayer",name+".CurrentFrame");
+        }
+    }
 
     virtual void draw()
     {
@@ -85,7 +95,7 @@ public:
             _curFrameUpdated=false;
         }
 
-        if(svar.GetInt("SLAM.Trajectory",1))
+        if(svar.GetInt(_name+".Trajectory",1))
         {
             glDisable(GL_LIGHTING);
             glBindBuffer(GL_ARRAY_BUFFER,_vetexTrajBuffer);
@@ -97,7 +107,7 @@ public:
             glDisableClientState(GL_VERTEX_ARRAY);
         }
 
-        if(svar.GetInt("SLAM.GPSOffset",1))
+        if(svar.GetInt(_name+".GPSOffset",1))
         {
             glDisable(GL_LIGHTING);
             glBindBuffer(GL_ARRAY_BUFFER,_gpsTrajBuffer);
@@ -109,7 +119,7 @@ public:
             glDisableClientState(GL_VERTEX_ARRAY);
         }
 
-        if(svar.GetInt("SLAM.Connects",1))
+        if(svar.GetInt(_name+".Connects",1))
         {
             glBindBuffer(GL_ARRAY_BUFFER,_vetexConnectionBuffer);
             glVertexPointer(3, GL_DOUBLE, 0, 0);
@@ -121,7 +131,7 @@ public:
         }
 
 
-        if(svar.GetInt("SLAM.PointCloud",1))
+        if(svar.GetInt(_name+".PointCloud",1))
         {
             glBindBuffer(GL_ARRAY_BUFFER,_pointCloudVertexBuffer);
             glVertexPointer(3, GL_FLOAT, 0, 0);
@@ -135,7 +145,7 @@ public:
             glDisableClientState(GL_VERTEX_ARRAY);
         }
 
-        if(svar.GetInt("SLAM.Frames",1))
+        if(svar.GetInt(_name+".Frames",1))
         {
             for(auto sim3:_keyframes)
             {
@@ -144,9 +154,10 @@ public:
         }
 
         glPopMatrix();
-        if(svar.GetInt("SLAM.CurrentFrame",1))
+        if(svar.GetInt(_name+".CurrentFrame",1)&&_curFrame)
         {
-            drawRect(_curFrame,curFrameColor);
+            GSLAM::SIM3 curPose(_curFrame->getPose(),fabs(_curFrame->getMedianDepth())*0.1);
+            drawRect(curPose,curFrameColor);
 
             glBindBuffer(GL_ARRAY_BUFFER,_curConnectionBuffer);
             glVertexPointer(3, GL_DOUBLE, 0, 0);
@@ -291,7 +302,8 @@ public:
             _mapUpdated=true;
             _scenceCenter=(boxMax+boxMin)/2.+center;
             _scenceRadius=(boxMax-boxMin).norm()/2;
-            _viewPoint.get_rotation()=_curFrame.get_rotation();
+            if(_curFrame)
+                _viewPoint.get_rotation()=_curFrame->getPose().get_rotation();
             double r[9];_viewPoint.get_rotation().getMatrix(r);
             _viewPoint.get_translation()=_scenceCenter-_scenceRadius*Point3d(r[2],r[5],r[8]);
             _scenceOrigin=center;
@@ -300,8 +312,8 @@ public:
 
     void update(GSLAM::MapPtr map,const GSLAM::FramePtr& curFrame)
     {
-        _curFrame=GSLAM::SIM3(curFrame->getPose(),fabs(curFrame->getMedianDepth())*0.1);
-        Point3d t=_curFrame.get_translation();
+        _curFrame=curFrame;
+        Point3d t=_curFrame->getPose().get_translation();
         std::map<GSLAM::FrameID,SPtr<GSLAM::FrameConnection> > parents;
         std::vector<Point3d> curConnection;
         if(curFrame->getParents(parents))
@@ -323,12 +335,13 @@ public:
     }
 
     GSLAM::MutexRW          _mutex;
+    std::string             _name;
     std::vector<Point3f>    _vetexTraj,_gpsTraj;
     std::vector<Point3d>    _vetexConnection,_gpsError;
     std::vector<Point3f>    _pointCloudVertex;
     std::vector<Point3ub>   _pointCloudColors;
     std::vector<GSLAM::SIM3> _keyframes;
-    GSLAM::SIM3             _curFrame;
+    GSLAM::FramePtr          _curFrame;
     std::vector<Point3d>    _curConnection;
     GSLAM::Camera           _camera;
 
@@ -350,10 +363,12 @@ public:
         _slam.reset();
     }
 
+    std::string             _name;
+    std::vector<SPtr<DrawableEvent> > _objects;
     SLAMPtr         _slam;
     MapPtr          _map;
     std::string     _slamplugin;
-    MapVisualizer   _vis;
+    SPtr<MapVisualizer>   _vis;
     bool            _firstFrame;
 };
 
@@ -373,6 +388,9 @@ SLAMPtr SLAMVisualizer::slam(){
 
         if(impl->_slam)
         {
+            impl->_name=impl->_slam->type();
+            scommand.Call("AddLayer",impl->_name);
+            impl->_vis=SPtr<MapVisualizer>(new MapVisualizer(impl->_name));
             impl->_slam->call("SetSvar",&svar);
             impl->_slam->setCallback(this);
         }
@@ -386,8 +404,10 @@ void SLAMVisualizer::releaseSLAM()
 }
 
 void SLAMVisualizer::draw(){
+    if(!svar.GetInt(impl->_name)) return ;
     if(impl->_slam&&impl->_slam->isDrawable()) impl->_slam->draw();
-    else impl->_vis.draw();
+    else if(impl->_vis) impl->_vis->draw();
+    for(auto& d:impl->_objects) if(svar.GetInt(impl->_name+"."+d->_name)) d->_obj->draw();
 }
 
 void SLAMVisualizer::handle(const SPtr<GObject>& obj){
@@ -395,16 +415,16 @@ void SLAMVisualizer::handle(const SPtr<GObject>& obj){
     if(auto e=std::dynamic_pointer_cast<Map>(obj))
     {
         impl->_map=e;
-        impl->_vis.update(impl->_map);
-        if(impl->_vis._scenceRadius>0)
+        impl->_vis->update(impl->_map);
+        if(impl->_vis->_scenceRadius>0)
         {
-            Point3d center=impl->_vis._scenceCenter;
+            Point3d center=impl->_vis->_scenceCenter;
             setSceneCenter(qglviewer::Vec(center.x,center.y,center.z));
-            setSceneRadius(impl->_vis._scenceRadius*10);
+            setSceneRadius(impl->_vis->_scenceRadius*10);
             if(impl->_firstFrame)
             {
                 impl->_firstFrame=false;
-                SE3 pose=impl->_vis._viewPoint;
+                SE3 pose=impl->_vis->_viewPoint;
                 const pi::Point3f& t=pose.get_translation();
                 const pi::SO3f& r=pose.get_rotation();
                 camera()->setPosition(qglviewer::Vec(t.x,t.y,t.z));
@@ -417,16 +437,16 @@ void SLAMVisualizer::handle(const SPtr<GObject>& obj){
     {
         e->setImage(GImage());
         if(impl->_slam&&!impl->_map) impl->_map=impl->_slam->getMap();
-        impl->_vis.update(impl->_map);
-        if(impl->_vis._scenceRadius>0)
+        impl->_vis->update(impl->_map);
+        if(impl->_vis->_scenceRadius>0)
         {
-            Point3d center=impl->_vis._scenceCenter;
+            Point3d center=impl->_vis->_scenceCenter;
             setSceneCenter(qglviewer::Vec(center.x,center.y,center.z));
-            setSceneRadius(impl->_vis._scenceRadius*10);
+            setSceneRadius(impl->_vis->_scenceRadius*10);
             if(impl->_firstFrame)
             {
                 impl->_firstFrame=false;
-                SE3 pose=impl->_vis._viewPoint;
+                SE3 pose=impl->_vis->_viewPoint;
                 const pi::Point3f& t=pose.get_translation();
                 const pi::SO3f& r=pose.get_rotation();
                 camera()->setPosition(qglviewer::Vec(t.x,t.y,t.z));
@@ -439,7 +459,7 @@ void SLAMVisualizer::handle(const SPtr<GObject>& obj){
     {
         if(!impl->_slam) return;
         if(impl->_slam&&!impl->_map) impl->_map=impl->_slam->getMap();
-        impl->_vis.update(impl->_slam->getMap(),e->_frame);
+        impl->_vis->update(impl->_slam->getMap(),e->_frame);
         update();
     }
     else if(obj->type()=="ScenceCenterEvent")
@@ -455,6 +475,10 @@ void SLAMVisualizer::handle(const SPtr<GObject>& obj){
         ScenceRadiusEvent* radiusE=(ScenceRadiusEvent*)obj.get();
         setSceneRadius(radiusE->_radius);
         update();
+    }
+    else if(auto e=std::dynamic_pointer_cast<DrawableEvent>(obj)){
+        impl->_objects.push_back(e);
+        scommand.Call("AddLayer",impl->_name+"."+e->_name);
     }
 }
 
