@@ -97,6 +97,7 @@ void ShowLayerWidget::changedSlot(QTreeWidgetItem *item, int column)
     {
         itemSvar->var=item->checkState(column);
         scommand.Call("LayerUpdate "+item->toolTip(0).toStdString());
+        scommand.Call("MainWindow.Update");
         emit signalStatusChanged(item->toolTip(0),item->checkState(column));
     }
 }
@@ -346,6 +347,7 @@ void MainWindow::call_slot(QString cmd)
     if("Show"==cmd)   show();
     if("Update"==cmd)
     {
+        for(SLAMVisualizer* vis:_d->slamVis) vis->update();
     }
     else
         scommand.Call(cmd.toStdString());
