@@ -33,6 +33,118 @@ enum ThreadStatus
     RUNNING,PAUSE,STOP
 };
 
+class SvarQTreeItem:public QTreeWidgetItem
+{
+public:
+    SvarQTreeItem(const string& cmd,QTreeWidgetItem* parent,const QString &strings,int type,int def)
+        : QTreeWidgetItem(parent,QStringList() <<strings,type),var(svar.GetInt(cmd,def))
+    {
+        SvarWithType<SvarQTreeItem*>::instance()[cmd]=this;
+
+        if(parent)
+            parent->addChild(this);
+//        setSelected(true);
+
+        if(!svar.GetInt(cmd,def))
+        {
+            setCheckState(0,Qt::Unchecked);
+        }
+        else if(svar.GetInt(cmd,def)==1)
+            setCheckState(0,Qt::PartiallyChecked);
+        else
+        {
+            setCheckState(0,Qt::Checked);
+//            if(parent)
+//            {
+//                if(parent->checkState(0)==Qt::Unchecked)
+//                    parent->setCheckState(0,Qt::Checked);
+//            }
+        }
+
+        setToolTip(0,cmd.c_str());
+    }
+
+    static SvarQTreeItem* get(const string& cmd){return SvarWithType<SvarQTreeItem*>::instance()[cmd];}
+
+
+    int& var;
+};
+
+void LayerHandle(void *ptr,string cmd,string para)
+{
+    ShowLayerWidget* w=static_cast<ShowLayerWidget*>(ptr);
+    if("AddLayer"==cmd){
+        w->addItem(para.c_str(),2);
+    }
+}
+
+ShowLayerWidget::ShowLayerWidget(QWidget* parent):QTreeWidget(parent){
+    scommand.RegisterCommand("AddLayer",LayerHandle,this);
+    //    this->setTabKeyNavigation(false);
+    setHeaderLabel(tr("Layers"));
+    setHeaderHidden(true);
+    SvarQTreeItem* rootTree=new SvarQTreeItem("Root",NULL,tr("Root"),0,2);
+    addTopLevelItem(rootTree);
+    connect(this,SIGNAL(itemChanged(QTreeWidgetItem*,int)),
+            this,SLOT(changedSlot(QTreeWidgetItem*,int)));
+    connect(this,SIGNAL(signalAddItem(QString,int)),this,SLOT(slotAddItem(QString,int)));
+}
+
+void ShowLayerWidget::changedSlot(QTreeWidgetItem *item, int column)
+{
+    SvarQTreeItem* itemSvar=(SvarQTreeItem*)item;
+    if(itemSvar->var!=item->checkState(column))
+    {
+        itemSvar->var=item->checkState(column);
+        scommand.Call("LayerUpdate "+item->toolTip(0).toStdString());
+        emit signalStatusChanged(item->toolTip(0),item->checkState(column));
+    }
+}
+
+bool ShowLayerWidget::changeLanguage()
+{
+    return false;
+}
+
+void ShowLayerWidget::addItem(QString itemName,int status)
+{
+    emit signalAddItem(itemName,status);
+}
+
+void ShowLayerWidget::slotAddItem(QString itemName,int status)
+{
+    std::string itemStr=itemName.toStdString();
+    if(!itemStr.empty()){
+        auto dotIdx=itemStr.find_last_of('.');
+        if(dotIdx==std::string::npos){
+            SvarQTreeItem* item=SvarQTreeItem::get(itemStr);
+            if(!item)
+            {
+                item=new SvarQTreeItem(itemStr.c_str(),SvarQTreeItem::get("Root"),itemStr.c_str(),0,status);
+            }
+            return ;
+        }
+
+        std::string parent=itemStr.substr(0,dotIdx);
+        std::string name=itemStr.substr(dotIdx+1);
+        SvarQTreeItem* itemP=SvarQTreeItem::get(parent);
+        if(!itemP) slotAddItem(parent.c_str(),status);
+        itemP=SvarQTreeItem::get(parent);
+        itemP=new SvarQTreeItem(itemStr,itemP,name.c_str(),0,status);
+    }
+}
+
+class Win3D : public QGLViewer,GObjectHandle
+{
+public:
+    virtual void draw(){
+        for(SLAMVisualizerPtr& vis : _visualizers)
+            vis->draw();
+    }
+
+    std::vector<SLAMVisualizerPtr> _visualizers;
+};
+
 struct MainWindowData
 {
     MainWindowData()
@@ -160,11 +272,15 @@ int MainWindow::setupLayout(void)
 
     _d->operateDock   =new QDockWidget(this);
     _d->slamTab       =new QTabWidget(this);
+    QTabWidget* operaterTab=new QTabWidget(_d->operateDock);
     _d->splitterLeft    =new QSplitter(Qt::Vertical,_d->operateDock);
 
     _d->operateDock->setWindowTitle("SideBar");
     _d->operateDock->setAllowedAreas(Qt::LeftDockWidgetArea|Qt::RightDockWidgetArea);
-    _d->operateDock->setWidget(_d->splitterLeft);
+    operaterTab->addTab(_d->splitterLeft,"FrameVis");
+    ShowLayerWidget* layersWidget=new ShowLayerWidget(_d->operateDock);
+    operaterTab->addTab(layersWidget,"Layers");
+    _d->operateDock->setWidget(operaterTab);
     addDockWidget(Qt::LeftDockWidgetArea,_d->operateDock);
     _d->frameVis      =new FrameVisualizer(_d->splitterLeft);
 

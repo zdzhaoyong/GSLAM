@@ -3,6 +3,7 @@
 #define MAINWINDOW_H
 #include <QMainWindow>
 #include <QAction>
+#include <QTreeWidget>
 #include <memory>
 
 namespace GSLAM{
@@ -55,6 +56,21 @@ public slots:
 
 private:
     QString _cmd;
+};
+
+class ShowLayerWidget:public QTreeWidget
+{
+    Q_OBJECT
+public:
+    ShowLayerWidget(QWidget* parent=NULL);
+    void addItem(QString itemName,int status);
+signals:
+    void signalAddItem(QString,int status);
+    void signalStatusChanged(QString,int);
+protected slots:
+    void changedSlot(QTreeWidgetItem *item, int column);
+    void slotAddItem(QString itemName,int status);
+    bool changeLanguage();
 };
 
 }

@@ -1199,11 +1199,16 @@ inline int& Svar::GetInt(const std::string& name, int def, SVARMODE mode)
     it=data.find(name);
     char* envStr=NULL;
     if(it==data.end()) envStr=getenv(name.c_str());
-    if(it!=data.end()) //Second: Use the var from Svar
+    if(it!=data.end()||envStr) //Second: Use the var from Svar
     {
         string str_var=envStr?envStr:it->second;
         istringstream istr_var(str_var);
-        istr_var>>def;
+        try{
+            istr_var>>def;
+        }
+        catch(std::exception e){
+            cerr<<"Failed to read value from "<<str_var<<endl;
+        }
         while(!ptr)
         {
             ptr=(typed_map.get_ptr(name,def));
@@ -1242,11 +1247,16 @@ inline double& Svar::GetDouble(const std::string& name, double def, SVARMODE mod
     it=data.find(name);
     char* envStr=NULL;
     if(it==data.end()) envStr=getenv(name.c_str());
-    if(it!=data.end()) //Second: Use the var from Svar
+    if(it!=data.end()||envStr) //Second: Use the var from Svar
     {
         string str_var=envStr?envStr:it->second;
         istringstream istr_var(str_var);
-        istr_var>>def;
+        try{
+            istr_var>>def;
+        }
+        catch(std::exception e){
+            cerr<<"Failed to read value from "<<str_var<<endl;
+        }
         while(!ptr)
         {
             ptr=(typed_map.get_ptr(name,def));

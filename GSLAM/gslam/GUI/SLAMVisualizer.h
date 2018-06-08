@@ -24,5 +24,6 @@ protected:
     SPtr<SLAMVisualizerImpl>   impl;
 };
 
+typedef SPtr<SLAMVisualizer> SLAMVisualizerPtr;
 }
 #endif
