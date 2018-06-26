@@ -63,8 +63,7 @@ before_script:
       cd build
       cmake .. \
         -DBUILD_TESTING=OFF \
-        -DBUILD_EXAMPLES=OFF \
-        -DCMAKE_INSTALL_PREFIX=../install
+        -DBUILD_EXAMPLES=OFF 
       make -j2
       make install
       cd ${TRAVIS_BUILD_DIR}

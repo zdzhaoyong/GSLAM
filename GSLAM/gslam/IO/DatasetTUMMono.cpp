@@ -267,12 +267,14 @@ public:
 
     bool loadVignette(const string& vigFile)
     {
+#ifdef HAS_OPENCV
         cv::Mat vigMat=cv::imread(vigFile, CV_LOAD_IMAGE_GRAYSCALE);
         if(!vigMat.empty()&&(vigMat.type()==CV_8U||vigMat.type()==CV_16U))
         {
             _vignette=vigMat;
         }
         else return false;
+#endif
         return false;
     }
 
