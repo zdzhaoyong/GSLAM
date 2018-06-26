@@ -81,10 +81,10 @@ script:
   - cmake --version
   - cd build
   - |
-    if [[ -z "$(ls -A colmap)" ]]; then
+    if [[ -z "$(ls -A GSLAM)" ]]; then
       git clone https://github.com/zdzhaoyong/GSLAM.git
     fi
-  - cd colmap
+  - cd GSLAM
   - git checkout ${TRAVIS_BRANCH}
   - git pull
   - mkdir -p build
