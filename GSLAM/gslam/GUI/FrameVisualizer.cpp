@@ -78,7 +78,7 @@ public:
     virtual void wheelEvent(QWheelEvent *e)
     {
         float scale=std::max(tgtRect.width()/(float)width(),tgtRect.height()/(float)height());
-        float scaleDelta=std::exp(e->delta()*0.001);
+        float scaleDelta=exp(e->delta()*0.001);
         scale=scaleDelta*scale;
 
         QPointF newDxy=QPointF(e->x(),e->y())-QPointF(e->x()-tgtRect.x(),e->y()-tgtRect.y())*scaleDelta;

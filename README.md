@@ -1,5 +1,7 @@
 # GSLAM (A General SLAM Framework and BenchMark)
 
+[![Build Status](https://travis-ci.org/zdzhaoyong/GSLAM.svg?branch=master)](https://travis-ci.org/zdzhaoyong/GSLAM)
+
 ## 1. Introduction
 
 ### 1.1. What is GSLAM?

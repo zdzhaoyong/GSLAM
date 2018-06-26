@@ -3,6 +3,8 @@
 #include "../../core/VideoFrame.h"
 #ifdef HAS_OPENCV
 #include <opencv2/highgui/highgui.hpp>
+#elif defined(HAS_QT)
+#include <QImage>
 #endif
 
 
