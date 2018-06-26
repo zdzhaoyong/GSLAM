@@ -13,11 +13,6 @@ matrix:
           packages:
             - cmake
             - build-essential
-            - libboost-program-options-dev
-            - libboost-filesystem-dev
-            - libboost-regex-dev
-            - libboost-system-dev
-            - libboost-test-dev
             - libeigen3-dev
             - libatlas-base-dev
             - libsuitesparse-dev
@@ -26,7 +21,7 @@ matrix:
             - libgflags-dev
             - libglew-dev
     - os: osx
-      env: CMAKE_OPTIONS="-DIPO_ENABLED=OFF -DQt5Core_DIR=/usr/local/opt/qt5/lib/cmake/Qt5Core -DQt5OpenGL_DIR=/usr/local/opt/qt5/lib/cmake/Qt5OpenGL"
+      env: CMAKE_OPTIONS="-DIPO_ENABLED=OFF -DQt5_DIR=/usr/local/opt/qt5/lib/cmake/Qt5 -DQt5Core_DIR=/usr/local/opt/qt5/lib/cmake/Qt5Core -DQt5OpenGL_DIR=/usr/local/opt/qt5/lib/cmake/Qt5OpenGL"
 
 cache:
   directories:
