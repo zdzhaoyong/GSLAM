@@ -5,7 +5,7 @@ dist: trusty
 matrix:
   include:
     - os: linux
-      env: CMAKE_OPTIONS="-DOPENGL_ENABLED=OFF -DCeres_DIR=${TRAVIS_BUILD_DIR}/deps/ceres-solver/install/lib/cmake/Ceres -DQt5Core_DIR=/opt/qt54/lib/cmake/Qt5Core -DQt5OpenGL_DIR=/opt/qt54/lib/cmake/Qt5OpenGL" QT_QPA_PLATFORM=offscreen
+      env: CMAKE_OPTIONS="-DCMAKE_RUNTIME_OUTPUT_DIRECTORY=bin -DOPENGL_ENABLED=OFF -DCeres_DIR=${TRAVIS_BUILD_DIR}/deps/ceres-solver/install/lib/cmake/Ceres -DQt5Core_DIR=/opt/qt54/lib/cmake/Qt5Core -DQt5OpenGL_DIR=/opt/qt54/lib/cmake/Qt5OpenGL" QT_QPA_PLATFORM=offscreen
       addons:
         apt:
           sources:
@@ -21,7 +21,7 @@ matrix:
             - libgflags-dev
             - libglew-dev
     - os: osx
-      env: CMAKE_OPTIONS="-DIPO_ENABLED=OFF -DQt5_DIR=/usr/local/opt/qt5/lib/cmake/Qt5 -DQt5Core_DIR=/usr/local/opt/qt5/lib/cmake/Qt5Core -DQt5OpenGL_DIR=/usr/local/opt/qt5/lib/cmake/Qt5OpenGL"
+      env: CMAKE_OPTIONS="-DCMAKE_RUNTIME_OUTPUT_DIRECTORY=bin -DIPO_ENABLED=OFF -DQt5_DIR=/usr/local/opt/qt5/lib/cmake/Qt5 -DQt5Core_DIR=/usr/local/opt/qt5/lib/cmake/Qt5Core -DQt5OpenGL_DIR=/usr/local/opt/qt5/lib/cmake/Qt5OpenGL"
 
 cache:
   directories:
@@ -84,4 +84,4 @@ script:
   - pwd
   - cmake .. -DCMAKE_BUILD_TYPE=Release -DTESTS_ENABLED=ON ${CMAKE_OPTIONS}
   - make -j2
-  - ./gslam Act=Tests
+  - ./bin/gslam Act=Tests
