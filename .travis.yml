@@ -34,9 +34,7 @@ before_script:
       brew tap homebrew/science
       brew install \
         cmake \
-        boost \
         eigen \
-        freeimage \
         glog \
         gflags \
         suite-sparse \

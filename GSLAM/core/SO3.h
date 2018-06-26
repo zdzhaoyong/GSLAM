@@ -432,13 +432,6 @@ public:
         return os;
     }
 
-    operator std::ostream()const
-    {
-        std::ostream os;
-        os<<x<<" "<<y<<" "<<z<<" "<<w;
-        return os;
-    }
-
 public:
     Precision x,y,z,w;
 };
