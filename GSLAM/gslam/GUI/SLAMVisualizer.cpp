@@ -1,9 +1,10 @@
 #if defined(HAS_QT)
 
-#if defined(HAS_GLEW) && 0
+#if defined(HAS_GLEW)
 #include <GL/glew.h>
-#endif
+#else
 #include <QtOpenGL>
+#endif
 
 #include "SLAMVisualizer.h"
 #include "../../core/Event.h"
@@ -46,7 +47,7 @@ public:
         GSLAM::Point3ub connectionColor=svar.get_var("MainWindow.ConnectionColor",Point3ub(0,255,255));
         GSLAM::Point3ub frameColor  =svar.get_var("MainWindow.FrameColor",Point3ub(0,0,255));
         GSLAM::Point3ub curFrameColor  =svar.get_var("MainWindow.CurrentFrameColor",Point3ub(255,0,0));
-#if defined(HAS_GLEW)&&0
+#if defined(HAS_GLEW)
         if(!_vetexTrajBuffer)
         {
             glewInit();
@@ -215,18 +216,18 @@ public:
         {
             if(_mapUpdated)
             {
-                glNewList(_vetexTrajBuffer,GL_COMPILE_AND_EXECUTE);
+                glNewList(_vetexTrajBuffer,GL_COMPILE);
                 glPointSize(pointCloudSize);
                 glBegin(GL_POINTS);
                 for(int i=0;i<_pointCloudVertex.size();i++) {
-                    glVertex(_pointCloudVertex[i]);
                     glColor(_pointCloudColors[i]);
+                    glVertex(_pointCloudVertex[i]);
                 }
                 glEnd();
                 glEndList();
                 _mapUpdated=false;
             }
-            else glCallList(_vetexTrajBuffer);
+            glCallList(_vetexTrajBuffer);
 
         }
 
