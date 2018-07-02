@@ -1,6 +1,8 @@
 # GSLAM (A General SLAM Framework and BenchMark)
 
 [![Build Status](https://travis-ci.org/zdzhaoyong/GSLAM.svg?branch=master)](https://travis-ci.org/zdzhaoyong/GSLAM)
+[![License](https://img.shields.io/badge/license-BSD--2--Clause-blue.svg)](./LICENSE)
+[![Version](https://img.shields.io/github/release/zdzhaoyong/GSLAM.svg)](https://github.com/zdzhaoyong/GSLAM/releases)
 
 ## 1. Introduction
 
