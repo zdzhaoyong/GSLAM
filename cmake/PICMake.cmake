@@ -335,7 +335,7 @@ function(pi_add_target_f TARGET_NAME TARGET_TYPE)
   endforeach()
 
   include_directories(${TARGET_COMPILEFLAGS})
-  add_definitions(${TARGET_DEFINITIONS})
+#  add_definitions(${TARGET_DEFINITIONS})
 
   if(TARGET_TYPE STREQUAL "BIN")
     set_property( GLOBAL APPEND PROPERTY APPS2COMPILE  " ${TARGET_NAME}")
@@ -365,7 +365,7 @@ function(pi_add_target_f TARGET_NAME TARGET_TYPE)
   #message("TARGET_MODULES: ${TARGET_MODULES}")
   #message("TARGET_REQUIRED: ${TARGET_REQUIRED}")
   #message("TARGET_COMPILEFLAGS: ${TARGET_COMPILEFLAGS}")
-
+  target_compile_definitions(${TARGET_NAME} PRIVATE ${TARGET_DEFINITIONS})
   target_link_libraries(${TARGET_NAME} ${TARGET_LINKFLAGS} ${TARGET_DEPENDENCY})
   list(APPEND TARGET_MODULES ${TARGET_REQUIRED})
   if("${TARGET_MODULES}" MATCHES "Qt|QT|qt")

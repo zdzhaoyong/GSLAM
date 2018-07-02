@@ -83,12 +83,20 @@ elseif(QT5_FOUND)
     qt5_add_resources(QRC_FILES GSLAM/gslam/GUI/res.qrc)
 endif()
 
-include_directories(.)
+include_directories(. GSLAM/core)
 
-pi_add_target(gslam BIN GSLAM/gslam ${QRC_FILES} REQUIRED System MODULES OpenCV Qt OpenGL GLEW GLUT)
-pi_add_target(gslamDB_cfg SHARED GSLAM/plugins/cfg REQUIRED System MODULES OpenCV Qt)
+pi_add_target(gslam BIN GSLAM/gslam ${QRC_FILES} REQUIRED System MODULES Qt OpenGL)
+
 pi_add_target(gslam_optimizer SHARED GSLAM/plugins/optimizer_ceres REQUIRED System Eigen3 Ceres GLOG)
 pi_add_target(gslam_estimator SHARED GSLAM/plugins/estimator_opencv REQUIRED OpenCV)
+
+pi_add_target(gslamDB_euroc SHARED GSLAM/gslam/IO/DatasetEuroc.cpp REQUIRED OpenCV)
+pi_add_target(gslamDB_kitti SHARED GSLAM/gslam/IO/DatasetKITTI.cpp REQUIRED OpenCV)
+pi_add_target(gslamDB_npurgbd SHARED GSLAM/gslam/IO/DatasetNPURGBD.cpp REQUIRED OpenCV)
+pi_add_target(gslamDB_cvmono SHARED GSLAM/gslam/IO/DatasetOpenCVMono.cpp REQUIRED OpenCV)
+pi_add_target(gslamDB_tummono SHARED GSLAM/gslam/IO/DatasetTUMMono.cpp REQUIRED OpenCV)
+pi_add_target(gslamDB_tumrgbd SHARED GSLAM/gslam/IO/DatasetTUMRGBD.cpp REQUIRED OpenCV)
+
 
 pi_report_target()
 #####################################################################

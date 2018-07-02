@@ -335,9 +335,16 @@ void FrameVisualizer::slotFrameUpdated()
 
         if(img.cols%4!=0)
         {
-#ifdef HAS_OPENCV
+#if defined(HAS_OPENCV)&&0
             cv::Mat src=img,dst(src.rows,src.cols-(img.cols%4),src.type());
             src(cv::Rect(0,0,dst.cols,dst.rows)).copyTo(dst);
+            img=dst;
+#else
+            GImage dst(img.rows,img.cols-(img.cols%4),img.type());
+            int srcLineStep=img.elemSize()*img.cols;
+            int dstLineStep=dst.elemSize()*dst.cols;
+            for(int i=0;i<img.rows;i++)
+                memcpy(dst.data+dstLineStep*i,img.data+srcLineStep*i,dstLineStep);
             img=dst;
 #endif
         }

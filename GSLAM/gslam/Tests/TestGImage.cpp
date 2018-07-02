@@ -1,9 +1,9 @@
 #include <thread>
+#include "gtest.h"
 
 #include "../../core/Timer.h"
 #include "../../core/GImage.h"
 #include "GSLAM/core/Random.h"
-#include "gtest.h"
 
 using namespace std;
 

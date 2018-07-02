@@ -1,5 +1,10 @@
 #if defined(HAS_QT)
+
+#if defined(HAS_GLEW) && 0
 #include <GL/glew.h>
+#endif
+#include <QtOpenGL>
+
 #include "SLAMVisualizer.h"
 #include "../../core/Event.h"
 
@@ -41,7 +46,7 @@ public:
         GSLAM::Point3ub connectionColor=svar.get_var("MainWindow.ConnectionColor",Point3ub(0,255,255));
         GSLAM::Point3ub frameColor  =svar.get_var("MainWindow.FrameColor",Point3ub(0,0,255));
         GSLAM::Point3ub curFrameColor  =svar.get_var("MainWindow.CurrentFrameColor",Point3ub(255,0,0));
-
+#if defined(HAS_GLEW)&&0
         if(!_vetexTrajBuffer)
         {
             glewInit();
@@ -166,10 +171,89 @@ public:
             glDrawArrays(GL_LINES,0,_curConnection.size());
             glDisableClientState(GL_VERTEX_ARRAY);
         }
+#else
+        if(!_vetexTrajBuffer){
+            _vetexTrajBuffer=glGenLists(1);
+        }
+
+        if(_curFrameUpdated)
+        {
+            _curFrameUpdated=false;
+        }
+
+        glDisable(GL_LIGHTING);
+
+        if(svar.GetInt(_name+".Trajectory",1))
+        {
+            glLineWidth(trajectoryWidth);
+            glColor3f(trajectoryColor.x,trajectoryColor.y,trajectoryColor.z);
+            glBegin(GL_LINES);
+            for(auto v:_vetexTraj) glVertex(v);
+            glEnd();
+        }
+
+        if(svar.GetInt(_name+".GPSOffset",1))
+        {
+            glLineWidth(trajectoryWidth);
+            glColor3ub(gpsTrajectoryColor.x,gpsTrajectoryColor.y,gpsTrajectoryColor.z);
+            glBegin(GL_LINES);
+            for(auto& v:_gpsTraj) glVertex(v);
+            glEnd();
+        }
+
+        if(svar.GetInt(_name+".Connects",1))
+        {
+            glLineWidth(connectionWidth);
+            glColor3ub(connectionColor.x,connectionColor.y,connectionColor.z);
+            glBegin(GL_LINES);
+            for(auto& v:_vetexConnection) glVertex(v);
+            glEnd();
+        }
+
+
+        if(svar.GetInt(_name+".PointCloud",1))
+        {
+            if(_mapUpdated)
+            {
+                glNewList(_vetexTrajBuffer,GL_COMPILE_AND_EXECUTE);
+                glPointSize(pointCloudSize);
+                glBegin(GL_POINTS);
+                for(int i=0;i<_pointCloudVertex.size();i++) {
+                    glVertex(_pointCloudVertex[i]);
+                    glColor(_pointCloudColors[i]);
+                }
+                glEnd();
+                glEndList();
+                _mapUpdated=false;
+            }
+            else glCallList(_vetexTrajBuffer);
+
+        }
+
+        if(svar.GetInt(_name+".Frames",1))
+        {
+            for(auto sim3:_keyframes)
+            {
+                drawRect(sim3,frameColor);
+            }
+        }
+
+        glPopMatrix();
+        if(svar.GetInt(_name+".CurrentFrame",1)&&_curFrame)
+        {
+            GSLAM::SIM3 curPose(_curFrame->getPose(),fabs(_curFrame->getMedianDepth())*0.1);
+            drawRect(curPose,curFrameColor);
+            glLineWidth(connectionWidth);
+            glBegin(GL_LINES);
+            for(auto& v:_curConnection) glVertex(v);
+            glEnd();
+        }
+#endif
     }
 
     void glVertex(const GSLAM::Point3f& p){glVertex3f(p.x,p.y,p.z);}
     void glVertex(const GSLAM::Point3d& p){glVertex3d(p.x,p.y,p.z);}
+    void glColor(const GSLAM::Point3ub& c){glColor3ub(c.x,c.y,c.z);}
     void drawRect(GSLAM::SIM3 pose,GSLAM::ColorType color)
     {
         if(!_camera.isValid()) _camera=GSLAM::Camera({640.,480.,500.,500.,320.,240.});

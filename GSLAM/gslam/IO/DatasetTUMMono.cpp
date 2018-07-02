@@ -7,6 +7,10 @@
 #include "GSLAM/core/Undistorter.h"
 #include "IO.h"
 
+#ifdef HAS_OPENCV
+#include <opencv2/highgui/highgui.hpp>
+#endif
+
 /**
  * 1. Download dataset from : https://vision.in.tum.de/data/datasets/mono-dataset
  * 2. Play dataset with gslam Dataset=<dir>/all_calib_sequences/calib_narrowGamma_scene1/.tummono
