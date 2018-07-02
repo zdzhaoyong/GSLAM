@@ -389,7 +389,7 @@ public:
             if(_curFrame)
                 _viewPoint.get_rotation()=_curFrame->getPose().get_rotation();
             double r[9];_viewPoint.get_rotation().getMatrix(r);
-            _viewPoint.get_translation()=_scenceCenter-_scenceRadius*Point3d(r[2],r[5],r[8]);
+            _viewPoint.get_translation()=_scenceCenter-Point3d(r[2],r[5],r[8])*double(_scenceRadius);
             _scenceOrigin=center;
         }
     }
@@ -459,10 +459,6 @@ public:
 SLAMVisualizer::SLAMVisualizer(QWidget* parent,QString pluginPath)
     :QGLViewer(parent),impl(new SLAMVisualizerImpl(pluginPath.toStdString()))
 {
-}
-
-bool open(QString pluginPath){
-
 }
 
 SLAMPtr SLAMVisualizer::slam(){

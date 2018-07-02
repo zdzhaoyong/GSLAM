@@ -1,7 +1,6 @@
 # GSLAM (A General SLAM Framework and BenchMark)
 
 [![Build Status](https://travis-ci.org/zdzhaoyong/GSLAM.svg?branch=master)](https://travis-ci.org/zdzhaoyong/GSLAM)
-[![Coverage Status](https://coveralls.io/repos/github/zdzhaoyong/GSLAM/badge.svg?branch=master)](https://coveralls.io/github/zdzhaoyong/GSLAM?branch=master)
 
 ## 1. Introduction
 

@@ -129,6 +129,12 @@
 // TODO(hamaji): Add other platforms.
 #endif
 
+#if defined(OS_LINUX)
+    #include <unistd.h>
+#elif defined(OS_WINDOWS)
+    #include <windows.h>
+#endif
+
 
 #if defined(_MSC_VER) && 0
 # define GSLAM_EXPORT __declspec(dllexport)
@@ -179,12 +185,6 @@ inline void get_timeinfo(struct tm& ti)
     localtime_r(&rawtime, &ti);
 #endif
 }
-
-#if defined(OS_LINUX)
-    #include <unistd.h>
-#elif defined(OS_WINDOWS)
-    #include <windows.h>
-#endif
 
 // FIXME: How to get tid on Windows?
 inline int64_t GetTID()

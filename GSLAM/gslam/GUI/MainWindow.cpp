@@ -277,7 +277,7 @@ int MainWindow::setupLayout(void)
     _d->splitterLeft    =new QSplitter(Qt::Vertical,_d->operateDock);
 
     _d->operateDock->setWindowTitle("SideBar");
-    _d->operateDock->setAllowedAreas(Qt::LeftDockWidgetArea|Qt::RightDockWidgetArea);
+//    _d->operateDock->setAllowedAreas(Qt::LeftDockWidgetArea|Qt::RightDockWidgetArea);// FIXME: Why no ok on windows qt 5.7.1
     operaterTab->addTab(_d->splitterLeft,"FrameVis");
     ShowLayerWidget* layersWidget=new ShowLayerWidget(_d->operateDock);
     operaterTab->addTab(layersWidget,"Layers");

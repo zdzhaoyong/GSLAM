@@ -35,25 +35,24 @@ ENDIF()
 
 message("-- Build type: " ${CMAKE_BUILD_TYPE})
 
-if(CMAKE_BUILD_TYPE STREQUAL Release)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -march=native ")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -march=native")
-endif()
-
-# Check C++11 or C++0x support
-include(CheckCXXCompilerFlag)
-CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
-CHECK_CXX_COMPILER_FLAG("-std=c++0x" COMPILER_SUPPORTS_CXX0X)
-if(COMPILER_SUPPORTS_CXX11)
-   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-   add_definitions(-DCOMPILEDWITHC11)
-   message(STATUS "Using flag -std=c++11.")
-elseif(COMPILER_SUPPORTS_CXX0X)
-   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
-   add_definitions(-DCOMPILEDWITHC0X)
-   message(STATUS "Using flag -std=c++0x.")
-else()
-   message(FATAL_ERROR "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler.")
+if(UNIX)
+    # Check C++11 or C++0x support
+    include(CheckCXXCompilerFlag)
+    CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
+    CHECK_CXX_COMPILER_FLAG("-std=c++0x" COMPILER_SUPPORTS_CXX0X)
+    if(COMPILER_SUPPORTS_CXX11)
+       set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+       add_definitions(-DCOMPILEDWITHC11)
+       message(STATUS "Using flag -std=c++11.")
+    elseif(COMPILER_SUPPORTS_CXX0X)
+       set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
+       add_definitions(-DCOMPILEDWITHC0X)
+       message(STATUS "Using flag -std=c++0x.")
+    else()
+       message(FATAL_ERROR "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler.")
+    endif()
+elseif(WIN32)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -DNOMINMAX")
 endif()
 
 
@@ -67,7 +66,7 @@ message("----------------------------------------------------------")
 # The GSLAM core need only -std-c++11 and no extra dependency, to build gslam with Util, GUI and IO things, please install the following dependencies.
 pi_collect_packages(VERBOSE REQUIRED System MODULES # System dependency -dl is essential
                     Eigen3 Ceres                    # Dependency for Optimizer
-                    Qt OpenGL GLEW GLUT             # Dependency for GUI
+                    Qt OpenGL                       # Dependency for GUI
                     OpenCV                          # Dependency for IO
                     )
 
