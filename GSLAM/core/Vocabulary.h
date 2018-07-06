@@ -2062,7 +2062,7 @@ inline float Vocabulary::distance(const TinyMat &a,  const TinyMat &b)
          return ret;
     }
 #if defined(__AVX2__)
-    else if(a.cols%8==0&&((int64)a.data&0x1F)==0&&((int64)b.data&0x1F)==0)
+    else if(a.cols%8==0&&((int64_t)a.data&0x1F)==0&&((int64_t)b.data&0x1F)==0)
     {
         int _nwords=a.cols/8;
         __m256 sum=_mm256_setzero_ps(), sub_mult;

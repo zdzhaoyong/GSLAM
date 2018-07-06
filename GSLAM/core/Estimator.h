@@ -19,12 +19,14 @@ enum EstimatorMethod{
     RANSAC      = 8  //!< RANSAC algorithm
 };
 
-class Estimator
+class Estimator : public GObject
 {
 public:
     Estimator(){}
 
     virtual ~Estimator(){}
+
+    virtual std::string type()const{return "Estimator";}
 
     // 2D corrospondences
     virtual bool findHomography(double* H,//3x3 dof=8
@@ -79,6 +81,11 @@ public:
                          int minInliersCount = 100,
                          std::vector<int>* inliers = NULL,
                          int flags=ITERATIVE)const{return false;}
+
+    virtual bool trianglate(const SE3&     ref2cur,
+                            const Point3d& refDirection,// camera.UnProject(ref2d)
+                            const Point3d& curDirection,// camera.UnProject(cur2d)
+                            Point3d&       refPt)const{return false;}
 
 
     static  SPtr<Estimator> create(std::string pluginName=""){

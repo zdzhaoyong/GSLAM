@@ -9,6 +9,8 @@ public:
     EstimatorOpenCV()
     {}
 
+    virtual std::string type()const{return "EstimatorOpenCV";}
+
     inline std::vector<cv::Point2d> toInputArray(const std::vector<Point2d>& input)const
     {
         return *(std::vector<cv::Point2d>*)&input;
@@ -345,6 +347,35 @@ public:
         world2camera=pi::SE3d(pi::SO3d::exp(pi::Point3d(R.at<double>(0),R.at<double>(1),R.at<double>(2))),
                       pi::Point3d(t.at<double>(0),t.at<double>(1),t.at<double>(2)));
 
+        return true;
+    }
+
+    virtual bool trianglate(const SE3&     ref2cur,
+                            const Point3d& xn1,
+                            const Point3d& xn2,
+                            Point3d&       pt)const{
+        const double t1[12]={1.,0.,0.,0,
+                             0.,1.,0.,0.,
+                             0.,0.,1.,0.};
+        double t2[12];
+        ref2cur.getMatrix(t2);
+        cv::Mat A=(cv::Mat_<double>(4,4) <<
+                xn1[0]*t1[8]-t1[0], xn1[0]*t1[9]-t1[1], xn1[0]*t1[10]-t1[2], xn1[0]*t1[11]-t1[3],
+                xn1[1]*t1[8]-t1[4], xn1[1]*t1[9]-t1[5], xn1[1]*t1[10]-t1[6], xn1[1]*t1[11]-t1[7],
+                xn2[0]*t2[8]-t2[0], xn2[0]*t2[9]-t2[1], xn2[0]*t2[10]-t2[2], xn2[0]*t2[11]-t2[3],
+                xn2[1]*t2[8]-t2[4], xn2[1]*t2[9]-t2[5], xn2[1]*t2[10]-t2[6], xn2[1]*t2[11]-t2[7]);
+
+        cv::Mat w,u,vt;
+        cv::SVD::compute(A,w,u,vt,cv::SVD::MODIFY_A| cv::SVD::FULL_UV);
+
+        cv::Mat x3D = vt.row(3).t();
+
+        if(x3D.at<double>(3)==0)
+            return false;
+
+        // Euclidean coordinates
+        x3D = x3D.rowRange(0,3)/x3D.at<double>(3);
+        pt=Point3d(x3D.at<double>(0),x3D.at<double>(1),x3D.at<double>(2));
         return true;
     }
 
