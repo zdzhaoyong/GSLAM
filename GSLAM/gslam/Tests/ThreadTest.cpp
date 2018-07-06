@@ -3,10 +3,11 @@
 #include <GSLAM/core/Svar.h>
 #include <GSLAM/core/Timer.h>
 
-void sumFunc(double* begin,double* end){
-    for(auto it=begin+1;it<=end;it++)
-        *begin+=*it;
-}
+//double sumFunc(double* begin,double* end){
+//    for(auto it=begin+1;it<=end;it++)
+//        *begin+=*it;
+//    return *begin;
+//}
 
 
 TEST(Thread,ThreadPool)
@@ -22,21 +23,28 @@ TEST(Thread,ThreadPool)
     int packageSize=nums.size()/threadNum;
     if(packageSize<1) packageSize++;
 
-    if(threadNum>1)
     {
         GSLAM::ScopedTimer tm("ThreadPoolTest.MultiThread");
         GSLAM::ThreadPool threads(threadNum);
+        std::vector<std::future<double> > futures;
         for(int startIdx=0;startIdx<nums.size();startIdx+=packageSize)
         {
             int endIdx  =startIdx+packageSize-1;
             endIdx=endIdx<nums.size()?endIdx:(nums.size()-1);
-            threads.Add(sumFunc,&nums[startIdx],&nums[endIdx]);
+//            futures.push_back(threads.Add(sumFunc,&nums[startIdx],&nums[endIdx]));
+            futures.push_back(threads.Add([](double* begin,double* end){
+                                              for(auto it=begin+1;it<=end;it++)
+                                                  *begin+=*it;
+                                              return *begin;
+                                          },&nums[startIdx],&nums[endIdx]));
         }
+        for(auto& f:futures) f.wait();
+
+        double sumThreads=0;
+        for(auto& f:futures)
+            sumThreads+=f.get();
+
+        CHECK_EQ(sumCheck,sumThreads);
     }
 
-    double sumThreads=0;
-    for(int startIdx=0;startIdx<nums.size();startIdx+=packageSize)
-        sumThreads+=nums[startIdx];
-
-    CHECK_EQ(sumCheck,sumThreads);
 }
