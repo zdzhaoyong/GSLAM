@@ -239,7 +239,9 @@ int MainWindow::setupLayout(void)
     operateDock->setWidget(operaterTab);
     addDockWidget(Qt::LeftDockWidgetArea,operateDock);
     frameVis      =new FrameVisualizer(splitterLeft);
+    gimageVis     =new GImageVisualizer(splitterLeft);
     win3d         =new Win3D(this,&slamVis);
+
     for(std::string plugin:defaultSLAMs.data)
     {
         slotAddSLAM(plugin.c_str());
@@ -519,6 +521,7 @@ void MainWindow::runSLAMMain()
         }
 
         frameVis->showFrame(frame);
+        gimageVis->imshow("CurrentImage",frame->getImage());
 
         if(status==ONESTEP){
             status=PAUSE;
@@ -550,6 +553,15 @@ void SCommandAction::triggerdSlot()
 //    std::cerr<<"SCommandAction::triggerdSlot";
     scommand.Call(_cmd.toStdString());
 }
+
+
+void MainWindow::handle(const SPtr<GObject>& obj)
+{
+    if(auto e=dynamic_pointer_cast<DebugImageEvent>(obj)){
+        gimageVis->imshow(e->_name,e->_img);
+    }
+}
+
 }
 
 #endif

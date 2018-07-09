@@ -53,6 +53,7 @@ public:
     virtual ~MainWindow(){slotStop();}
 
     virtual int setupLayout(void);
+    virtual void handle(const SPtr<GObject>& obj);
 
     void call(QString cmd);
 
@@ -94,6 +95,7 @@ protected:
 
     QDockWidget             *operateDock;
     QSplitter               *splitterLeft;
+    GImageVisualizer        *gimageVis;
 //    QTabWidget              *slamTab;
     Win3D                   *win3d;
 

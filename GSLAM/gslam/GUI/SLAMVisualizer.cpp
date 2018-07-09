@@ -18,7 +18,8 @@ SLAMVisualizer::SLAMVisualizer(SLAMPtr slam_ptr,GObjectHandle* handle)
 void SLAMVisualizer::draw(){
     if(!svar.GetInt(_name)) return;
     if(_slam&&_slam->isDrawable()) _slam->draw();
-    if(_vis) _vis->draw();
+    if(_vis)
+        _vis->draw();
     for(auto& d:_objects)
         if(svar.GetInt(d.first))
             d.second->_obj->draw();
@@ -76,6 +77,7 @@ void SLAMVisualizer::handle(const SPtr<GObject>& obj){
 //        LOG(INFO)<<"DrawableEvent";
         updateGL();
     }
+    else if(_handle) return _handle->handle(obj);
 }
 
 }
