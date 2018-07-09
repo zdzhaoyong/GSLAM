@@ -348,6 +348,7 @@ public:
     bool    setMap(const MapPtr& map);
     MapPtr  getMap()const;
 
+    virtual bool    setSvar(Svar& var);
     virtual bool    setCallback(GObjectHandle* cbk){_handle=cbk;return true;}
     virtual bool    track(FramePtr& frame){return false;}
     virtual bool    finalize(){return false;}
@@ -451,6 +452,13 @@ inline MapPtr SLAM::getMap()const
 {
     ReadMutex lock(_mutexMap);
     return _curMap;
+}
+
+inline bool SLAM::setSvar(Svar &var)
+{
+    for(auto it:var.get_data())
+        svar.insert(it.first,it.second);
+    return true;
 }
 
 inline SLAMPtr SLAM::create(const std::string& slamPlugin){
