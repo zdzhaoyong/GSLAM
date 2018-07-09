@@ -5,11 +5,47 @@
 #include <QAction>
 #include <QTreeWidget>
 #include <memory>
+#include <GSLAM/core/GSLAM.h>
+
+#include "FrameVisualizer.h"
+#include "SLAMVisualizer.h"
+
+#include "../../core/Svar.h"
+#include "../../core/GSLAM.h"
+#include "../../core/Dataset.h"
+#include "../../core/Svar.h"
+#include "../../core/Timer.h"
+#include "../../core/VecParament.h"
+
+#include "QGLViewer/qglviewer.h"
 
 namespace GSLAM{
 
-class MainWindowData;
-class MainWindow: public QMainWindow
+class Win3D : public QGLViewer
+{
+public:
+    Win3D(QWidget* parent,std::vector<SLAMVisualizerPtr>* visualizers)
+        : QGLViewer(parent),_visualizers(visualizers),_fastDraw(svar.GetInt("FastDrawing",0)){}
+
+    virtual void draw()
+    {
+        _fastDraw=0;
+        for(SLAMVisualizerPtr& vis : *_visualizers)
+            vis->draw();
+    }
+
+    virtual void fastDraw()
+    {
+        _fastDraw=1;
+        for(SLAMVisualizerPtr& vis : *_visualizers)
+            vis->draw();
+    }
+
+    int&                            _fastDraw;
+    std::vector<SLAMVisualizerPtr>* _visualizers;
+};
+
+class MainWindow: public QMainWindow,GObjectHandle
 {
     Q_OBJECT
 public:
@@ -32,8 +68,14 @@ public slots:
     bool slotStart();
     bool slotPause();
     bool slotStop();
+    bool slotOneStep();
     bool slotAddSLAM(QString pluginPath);
     bool slotStartDataset(QString dataset);
+    void slotUpdate();
+    void slotSetSceneRadius(qreal radius);
+    void slotSetSceneCenter(qreal x,qreal y,qreal z);
+    void slotSetViewPoint(qreal x,qreal y,qreal z,
+                            qreal rw,qreal rx,qreal ry,qreal rz);
 
 protected:
     void keyPressEvent(QKeyEvent *event);
@@ -42,7 +84,24 @@ protected:
 
     void runSLAMMain();
 
-    std::shared_ptr<MainWindowData> _d;
+    QMenu    *fileMenu,*exportMenu,*historyMenu,*runMenu;
+    QToolBar *toolBar;
+    QAction  *openAction,*startAction,*pauseAction,*stopAction,*oneStepAction;
+
+    Dataset                 dataset; // current dataset, load implementations
+    FrameVisualizer         *frameVis;
+    std::vector<SLAMVisualizerPtr> slamVis;
+
+    QDockWidget             *operateDock;
+    QSplitter               *splitterLeft;
+//    QTabWidget              *slamTab;
+    Win3D                   *win3d;
+
+    std::thread             threadPlay;
+    int                     status;
+
+    std::string                  historyFile,lastOpenFile,defaultDataset;
+    VecParament<std::string> defaultSLAMs;
 };
 
 class SCommandAction : public QAction

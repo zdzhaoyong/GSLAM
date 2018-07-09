@@ -9,20 +9,6 @@
 #include <QFileInfo>
 
 #include "MainWindow.h"
-#include "FrameVisualizer.h"
-
-#if defined(HAS_QT)
-#include "SLAMVisualizer.h"
-#else
-class SLAMVisualizer;
-#endif
-
-#include "../../core/Svar.h"
-#include "../../core/GSLAM.h"
-#include "../../core/Dataset.h"
-#include "../../core/Svar.h"
-#include "../../core/Timer.h"
-#include "../../core/VecParament.h"
 
 using namespace std;
 
@@ -30,7 +16,7 @@ namespace GSLAM{
 
 enum ThreadStatus
 {
-    RUNNING,PAUSE,STOP
+    RUNNING,PAUSE,STOP,ONESTEP
 };
 
 class SvarQTreeItem:public QTreeWidgetItem
@@ -135,44 +121,6 @@ void ShowLayerWidget::slotAddItem(QString itemName,int status)
     }
 }
 
-class Win3D : public QGLViewer,GObjectHandle
-{
-public:
-    virtual void draw(){
-        for(SLAMVisualizerPtr& vis : _visualizers)
-            vis->draw();
-    }
-
-    std::vector<SLAMVisualizerPtr> _visualizers;
-};
-
-struct MainWindowData
-{
-    MainWindowData()
-        : frameVis(NULL),status(STOP),historyFile("history.txt"),
-          defaultSLAMs(svar.get_var<VecParament<std::string> >("SLAM",VecParament<std::string>())),
-          defaultDataset(svar.GetString("Dataset",""))
-    {}
-
-    QMenu    *fileMenu,*exportMenu,*historyMenu,*runMenu;
-    QToolBar *toolBar;
-    QAction  *openAction,*startAction,*pauseAction,*stopAction;
-
-    Dataset                 dataset; // current dataset, load implementations
-    FrameVisualizer         *frameVis;
-    vector<SLAMVisualizer*> slamVis;
-
-    QDockWidget             *operateDock;
-    QSplitter               *splitterLeft;
-    QTabWidget              *slamTab;
-
-    std::thread             threadPlay;
-    int                     status;
-
-    string                  historyFile,lastOpenFile,defaultDataset;
-    VecParament<std::string> defaultSLAMs;
-};
-
 void GuiHandle(void *ptr,string cmd,string para)
 {
     if(cmd=="MainWindow.Show")
@@ -200,7 +148,9 @@ void GuiHandle(void *ptr,string cmd,string para)
 
 ////////////////////////////////////////////////////////////////////////////////
 MainWindow::MainWindow(QWidget *parent)
-    :QMainWindow(parent),_d(new MainWindowData())
+    : QMainWindow(parent),frameVis(NULL),status(STOP),historyFile("history.txt"),
+      defaultSLAMs(svar.get_var<VecParament<std::string> >("SLAM",VecParament<std::string>())),
+      defaultDataset(svar.GetString("Dataset",""))
 {
     // set window minimum size
     this->setMinimumSize(1366, 700);
@@ -216,86 +166,92 @@ MainWindow::MainWindow(QWidget *parent)
     setupLayout();
     connect(this, SIGNAL(call_signal(QString) ), this, SLOT(call_slot(QString)) );
 
-    if(_d->defaultDataset.size()) slotStartDataset(_d->defaultDataset.c_str());
+    if(defaultDataset.size()) slotStartDataset(defaultDataset.c_str());
 }
 
 int MainWindow::setupLayout(void)
 {
-    _d->toolBar=addToolBar(tr("&ToolBar"));
-    _d->fileMenu    =menuBar()->addMenu(tr("&File"));
-    _d->runMenu     =menuBar()->addMenu(tr("&Run"));
+    toolBar=addToolBar(tr("&ToolBar"));
+    fileMenu    =menuBar()->addMenu(tr("&File"));
+    runMenu     =menuBar()->addMenu(tr("&Run"));
 
-    _d->exportMenu  =new QMenu(tr("&Export"),_d->fileMenu);
-    _d->historyMenu =new QMenu(tr("&History"),_d->fileMenu);
-    _d->openAction  =new QAction(tr("&Open"),_d->fileMenu);
-    _d->startAction =new QAction(tr("&Start"),_d->runMenu);
-    _d->pauseAction =new QAction(tr("&Pause"),_d->runMenu);
-    _d->stopAction  =new QAction(tr("&Stop"),_d->runMenu);
+    exportMenu  =new QMenu(tr("&Export"),fileMenu);
+    historyMenu =new QMenu(tr("&History"),fileMenu);
+    openAction  =new QAction(tr("&Open"),fileMenu);
+    startAction =new QAction(tr("&Start"),runMenu);
+    pauseAction =new QAction(tr("&Pause"),runMenu);
+    stopAction  =new QAction(tr("&Stop"),runMenu);
+    oneStepAction=new QAction(tr("&OneStep"),runMenu);
 
-    _d->fileMenu->addAction(_d->openAction);
-    _d->fileMenu->addMenu(_d->exportMenu);
-    _d->fileMenu->addMenu(_d->historyMenu);
-    _d->runMenu->addAction(_d->startAction);
-    _d->runMenu->addAction(_d->pauseAction);
-    _d->runMenu->addAction(_d->stopAction);
+    fileMenu->addAction(openAction);
+    fileMenu->addMenu(exportMenu);
+    fileMenu->addMenu(historyMenu);
+    runMenu->addAction(startAction);
+    runMenu->addAction(pauseAction);
+    runMenu->addAction(stopAction);
+    runMenu->addAction(oneStepAction);
 
-    _d->toolBar->setMovable(true);
-    _d->toolBar->addAction(_d->openAction);
-    _d->toolBar->addSeparator();
-    _d->toolBar->addAction(_d->startAction);
-    _d->toolBar->addAction(_d->pauseAction);
-    _d->toolBar->addAction(_d->stopAction);
-    _d->pauseAction->setDisabled(true);
-    _d->stopAction->setDisabled(true);
-    _d->startAction->setDisabled(true);
+    toolBar->setMovable(true);
+    toolBar->addAction(openAction);
+    toolBar->addSeparator();
+    toolBar->addAction(startAction);
+    toolBar->addAction(pauseAction);
+    toolBar->addAction(oneStepAction);
+    toolBar->addAction(stopAction);
+    pauseAction->setDisabled(true);
+    stopAction->setDisabled(true);
+    startAction->setDisabled(true);
+    oneStepAction->setDisabled(true);
 
     QString iconFolder=":icon";
-    _d->openAction->setIcon(QIcon(iconFolder+"/open.png"));
-    _d->exportMenu->setIcon(QIcon(iconFolder+"/export.png"));
-    _d->startAction->setIcon(QIcon(iconFolder+"/start.png"));
-    _d->pauseAction->setIcon(QIcon(iconFolder+"/pause.png"));
-    _d->stopAction->setIcon(QIcon(iconFolder+"/stop.png"));
+    openAction->setIcon(QIcon(iconFolder+"/open.png"));
+    exportMenu->setIcon(QIcon(iconFolder+"/export.png"));
+    startAction->setIcon(QIcon(iconFolder+"/start.png"));
+    pauseAction->setIcon(QIcon(iconFolder+"/pause.png"));
+    stopAction->setIcon(QIcon(iconFolder+"/stop.png"));
+    oneStepAction->setIcon(QIcon(iconFolder+"/startPause.png"));
 
-    if(_d->historyFile.size())
+    if(historyFile.size())
     {
-        ifstream ifs(_d->historyFile);
+        ifstream ifs(historyFile);
         if(ifs.is_open())
         {
             string line;
             while(getline(ifs,line))
             {
                 if(line.empty()) continue;
-                _d->historyMenu->addAction(new SCommandAction(QString::fromStdString("MainWindow Open "+line),
-                                                              QString::fromStdString(line),_d->historyMenu));
+                historyMenu->addAction(new SCommandAction(QString::fromStdString("MainWindow Open "+line),
+                                                              QString::fromStdString(line),historyMenu));
             }
         }
     }
 
-    _d->operateDock   =new QDockWidget(this);
-    _d->slamTab       =new QTabWidget(this);
-    QTabWidget* operaterTab=new QTabWidget(_d->operateDock);
-    _d->splitterLeft    =new QSplitter(Qt::Vertical,_d->operateDock);
+    operateDock   =new QDockWidget(this);
+//    slamTab       =new QTabWidget(this);
+    QTabWidget* operaterTab=new QTabWidget(operateDock);
+    splitterLeft    =new QSplitter(Qt::Vertical,operateDock);
 
-    _d->operateDock->setWindowTitle("SideBar");
-//    _d->operateDock->setAllowedAreas(Qt::LeftDockWidgetArea|Qt::RightDockWidgetArea);// FIXME: Why no ok on windows qt 5.7.1
-    operaterTab->addTab(_d->splitterLeft,"FrameVis");
-    ShowLayerWidget* layersWidget=new ShowLayerWidget(_d->operateDock);
+    operateDock->setWindowTitle("SideBar");
+//    operateDock->setAllowedAreas(Qt::LeftDockWidgetArea|Qt::RightDockWidgetArea);// FIXME: Why no ok on windows qt 5.7.1
+    operaterTab->addTab(splitterLeft,"FrameVis");
+    ShowLayerWidget* layersWidget=new ShowLayerWidget(operateDock);
     operaterTab->addTab(layersWidget,"Layers");
-    _d->operateDock->setWidget(operaterTab);
-    addDockWidget(Qt::LeftDockWidgetArea,_d->operateDock);
-    _d->frameVis      =new FrameVisualizer(_d->splitterLeft);
-
-    for(std::string plugin:_d->defaultSLAMs.data)
+    operateDock->setWidget(operaterTab);
+    addDockWidget(Qt::LeftDockWidgetArea,operateDock);
+    frameVis      =new FrameVisualizer(splitterLeft);
+    win3d         =new Win3D(this,&slamVis);
+    for(std::string plugin:defaultSLAMs.data)
     {
         slotAddSLAM(plugin.c_str());
     }
 
-    setCentralWidget(_d->slamTab);
+    setCentralWidget(win3d);
 
-    connect(_d->openAction,SIGNAL(triggered(bool)),this,SLOT(slotOpen()));
-    connect(_d->startAction,SIGNAL(triggered(bool)),this,SLOT(slotStart()));
-    connect(_d->pauseAction,SIGNAL(triggered(bool)),this,SLOT(slotPause()));
-    connect(_d->stopAction,SIGNAL(triggered(bool)),this,SLOT(slotStop()));
+    connect(openAction,SIGNAL(triggered(bool)),this,SLOT(slotOpen()));
+    connect(startAction,SIGNAL(triggered(bool)),this,SLOT(slotStart()));
+    connect(pauseAction,SIGNAL(triggered(bool)),this,SLOT(slotPause()));
+    connect(stopAction,SIGNAL(triggered(bool)),this,SLOT(slotStop()));
+    connect(oneStepAction,SIGNAL(triggered(bool)),this,SLOT(slotOneStep()));
     connect(this,SIGNAL(signalStop()),this,SLOT(slotStop()));
     return 0;
 }
@@ -347,7 +303,7 @@ void MainWindow::call_slot(QString cmd)
     if("Show"==cmd)   show();
     if("Update"==cmd)
     {
-        for(SLAMVisualizer* vis:_d->slamVis) vis->update();
+        win3d->update();
     }
     else
         scommand.Call(cmd.toStdString());
@@ -370,7 +326,7 @@ bool MainWindow::slotOpen(QString filePath)
     if(!filePath.size())
     {
         filePath= QFileDialog::getOpenFileName(this, tr("Choose a file.\n"),
-                                                       _d->lastOpenFile.c_str(),
+                                                       lastOpenFile.c_str(),
                                                       "Allfile(*.*);;");
     }
     QFileInfo info(filePath);
@@ -384,11 +340,11 @@ bool MainWindow::slotOpen(QString filePath)
 
 bool MainWindow::slotStart()
 {
-    if(_d->status==PAUSE)
+    if(status==PAUSE)
     {
-        _d->status=RUNNING;
+        status=RUNNING;
     }
-    else if(_d->status==RUNNING)
+    else if(status==RUNNING)
     {
         // still running and need to stop first
         if(!slotStop())
@@ -397,75 +353,122 @@ bool MainWindow::slotStart()
         }
     }
 
-    if(_d->status==STOP){
-        if(!_d->dataset.isOpened())
+    if(status==STOP){
+        if(!dataset.isOpened())
         {
             slotShowMessage(tr("Please open a dataset first!\n"));
         }
-        _d->status=RUNNING;
-        _d->threadPlay=std::thread(&MainWindow::runSLAMMain,this);
+        status=RUNNING;
+        threadPlay=std::thread(&MainWindow::runSLAMMain,this);
     }
-    _d->startAction->setDisabled(true);
-    _d->pauseAction->setDisabled(false);
-    _d->stopAction->setDisabled(false);
+    startAction->setDisabled(true);
+    pauseAction->setDisabled(false);
+    stopAction->setDisabled(false);
+    oneStepAction->setDisabled(true);
     return true;
 }
 
 bool MainWindow::slotPause()
 {
-    if(_d->status!=RUNNING) return false;
-    _d->status=PAUSE;
-    _d->startAction->setDisabled(false);
-    _d->pauseAction->setDisabled(true);
-    _d->stopAction->setDisabled(false);
+    if(status!=RUNNING) return false;
+    status=PAUSE;
+    startAction->setDisabled(false);
+    pauseAction->setDisabled(true);
+    stopAction->setDisabled(false);
+    oneStepAction->setDisabled(false);
+    return true;
+}
+
+bool MainWindow::slotOneStep()
+{
+    if(status==STOP){
+        if(!dataset.isOpened())
+        {
+            slotShowMessage(tr("Please open a dataset first!\n"));
+        }
+        status=PAUSE;
+        threadPlay=std::thread(&MainWindow::runSLAMMain,this);
+    }
+    if(status==PAUSE)
+    {
+        status=ONESTEP;
+    }
+    startAction->setDisabled(false);
+    pauseAction->setDisabled(true);
+    stopAction->setDisabled(false);
+    oneStepAction->setDisabled(false);
     return true;
 }
 
 bool MainWindow::slotStop()
 {
-    if(_d->status==STOP) return false;
-    _d->status=STOP;
-    while(!_d->threadPlay.joinable()) GSLAM::Rate::sleep(0.01);
-    _d->threadPlay.join();
-    _d->startAction->setDisabled(false);
-    _d->pauseAction->setDisabled(true);
-    _d->stopAction->setDisabled(true);
+    if(status==STOP) return false;
+    status=STOP;
+    while(!threadPlay.joinable()) GSLAM::Rate::sleep(0.01);
+    threadPlay.join();
+    startAction->setDisabled(false);
+    pauseAction->setDisabled(true);
+    stopAction->setDisabled(true);
 
-#if defined(HAS_QT)
-        for(SLAMVisualizer* vis:_d->slamVis)
-        {
-            vis->releaseSLAM();
-        }
-#endif
+    for(auto& vis:slamVis)
+    {
+        vis->releaseSLAM();
+    }
     if(svar.GetInt("AutoClose")) close();
     return true;
 }
 
 bool MainWindow::slotAddSLAM(QString pluginPath)
 {
-#if defined(HAS_QT)
-    SLAMVisualizer* slamVis=new SLAMVisualizer(this,pluginPath);
-    if(slamVis->slam()&&slamVis->slam()->valid())
-    {
-        _d->slamVis.push_back(slamVis);
-        _d->slamTab->addTab(slamVis,slamVis->slam()->type().c_str());
-        return true;
-    }
-    delete slamVis;
-#endif
+    SLAMPtr slam=SLAM::create(pluginPath.toStdString());
+    if(!slam||!slam->valid()) return false;
+
+    SPtr<SLAMVisualizer> vis(new SLAMVisualizer(slam,dynamic_cast<GObjectHandle*>(this)));
+    slamVis.push_back(vis);
+    SLAMVisualizer* visPtr=vis.get();
+    connect(visPtr,SIGNAL(signalUpdate()),this,SLOT(slotUpdate()));
+    connect(visPtr,SIGNAL(signalSetSceneCenter(qreal,qreal,qreal)),
+            this,SLOT(slotSetSceneCenter(qreal,qreal,qreal)));
+    connect(visPtr,SIGNAL(signalSetSceneRadius(qreal)),
+            this,SLOT(slotSetSceneRadius(qreal)));
+    connect(visPtr,SIGNAL(signalSetViewPoint(qreal,qreal,qreal,qreal,qreal,qreal,qreal)),
+            this,SLOT(slotSetViewPoint(qreal,qreal,qreal,qreal,qreal,qreal,qreal)));
+
     return false;
 }
 
-bool MainWindow::slotStartDataset(QString dataset)
+bool MainWindow::slotStartDataset(QString datasetPath)
 {
-    if(!_d->dataset.open(dataset.toStdString()))
+    if(!dataset.open(datasetPath.toStdString()))
     {
-        slotShowMessage(tr("Failed to open dataset ")+dataset);
+        slotShowMessage(tr("Failed to open dataset ")+datasetPath);
         return false;
     }
-    _d->startAction->setEnabled(true);
-    if(svar.GetInt("AutoStart",1)) slotStart();
+    startAction->setEnabled(true);
+    oneStepAction->setEnabled(true);
+    if(svar.GetInt("AutoStart",0)) slotStart();
     return true;
+}
+
+void MainWindow::slotUpdate(){
+    win3d->updateGL();
+}
+
+void MainWindow::slotSetSceneRadius(qreal radius)
+{
+    win3d->setSceneRadius(radius);
+}
+
+void MainWindow::slotSetSceneCenter(qreal x,qreal y,qreal z)
+{
+    win3d->setSceneCenter(qglviewer::Vec(x,y,z));
+}
+
+void MainWindow::slotSetViewPoint(qreal x,qreal y,qreal z,
+                        qreal rw,qreal rx,qreal ry,qreal rz)
+{
+    win3d->camera()->setPosition(qglviewer::Vec(x,y,z));
+    win3d->camera()->setOrientation(qglviewer::Quaternion(rw,rz,-ry,-rx));
 }
 
 void MainWindow::runSLAMMain()
@@ -475,9 +478,9 @@ void MainWindow::runSLAMMain()
     double& playSpeedWarningTime=svar.GetDouble("PlaySpeedWarning",5);
     GSLAM::TicToc tictoc,tictocWarning;
     GSLAM::FramePtr frame;
-    while(_d->status!=STOP)
+    while(status!=STOP)
     {
-        if(_d->status==PAUSE)
+        if(status==PAUSE)
         {
             GSLAM::Rate::sleep(0.001);
             startTime=-1;
@@ -486,7 +489,7 @@ void MainWindow::runSLAMMain()
 
         {
             GSLAM::ScopedTimer mt("Dataset::grabFrame");
-            frame=_d->dataset.grabFrame();
+            frame=dataset.grabFrame();
         }
 
         if(!frame) break;
@@ -508,25 +511,26 @@ void MainWindow::runSLAMMain()
             else GSLAM::Rate::sleep(shouldSleep);
         }
 
-#if defined(HAS_QT)
-        for(SLAMVisualizer* vis:_d->slamVis)
+        for(auto& vis:slamVis)
         {
             string str=vis->slam()->type()+"::Track";
             GSLAM::ScopedTimer mt(str.c_str());
             vis->slam()->track(frame);
         }
-#endif
-        _d->frameVis->showFrame(frame);
+
+        frameVis->showFrame(frame);
+
+        if(status==ONESTEP){
+            status=PAUSE;
+        }
     }
 
-#if defined(HAS_QT)
-        for(SLAMVisualizer* vis:_d->slamVis)
-        {
-            string str=vis->slam()->type()+"::Finalize";
-            GSLAM::ScopedTimer mt(str.c_str());
-            vis->slam()->finalize();
-        }
-#endif
+    for(auto& vis:slamVis)
+    {
+        string str=vis->slam()->type()+"::Finalize";
+        GSLAM::ScopedTimer mt(str.c_str());
+        vis->slam()->finalize();
+    }
     std::cerr<<"Play thread stoped."<<endl;
     emit signalStop();
 }
