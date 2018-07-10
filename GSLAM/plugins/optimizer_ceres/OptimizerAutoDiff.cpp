@@ -46,7 +46,7 @@ ceres::Solver::Options getOption(const OptimzeConfig& _config)
     ceres_config_options.logging_type = ceres::SILENT;
     ceres_config_options.parameter_tolerance = 1e-8;
     ceres_config_options.num_threads=4;
-    ceres_config_options.num_linear_solver_threads=4;
+    //ceres_config_options.num_linear_solver_threads=4;
     ceres_config_options.max_solver_time_in_seconds=svar.GetDouble("Optimizer.MaxSolverTime",1e3);
     // If Sparse linear solver are available
     // Descending priority order by efficiency (SUITE_SPARSE > CX_SPARSE > EIGEN_SPARSE)
@@ -129,7 +129,8 @@ bool OptimizerAutoDiffCeres::optimizePose(std::vector<std::pair<CameraAnchor,Cam
 #if CERES_VERSION_MINOR>=12
     if (!summary.IsSolutionUsable())
 #else
-    if(summary.error.size())
+    //if(summary.error.size())
+    if( !summary.IsSolutionUsable() )
 #endif
     {
         if (ceres_config_options.minimizer_progress_to_stdout)
@@ -196,7 +197,8 @@ bool OptimizerAutoDiffCeres::optimizePnP(const std::vector<std::pair<GSLAM::Poin
 #if CERES_VERSION_MINOR>=12
     if (!summary.IsSolutionUsable())
 #else
-    if(summary.error.size())
+    //if(summary.error.size())
+    if( !summary.IsSolutionUsable() )
 #endif
     {
         if (ceres_config_options.minimizer_progress_to_stdout)
