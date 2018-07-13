@@ -16,7 +16,7 @@ namespace GSLAM{
 
 enum ThreadStatus
 {
-    RUNNING,PAUSE,STOP,ONESTEP
+    READY,RUNNING,PAUSE,STOP,ONESTEP
 };
 
 class SvarQTreeItem:public QTreeWidgetItem
@@ -148,7 +148,7 @@ void GuiHandle(void *ptr,string cmd,string para)
 
 ////////////////////////////////////////////////////////////////////////////////
 MainWindow::MainWindow(QWidget *parent)
-    : QMainWindow(parent),frameVis(NULL),status(STOP),historyFile("history.txt"),
+    : QMainWindow(parent),frameVis(NULL),status(READY),historyFile("history.txt"),
       defaultSLAMs(svar.get_var<VecParament<std::string> >("SLAM",VecParament<std::string>())),
       defaultDataset(svar.GetString("Dataset",""))
 {
@@ -355,7 +355,7 @@ bool MainWindow::slotStart()
         }
     }
 
-    if(status==STOP){
+    if(status==READY){
         if(!dataset.isOpened())
         {
             slotShowMessage(tr("Please open a dataset first!\n"));
@@ -383,7 +383,7 @@ bool MainWindow::slotPause()
 
 bool MainWindow::slotOneStep()
 {
-    if(status==STOP){
+    if(status==READY){
         if(!dataset.isOpened())
         {
             slotShowMessage(tr("Please open a dataset first!\n"));
@@ -408,9 +408,10 @@ bool MainWindow::slotStop()
     status=STOP;
     while(!threadPlay.joinable()) GSLAM::Rate::sleep(0.01);
     threadPlay.join();
-    startAction->setDisabled(false);
+    startAction->setDisabled(true);
     pauseAction->setDisabled(true);
     stopAction->setDisabled(true);
+    oneStepAction->setDisabled(true);
 
     for(auto& vis:slamVis)
     {
@@ -446,6 +447,7 @@ bool MainWindow::slotStartDataset(QString datasetPath)
         slotShowMessage(tr("Failed to open dataset ")+datasetPath);
         return false;
     }
+    status=READY;
     startAction->setEnabled(true);
     oneStepAction->setEnabled(true);
     if(svar.GetInt("AutoStart",0)) slotStart();

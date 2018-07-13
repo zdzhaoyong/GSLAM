@@ -101,5 +101,5 @@ pi_report_target()
 #####################################################################
 # Now do make install
 pi_install(HEADERS GSLAM/core HEADER_DESTINATION include/GSLAM
-           TARGETS gslam gslamDB_cfg gslam_optimizer gslam_estimator CMAKE "${PROJECT_SOURCE_DIR}/cmake/FindGSLAM.cmake.in")
+           TARGETS gslam gslamDB_cfg gslamDB_euroc gslamDB_kitti gslamDB_npurgbd gslamDB_cvmono gslamDB_tummono gslamDB_tumrgbd gslam_optimizer gslam_estimator CMAKE "${PROJECT_SOURCE_DIR}/cmake/FindGSLAM.cmake.in")
 

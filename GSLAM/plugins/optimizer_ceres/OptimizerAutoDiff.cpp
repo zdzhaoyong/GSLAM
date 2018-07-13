@@ -46,7 +46,11 @@ ceres::Solver::Options getOption(const OptimzeConfig& _config)
     ceres_config_options.logging_type = ceres::SILENT;
     ceres_config_options.parameter_tolerance = 1e-8;
     ceres_config_options.num_threads=4;
+<<<<<<< HEAD
     //ceres_config_options.num_linear_solver_threads=4;
+=======
+    //ceres_config_options.num_linear_solver_threads=4; // deleted since ceres 2.0
+>>>>>>> 02832b6d7fef477fde45b58e739a03f9e62587c5
     ceres_config_options.max_solver_time_in_seconds=svar.GetDouble("Optimizer.MaxSolverTime",1e3);
     // If Sparse linear solver are available
     // Descending priority order by efficiency (SUITE_SPARSE > CX_SPARSE > EIGEN_SPARSE)
@@ -60,7 +64,7 @@ ceres::Solver::Options getOption(const OptimzeConfig& _config)
         ceres_config_options.sparse_linear_algebra_library_type = ceres::CX_SPARSE;
         ceres_config_options.linear_solver_type  = ceres::SPARSE_SCHUR;
     }
-#if CERES_VERSION_MINOR>=12
+#if CERES_VERSION_MAJOR>1||CERES_VERSION_MINOR>=12
     else if (ceres::IsSparseLinearAlgebraLibraryTypeAvailable(ceres::EIGEN_SPARSE))
     {
         ceres_config_options.sparse_linear_algebra_library_type = ceres::EIGEN_SPARSE;
@@ -126,7 +130,7 @@ bool OptimizerAutoDiffCeres::optimizePose(std::vector<std::pair<CameraAnchor,Cam
         std::cout << summary.FullReport() << std::endl;
 
     // If no error, get back refined parameters
-#if CERES_VERSION_MINOR>=12
+#if CERES_VERSION_MAJOR>1||CERES_VERSION_MINOR>=12
     if (!summary.IsSolutionUsable())
 #else
     //if(summary.error.size())
@@ -194,7 +198,7 @@ bool OptimizerAutoDiffCeres::optimizePnP(const std::vector<std::pair<GSLAM::Poin
         std::cout << summary.FullReport() << std::endl;
 
     // If no error, get back refined parameters
-#if CERES_VERSION_MINOR>=12
+#if CERES_VERSION_MAJOR>1||CERES_VERSION_MINOR>=12
     if (!summary.IsSolutionUsable())
 #else
     //if(summary.error.size())
