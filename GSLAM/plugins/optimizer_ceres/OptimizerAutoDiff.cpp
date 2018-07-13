@@ -46,11 +46,7 @@ ceres::Solver::Options getOption(const OptimzeConfig& _config)
     ceres_config_options.logging_type = ceres::SILENT;
     ceres_config_options.parameter_tolerance = 1e-8;
     ceres_config_options.num_threads=4;
-<<<<<<< HEAD
-    //ceres_config_options.num_linear_solver_threads=4;
-=======
     //ceres_config_options.num_linear_solver_threads=4; // deleted since ceres 2.0
->>>>>>> 02832b6d7fef477fde45b58e739a03f9e62587c5
     ceres_config_options.max_solver_time_in_seconds=svar.GetDouble("Optimizer.MaxSolverTime",1e3);
     // If Sparse linear solver are available
     // Descending priority order by efficiency (SUITE_SPARSE > CX_SPARSE > EIGEN_SPARSE)
