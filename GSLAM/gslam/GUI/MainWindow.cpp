@@ -355,7 +355,8 @@ bool MainWindow::slotStart()
         }
     }
 
-    if(status==READY){
+    if(status==READY)
+    {
         if(!dataset.isOpened())
         {
             slotShowMessage(tr("Please open a dataset first!\n"));
@@ -363,27 +364,32 @@ bool MainWindow::slotStart()
         status=RUNNING;
         threadPlay=std::thread(&MainWindow::runSLAMMain,this);
     }
+
     startAction->setDisabled(true);
     pauseAction->setDisabled(false);
     stopAction->setDisabled(false);
     oneStepAction->setDisabled(true);
+
     return true;
 }
 
 bool MainWindow::slotPause()
 {
     if(status!=RUNNING) return false;
+
     status=PAUSE;
     startAction->setDisabled(false);
     pauseAction->setDisabled(true);
     stopAction->setDisabled(false);
     oneStepAction->setDisabled(false);
+
     return true;
 }
 
 bool MainWindow::slotOneStep()
 {
-    if(status==READY){
+    if(status==READY)
+    {
         if(!dataset.isOpened())
         {
             slotShowMessage(tr("Please open a dataset first!\n"));
@@ -395,6 +401,7 @@ bool MainWindow::slotOneStep()
     {
         status=ONESTEP;
     }
+
     startAction->setDisabled(false);
     pauseAction->setDisabled(true);
     stopAction->setDisabled(false);
