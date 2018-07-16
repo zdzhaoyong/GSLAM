@@ -129,7 +129,8 @@ bool OptimizerAutoDiffCeres::optimizePose(std::vector<std::pair<CameraAnchor,Cam
 #if CERES_VERSION_MAJOR>1||CERES_VERSION_MINOR>=12
     if (!summary.IsSolutionUsable())
 #else
-    if(summary.error.size())
+    //if(summary.error.size())
+    if( !summary.IsSolutionUsable() )
 #endif
     {
         if (ceres_config_options.minimizer_progress_to_stdout)
@@ -196,7 +197,8 @@ bool OptimizerAutoDiffCeres::optimizePnP(const std::vector<std::pair<GSLAM::Poin
 #if CERES_VERSION_MAJOR>1||CERES_VERSION_MINOR>=12
     if (!summary.IsSolutionUsable())
 #else
-    if(summary.error.size())
+    //if(summary.error.size())
+    if( !summary.IsSolutionUsable() )
 #endif
     {
         if (ceres_config_options.minimizer_progress_to_stdout)
