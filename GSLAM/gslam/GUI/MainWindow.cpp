@@ -406,17 +406,13 @@ bool MainWindow::slotStop()
 {
     if(status==STOP) return false;
     status=STOP;
-    while(!threadPlay.joinable()) GSLAM::Rate::sleep(0.01);
-    threadPlay.join();
+    if(threadPlay.joinable())
+        threadPlay.join();
     startAction->setDisabled(true);
     pauseAction->setDisabled(true);
     stopAction->setDisabled(true);
     oneStepAction->setDisabled(true);
 
-    for(auto& vis:slamVis)
-    {
-        vis->releaseSLAM();
-    }
     if(svar.GetInt("AutoClose")) close();
     return true;
 }
@@ -537,6 +533,10 @@ void MainWindow::runSLAMMain()
         vis->slam()->finalize();
     }
     std::cerr<<"Play thread stoped."<<endl;
+    for(auto& vis:slamVis)
+    {
+        vis->releaseSLAM();
+    }
     emit signalStop();
 }
 
