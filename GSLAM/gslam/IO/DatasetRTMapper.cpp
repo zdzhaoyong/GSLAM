@@ -3,9 +3,9 @@
 #include "GSLAM/core/Svar.h"
 #include "GSLAM/core/VecParament.h"
 #include "GSLAM/core/Timer.h"
-#include <list>
+#include "GSLAM/core/XML.h"
 
-#undef HAS_OPENCV
+#include <list>
 
 #ifdef HAS_QT
 #include <QFileInfo>
@@ -46,7 +46,6 @@ public:
     virtual GSLAM::GImage  getImage(int idx,int channalMask){
         if(idx==0)
         {
-#ifdef HAS_QT
             if(_image.empty())
             {
                 using namespace GSLAM;
@@ -67,7 +66,6 @@ public:
                 }
             }
             else  
-#endif
 				return _image;
         }
         else return _thumbnail;
@@ -134,6 +132,16 @@ public:
         }
     }
 
+    virtual RTMapperFrame& operator =(const RTMapperFrame& frame)
+    {
+        this->_camera = frame._camera;
+        this->_cameraName = frame._cameraName;
+        this->_gpshpyr = frame._gpshpyr;
+        this->_imagePath = frame._imagePath;
+
+        return *this;
+    }
+
     std::string imagePath(){return _imagePath;}
     GSLAM::GImage& thumbnail(){return _thumbnail;}
 
@@ -171,120 +179,306 @@ public:
     virtual bool open(const string &dataset)
     {
         Svar var;
-        if(!var.ParseFile(dataset)) return false;
-        _seqTop=Svar::getFolderPath(dataset);
-        if(var.exist("VideoReader.VideoFile"))
-            return open(var,"VideoReader");
-        else
-            return open(var,"Dataset");
+        bool ret = false;
+
+        // try XML format
+        ret = openRTM_XML(var, dataset);
+        if( !ret )
+        {
+            // try SVar format
+            ret = var.ParseFile(dataset);
+            if( !ret ) return false;
+
+            _seqTop = Svar::getFolderPath(dataset);
+            if( var.exist("VideoReader.VideoFile") )
+                ret = openRTM_Svar(var,"VideoReader");
+            else
+                ret = openRTM_Svar(var,"Dataset");
+        }
+
+        // set local variables & reading thread
+        _frameId = 0;
+        _shouldStop = false;
+        _prepareThread = std::thread(&DatasetRTMapper::run, this);
+
+        return ret;
     }
 
 
-    bool isOpened(){return _ifs.is_open()&&_camera.isValid();}
+    bool isOpened()
+    {
+        return _camera.isValid() && _frames.size();
+    }
 
-#if defined(HAS_QT)
-	bool open(Svar& var, const std::string& name)
+    bool openRTM_Svar(Svar& var, const std::string& name)
 	{
-		if (_ifs.is_open())_ifs.close();
-		_ifs.open((_seqTop + "/imageLists.txt").c_str());
-		if (!_ifs.is_open()) return false;
-		_cameraName = var.GetString(name + ".Camera", name + ".Camera");
-		_camera = camFromName(_cameraName, var);
-		if (!_camera.isValid()) return false;
-		_name = name;
-		_frameId = 1;
+        _frames.clear();
+        _name = name;
+        string prjFile = var.GetString("Svar.ParsingFile", "");
 
-		_shouldStop = false;
-		_prepareThread = std::thread(&DatasetRTMapper::run, this);
-		return true;
-	}
+        // load camera info
+        string cameraName;
+        if(var.exist("VideoReader.Camera"))
+        {
+            cameraName=var.GetString("VideoReader.Camera","");
+        }
+        else if(var.exist("Dataset.Camera"))
+            cameraName=var.GetString("Dataset.Camera","");
+        if(cameraName.empty()) return false;
+
+        VecParament<double> camParas=var.get_var(cameraName+".Paraments",VecParament<double>());
+        GSLAM::Camera camera(camParas.data);
+        if(!camera.isValid()) return false;
+        _cameraName = cameraName;
+        _camera = camera;
+
+
+        // load image list
+        QFileInfo rtmFileInfo(QString::fromLocal8Bit(prjFile.c_str()));
+        QDir      rtmFileDir=rtmFileInfo.absoluteDir();
+        QFileInfo imageListInfo(rtmFileDir.absolutePath()+"/imageLists.txt");
+        if(!imageListInfo.exists()) return false;
+
+        // FIXME: image list use UTF-8 ?
+        QByteArray baImgList = imageListInfo.absoluteFilePath().toLocal8Bit();
+        ifstream ifs(baImgList.data());
+        if(!ifs.is_open()) {
+            LOG(ERROR) << "Can not open image list: " << baImgList.data();
+            return false;
+        }
+
+        string line;
+        while( getline(ifs, line) )
+        {
+            int dotIdx=line.find(',');
+            if(dotIdx==string::npos) continue;
+
+            string imgFile=line.substr(0,dotIdx);
+            string paras  =line.substr(dotIdx+1);
+            VecParament<double> gpsInfo;
+            gpsInfo.fromString(paras);
+            if(gpsInfo.size()<1) continue;
+
+            SPtr<RTMapperFrame> frame(new RTMapperFrame(_frames.size(),gpsInfo[0]));
+            frame->_cameraName=cameraName;
+            frame->_camera=camera;
+            gpsInfo.data.erase(gpsInfo.data.begin());
+            frame->_gpshpyr=gpsInfo.data;
+
+            QFileInfo info(QString::fromUtf8(imgFile.c_str()));
+            if(info.isAbsolute()&&info.exists())
+            {
+                // FIXME: convert utf-8 string to local string
+                QString fnUnicode = QString::fromUtf8(imgFile.c_str());
+                QByteArray baFilename = fnUnicode.toLocal8Bit();
+                frame->_imagePath = baFilename.data();
+            }
+            else
+            {
+                QString fnUnicode = QString::fromUtf8(imgFile.c_str());
+
+                QByteArray baImgPath = QFileInfo(rtmFileDir.absolutePath()+"/"+fnUnicode).absoluteFilePath().toLocal8Bit();
+                frame->_imagePath = baImgPath.data();
+            }
+
+            _frames.push_back(frame);
+        }
+
+        return _frames.size();
+    }
+
+
+    bool exportEle(GSLAM::Svar& var,tinyxml2::XMLElement* ele,string parentName="")
+    {
+        if( !ele ) return false;
+        if( ele->Attribute("value") )
+            var.insert((parentName.empty()?string():parentName+".")+ele->Name(),ele->Attribute("value"));
+
+        tinyxml2::XMLElement* child=ele->FirstChildElement();
+        while(child)
+        {
+            exportEle(var,child,(parentName.empty()?string():parentName+".")+ele->Name());
+            child=child->NextSiblingElement();
+        }
+
+        return true;
+    }
+
+    bool exportFrame(GSLAM::Svar& var,tinyxml2::XMLElement* ele,const std::string& dataset,string parentName="")
+    {
+        if(!ele)  return false;
+
+        string projectType=var.GetString("ProjectType","");
+
+        // load camera settings
+        string cameraName = var.GetString("Dataset.Camera","");
+        if( cameraName.empty() ) return false;
+
+        VecParament<double> camParas=var.get_var(cameraName+".Paraments",VecParament<double>());
+        GSLAM::Camera camera(camParas.data);
+        if( !camera.isValid() ) return false;
+        _cameraName = cameraName;
+        _camera = camera;
+
+        // load image list
+        QFileInfo rtmFileInfo(QString::fromLocal8Bit(dataset.c_str()));
+        QDir      rtmFileDir = rtmFileInfo.absoluteDir();
+
+        tinyxml2::XMLElement* child=ele->FirstChildElement();
+        while(child)
+        {
+            double timestamp=child->DoubleAttribute("timestamp");
+            SPtr<RTMapperFrame> frame(new RTMapperFrame(_frames.size(),timestamp));
+
+            // FIXME: Get image path (convert from UTF-8 to local)
+            string imgFile = child->Attribute("image");
+            QString fnUni = QString::fromUtf8(imgFile.c_str());
+            QByteArray baImgFilename = fnUni.toLocal8Bit();
+            imgFile = baImgFilename.data();
+
+            QFileInfo info(fnUni);
+            if(info.isAbsolute()&&info.exists())
+            {
+                frame->_imagePath = imgFile;
+            }
+            else
+            {
+                QByteArray baImgPath = QFileInfo(rtmFileDir.absolutePath()+"/"+ fnUni).absoluteFilePath().toLocal8Bit();
+                frame->_imagePath = baImgPath.data();
+            }
+            frame->_cameraName=cameraName;
+            frame->_camera=camera;
+
+            vector<string> paras[5]={{"gps","longtitude","latitude","altitude"},
+                                     {"gpsSigma","longtitude","latitude","altitude"},
+                                     {"height","value","sigma"},
+                                     {"attitude","pitch","yaw","roll"},
+                                     {"attitudeSigma","pitch","yaw","roll"}};
+
+            for(int i=0;i<5;i++)
+            {
+                tinyxml2::XMLElement* child1=child->FirstChildElement(paras[i][0].c_str());
+                if(!child1) continue;
+                for(int j=1;j<paras[i].size();j++)
+                {
+                    double gpsData = child1->DoubleAttribute(paras[i][j].c_str());
+                    frame->_gpshpyr.push_back(gpsData);
+                }
+            }
+
+
+            _frames.push_back(frame);
+
+            child = child->NextSiblingElement();
+        }
+
+        return _frames.size();
+    }
+
+
+    bool openRTM_XML(GSLAM::Svar& var,const std::string& dataset)
+    {
+        _name = "Dataset";
+
+        tinyxml2::XMLDocument doc;
+        if(tinyxml2::XML_SUCCESS!=doc.LoadFile(dataset.c_str())) return false;
+
+        tinyxml2::XMLElement* proiEle=doc.FirstChildElement("project");
+        proiEle->SetName("");
+        if(exportEle(var,proiEle))
+        {
+            tinyxml2::XMLElement* imgsEle = proiEle->NextSiblingElement("images");
+            imgsEle->SetName("");
+            return exportFrame(var,imgsEle,dataset);
+        }
+
+        return false;
+    }
+
     GSLAM::GImage imread(const QString& imgFile)
     {
-        GSLAM::GImage thumbnail;
+        GSLAM::GImage img;
         QImage qimage(imgFile);
-//        qimage=qimage.convertToFormat(QImage::Format_RGB32);
-        if(qimage.format()==QImage::Format_RGB32)
+
+        if( qimage.format() == QImage::Format_RGB32 )
         {
-            thumbnail=GImage(qimage.height(),qimage.width(),
-                       GImageType<uchar,4>::Type,qimage.bits(),true);
+            img=GImage(qimage.height(), qimage.width(),
+                       GImageType<uchar,4>::Type, qimage.bits(), true);
         }
-        else if(qimage.format()==QImage::Format_RGB888){
-            thumbnail=GImage(qimage.height(),qimage.width(),
-                       GImageType<uchar,3>::Type,qimage.bits(),true);
+        else if(qimage.format() == QImage::Format_RGB888){
+            img=GImage(qimage.height(), qimage.width(),
+                       GImageType<uchar,3>::Type, qimage.bits(), true);
         }
         else if(qimage.format()==QImage::Format_Indexed8)
         {
-            thumbnail=GImage(qimage.height(),qimage.width(),
-                       GImageType<uchar,1>::Type,qimage.bits(),true);
+            img=GImage(qimage.height(), qimage.width(),
+                       GImageType<uchar,1>::Type, qimage.bits(), true);
         }
-        return thumbnail;
+
+        return img;
     }
 
     void run()
     {
-        while (!_shouldStop) {
-            if(_preparedFrames.size()>=2) {Rate::sleep(0.001);continue;}
-            auto fr=prepareFrame();
-            if(!fr) break;
+        while (!_shouldStop)
+        {
+            if(_preparedFrames.size()>=2)
+            {
+                Rate::sleep(0.001);
+                continue;
+            }
+
+            auto fr = prepareFrame();
+            if( !fr ) break;
+
             _preparedFrames.push_back(fr);
             _eventPrepared.set();
         }
-        _shouldStop=true;
+
+        _shouldStop = true;
     }
 
     GSLAM::FramePtr grabFrame()
     {
         if(_preparedFrames.size())
         {
-            auto ret=_preparedFrames.front();
+            auto ret = _preparedFrames.front();
             _preparedFrames.pop_front();
             return ret;
         }
-        if(_shouldStop) return GSLAM::FramePtr();
+
+        if( _shouldStop ) return GSLAM::FramePtr();
+
         _eventPrepared.wait();
-        auto ret=_preparedFrames.front();
+        auto ret = _preparedFrames.front();
         _preparedFrames.pop_front();
+
         return ret;
     }
 
     GSLAM::FramePtr prepareFrame()
     {
-        string line;
-        if(!getline(_ifs,line)) return GSLAM::FramePtr();
-        int dotIdx=line.find(',');
-        if(dotIdx==string::npos) return GSLAM::FramePtr();
-        string imgFile=line.substr(0,dotIdx);
-        string paras  =line.substr(dotIdx+1);
-        VecParament<double> gpsInfo;
-        gpsInfo.fromString(paras);
-        if(gpsInfo.size()<1) return GSLAM::FramePtr();
-        SPtr<RTMapperFrame> frame(new RTMapperFrame(_frameId++,gpsInfo[0]));
-        frame->_cameraName=_cameraName;
-        frame->_camera=_camera;
-        gpsInfo.data.erase(gpsInfo.data.begin());
-        frame->_gpshpyr=gpsInfo.data;
-        QFileInfo info(imgFile.c_str());
-        if(info.isAbsolute()&&info.exists())
-            frame->_imagePath=imgFile;
-        else
+        if( _frameId < _frames.size() )
         {
-            frame->_imagePath=QFileInfo(QDir(_seqTop.c_str()),imgFile.c_str()).absoluteFilePath().toStdString();
-        }
-        QDir      thumbnailDir(QString(_seqTop.c_str())+"/thumbnail");
-        QFileInfo thumbnailFile(thumbnailDir.absolutePath()+"/"+info.fileName());
-        if(thumbnailFile.exists())
-            frame->_thumbnail=imread(thumbnailFile.absoluteFilePath());
+            SPtr<RTMapperFrame> frame = _frames[_frameId++];
 
-        frame->_image=imread(frame->_imagePath.c_str());
-        return frame;
+            SPtr<RTMapperFrame> nf(new RTMapperFrame(frame->id(), frame->timestamp()));
+            *nf = *frame;
+            nf->_image = imread(nf->_imagePath.c_str());
+
+            return nf;
+        }
+
+        return GSLAM::FramePtr(NULL);
     }
-#endif
 
     string           _seqTop;
     GSLAM::FrameID   _frameId;
     GSLAM::Camera    _camera;
-    string           _name,_cameraName;
-    ifstream         _ifs;
+    string           _name, _cameraName;
+
+    std::vector<SPtr<RTMapperFrame> >   _frames;
+
     std::thread      _prepareThread;
     bool             _shouldStop;
     GSLAM::Event     _eventPrepared;
@@ -294,4 +488,4 @@ public:
 REGISTER_DATASET(DatasetRTMapper,rtm)
 
 
-#endif
+#endif // end of HAS_QT
