@@ -115,7 +115,7 @@ class Estimator : public GObject {
     return false;
   }
 
-  virtual bool findPlane(const SE3& plane, const std::vector<Point3d>& points,
+  virtual bool findPlane(SE3& plane, const std::vector<Point3d>& points,//NOLINT
                          int method = 0, double ransacThreshold = -1.,
                          std::vector<uchar>* mask = NULL) const {
     return false;
@@ -135,7 +135,7 @@ class Estimator : public GObject {
       const SE3& ref2cur,
       const Point3d& refDirection,  // camera.UnProject(ref2d)
       const Point3d& curDirection,  // camera.UnProject(cur2d)
-      const Point3d& refPt) const {
+      Point3d& refPt) const {       // NOLINT
     return false;
   }
 

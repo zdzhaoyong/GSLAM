@@ -185,9 +185,9 @@ class Optimizer {
   // TRACKING: Update relative pose agaist the first frame with known or unknown
   // depth
   virtual bool optimizePose(
-      const std::vector<std::pair<CameraAnchor, CameraAnchor> >& matches,
-      const std::vector<IdepthEstimation>& firstIDepth,
-      const GSLAM::SE3& relativePose,  // T_{12}
+      std::vector<std::pair<CameraAnchor, CameraAnchor> >& matches,// NOLINT
+      std::vector<IdepthEstimation>& firstIDepth,// NOLINT
+      GSLAM::SE3& relativePose,  // T_{12} // NOLINT
       KeyFrameEstimzationDOF dof = UPDATE_KF_SE3, double* information = NULL) {
     return false;
   }
@@ -195,7 +195,7 @@ class Optimizer {
   // Update pose with 3D-2D corrospondences
   virtual bool optimizePnP(
       const std::vector<std::pair<GSLAM::Point3d, CameraAnchor> >& matches,
-      const GSLAM::SE3& pose, KeyFrameEstimzationDOF dof = UPDATE_KF_SE3,
+      GSLAM::SE3& pose, KeyFrameEstimzationDOF dof = UPDATE_KF_SE3,// NOLINT
       double* information = NULL) {
     return false;
   }
@@ -204,7 +204,7 @@ class Optimizer {
   virtual bool optimizeICP(
       const std::vector<std::pair<GSLAM::Point3d, GSLAM::Point3d> >&
           matches,  // T_{12}
-      const GSLAM::SIM3& pose,
+      GSLAM::SIM3& pose,  //NOLINT
       KeyFrameEstimzationDOF dof = UPDATE_KF_SE3, double* information = NULL) {
     return false;
   }
@@ -212,15 +212,15 @@ class Optimizer {
   // Fit the sim3 transform between 2 synchronized trajectory
   virtual bool fitSim3(
       const std::vector<std::pair<GSLAM::SE3, GSLAM::SE3> >& matches,  // T_{12}
-      const GSLAM::SIM3& sim3, KeyFrameEstimzationDOF dof = UPDATE_KF_SIM3,
+      GSLAM::SIM3& sim3, KeyFrameEstimzationDOF dof = UPDATE_KF_SIM3,  // NOLINT
       double* information = NULL) {
     return false;
   }
 
   // MAPPING: Do bundle adjust with auto calibration or not: BUNDLEADJUST,
   // INVDEPTH_BUNDLE, POSEGRAPH
-  virtual bool optimize(const BundleGraph& graph) { return false; }
-  virtual bool magin(const BundleGraph& graph) {
+  virtual bool optimize(BundleGraph& graph) { return false; }// NOLINT
+  virtual bool magin(BundleGraph& graph) {// NOLINT
     return false;
   }  // Convert bundle graph to pose graph
 
