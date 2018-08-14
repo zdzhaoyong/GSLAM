@@ -89,6 +89,11 @@ struct Point2_
             return Point2_<Precision>(0,0);
     }
 
+    inline Precision dot(const Point2_& a)const
+    {
+        return x*a.x+y*a.y;
+    }
+
     friend inline std::ostream& operator <<(std::ostream& os,const Point2_& p)
     {
         os<<p.x<<" "<<p.y;
@@ -125,12 +130,12 @@ struct Point3_
         return sqrt(x*x+y*y+z*z);
     }
 
-    inline Precision dot(const Point3_& a)
+    inline Precision dot(const Point3_& a)const
     {
         return x*a.x+y*a.y+z*a.z;
     }
 
-    inline Point3_<Precision> cross(const Point3_& a)
+    inline Point3_<Precision> cross(const Point3_& a)const
     {
         return Point3_<Precision>(y*a.z-z*a.y,z*a.x-x*a.z,x*a.y-y*a.x);
     }

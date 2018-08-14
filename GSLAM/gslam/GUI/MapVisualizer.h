@@ -30,7 +30,7 @@ private:
     std::vector<Point3d>    _vetexConnection,_gpsError;
     std::vector<Point3f>    _pointCloudVertex;
     std::vector<Point3ub>   _pointCloudColors;
-    std::vector<GSLAM::SIM3> _keyframes;
+    std::vector<GSLAM::SIM3> _keyframes,_gpsFrames;
     GSLAM::FramePtr          _curFrame;
     std::vector<Point3d>    _curConnection;
     GSLAM::Camera           _camera;

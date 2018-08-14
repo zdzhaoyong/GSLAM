@@ -300,6 +300,7 @@ void MapVisualizer::update()
     double               minRadius=0;
     for(GSLAM::FramePtr& fr:mapFrames)
     {
+        if(!_camera.isValid()) _camera=fr->getCamera();
         if(!centerSeted)
         {
             center=fr->getPose().get_translation();
