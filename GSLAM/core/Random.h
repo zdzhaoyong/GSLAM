@@ -2,6 +2,7 @@
 #define RANDOM_H
 
 #include <cstdlib>
+#include <cmath>
 
 namespace GSLAM {
 

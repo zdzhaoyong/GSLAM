@@ -37,12 +37,17 @@
 #include <vector>
 #include "GSLAM.h"
 
-#define USE_ESTIMATOR_PLUGIN(EST_CLASS)              \
-  extern "C" {                                       \
-  SPtr<GSLAM::Estimator> createEstimatorInstance() { \
-    return SPtr<GSLAM::Estimator>(new EST_CLASS());  \
-  }                                                  \
-  }
+#define USE_ESTIMATOR_PLUGIN(EST_CLASS)                                  \
+  extern "C" SPtr<GSLAM::Estimator> createEstimatorInstance() {          \
+    return SPtr<GSLAM::Estimator>(new EST_CLASS());                      \
+  }                                                                      \
+  class EST_CLASS##_Register {                                           \
+   public:                                                               \
+    EST_CLASS##_Register() {                                             \
+      SvarWithType<funcCreateEstimatorInstance>::instance()["Default"] = \
+          createEstimatorInstance;                                       \
+    }                                                                    \
+  } EST_CLASS##_Register_instance;
 
 namespace GSLAM {
 
@@ -115,7 +120,8 @@ class Estimator : public GObject {
     return false;
   }
 
-  virtual bool findPlane(SE3& plane, const std::vector<Point3d>& points,//NOLINT
+  virtual bool findPlane(SE3& plane,
+                         const std::vector<Point3d>& points,  // NOLINT
                          int method = 0, double ransacThreshold = -1.,
                          std::vector<uchar>* mask = NULL) const {
     return false;
@@ -140,14 +146,17 @@ class Estimator : public GObject {
   }
 
   static SPtr<Estimator> create(std::string pluginName = "") {
+    funcCreateEstimatorInstance createFunc =
+        SvarWithType<funcCreateEstimatorInstance>::instance()["Default"];
+    if (createFunc) return createFunc();
+
     if (pluginName.empty()) {
       pluginName = svar.GetString("EstimatorPlugin", "libgslam_estimator");
     }
     SPtr<SharedLibrary> plugin = Registry::get(pluginName);
     if (!plugin) return SPtr<Estimator>();
-    funcCreateEstimatorInstance createFunc =
-        (funcCreateEstimatorInstance)plugin->getSymbol(
-            "createEstimatorInstance");
+    createFunc = (funcCreateEstimatorInstance)plugin->getSymbol(
+        "createEstimatorInstance");
     if (!createFunc)
       return SPtr<Estimator>();
     else
