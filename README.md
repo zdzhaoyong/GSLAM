@@ -133,8 +133,7 @@ Copyright (c) 2018 Northwestern Polytechnical University, Yong Zhao. All rights 
 This software was developed by the Yong Zhao at Northwestern Polytechnical University.
 
 All advertising materials mentioning features or use of this software must display
-the following acknowledgement: This product includes software developed by the
-University of California, Lawrence Berkeley Laboratory.
+the following acknowledgement: This product includes software developed by Northwestern Polytechnical University, PILAB.
 
 Redistribution and use in source and binary forms, with or without modification,
 are permitted provided that the following conditions are met:
@@ -146,7 +145,7 @@ list of conditions and the following disclaimer in the documentation and/or
 other materials provided with the distribution.
 3. All advertising materials mentioning features or use of this software must
 display the following acknowledgement: This product includes software developed
-by the University of California, Berkeley and its contributors.
+by Northwestern Polytechnical University and its contributors.
 4. Neither the name of the University nor the names of its contributors may be
 used to endorse or promote products derived from this software without specific
 prior written permission.
