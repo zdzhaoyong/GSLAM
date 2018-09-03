@@ -186,18 +186,125 @@ public:
     }
 #endif
 
-    Array_<Precision,6> ln()const
+    inline Array_<Precision,6> log()const
     {
         Array_<Precision,6> result;
-        *(Vec3*)&result=my_translation;
-        *((Vec3*)&result+1)=my_rotation.ln();
+        const auto& l=my_rotation;
+        const auto& t=my_translation;
+        const Precision squared_w = l.w*l.w;
+        const Precision n = sqrt(l.x*l.x+l.y*l.y+l.z*l.z);
+
+        Precision A_inv;
+        // Atan-based log thanks to
+        //
+        // C. Hertzberg et al.:
+        // "Integrating Generic Sensor Fusion Algorithms with Sound State
+        // Representation through Encapsulation of Manifolds"
+        // Information Fusion, 2011
+
+        if (n < NEAR_ZERO||true)
+        {
+            //If n is too small
+            A_inv = 2./l.w - 2.*(1.0-squared_w)/(l.w*squared_w);
+            Point3_<Precision> r(l.x*A_inv,l.y*A_inv,l.z*A_inv);
+            Point3_<Precision> p=t-0.5*r.cross(t)+static_cast<Precision>(1. / 12.)*r.cross(r.cross(t));
+            *(Point3_<Precision>*)&result.data=p;
+            *(Point3_<Precision>*)&result.data[3]=r;
+        }
+        else
+        {
+            if (fabs(l.w)<NEAR_ZERO)
+            {
+                //If w is too small
+                if (l.w>0)
+                {
+                    A_inv = M_PI/n;
+                }
+                else
+                {
+                    A_inv = -M_PI/n;
+                }
+            }
+            else
+                A_inv = 2*atan(n/l.w)/n;
+
+            auto theta=A_inv*n;
+            Point3_<Precision> r(l.x*A_inv,l.y*A_inv,l.z*A_inv);
+            Point3_<Precision> a=r/theta;
+            Point3_<Precision> p=t-0.5*r.cross(t)+(1-theta/(2*tan(0.5*theta)))*a.cross(a.cross(t));
+            *(Point3_<Precision>*)&result.data=p;
+            *(Point3_<Precision>*)&result.data[3]=r;
+        }
         return result;
     }
 
-    static SE3<Precision> exp(const Array_<Precision,6>& v)
+    template <typename Scalar>
+    static inline SE3<Scalar> exp(const Array_<Scalar,6>& l)
     {
-        return SE3<Precision>(SO3<Precision>::exp(*((Vec3*)&v+1)),
-                              *(Vec3*)&v);
+        Point3_<Scalar> p(l.data[0],l.data[1],l.data[2]);
+        Point3_<Scalar> r(l.data[3],l.data[4],l.data[5]);
+        Scalar theta_sq = r.dot(r);
+        Scalar theta    = sqrt(theta_sq);
+        Scalar half_theta = static_cast<Scalar>(0.5) * theta;
+
+        Scalar imag_factor;
+        Scalar real_factor;
+
+        if (theta < static_cast<Scalar>(1e-10)) {
+          Scalar theta_po4 = theta_sq * theta_sq;
+          imag_factor = static_cast<Scalar>(0.5) -
+                        static_cast<Scalar>(1.0 / 48.0) * theta_sq +
+                        static_cast<Scalar>(1.0 / 3840.0) * theta_po4;
+          real_factor = static_cast<Scalar>(1) -
+                        static_cast<Scalar>(0.5) * theta_sq +
+                        static_cast<Scalar>(1.0 / 384.0) * theta_po4;
+        } else {
+          Scalar sin_half_theta = sin(half_theta);
+          imag_factor = sin_half_theta / theta;
+          real_factor = cos(half_theta);
+        }
+
+        SO3<Scalar> R( imag_factor * r.x, imag_factor * r.y,imag_factor * r.z,real_factor);
+        auto t= p+(1-cos(theta))/theta_sq*r.cross(p)+
+                (theta-sin(theta))/(theta_sq*theta)*r.cross(r.cross(p));
+        return SE3<Scalar>(R,t);
+    }
+
+    template <typename Scalar>
+    static inline SE3<Scalar> expFast(const Array_<Scalar,6>& l)
+    {
+        Point3_<Scalar> p(l.data[0],l.data[1],l.data[2]);
+        Point3_<Scalar> r(l.data[3],l.data[4],l.data[5]);
+        Scalar theta_sq = r.dot(r);
+        Scalar theta    = sqrt(theta_sq);
+        Scalar half_theta = static_cast<Scalar>(0.5) * theta;
+
+        Scalar imag_factor;
+        Scalar real_factor;
+
+        if (theta < static_cast<Scalar>(1e-10)) {
+          Scalar theta_po4 = theta_sq * theta_sq;
+          imag_factor = static_cast<Scalar>(0.5) -
+                        static_cast<Scalar>(1.0 / 48.0) * theta_sq +
+                        static_cast<Scalar>(1.0 / 3840.0) * theta_po4;
+          real_factor = static_cast<Scalar>(1) -
+                        static_cast<Scalar>(0.5) * theta_sq +
+                        static_cast<Scalar>(1.0 / 384.0) * theta_po4;
+        } else {
+          Scalar sin_half_theta = SO3<Scalar>::sine(half_theta);
+          imag_factor = sin_half_theta / theta;
+          real_factor = SO3<Scalar>::cosine(half_theta);
+        }
+
+        SO3<Scalar> R( imag_factor * r.x, imag_factor * r.y,imag_factor * r.z,real_factor);
+        auto t= p+(1-SO3<Scalar>::cosine(theta))/theta_sq*r.cross(p)+
+                (theta-SO3<Scalar>::sine(theta))/(theta_sq*theta)*r.cross(r.cross(p));
+        return SE3<Scalar>(R,t);
+    }
+
+    Array_<Precision,6> ln()const
+    {
+        return log();
     }
 
 protected:

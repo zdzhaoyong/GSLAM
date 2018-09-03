@@ -79,7 +79,9 @@ public:
         return SO3<Scalar>(x,y,z,w);
     }
 
-    Point3_<Precision> ln()const
+    Point3_<Precision> ln()const{return log();}// TODO: Remove
+
+    Point3_<Precision> log()const
     {
         const Precision squared_w = w*w;
         const Precision n = sqrt(x*x+y*y+z*z);
@@ -141,6 +143,66 @@ public:
                               sin_half_theta*r.y,
                               sin_half_theta*r.z,W);
     }
+
+    template <typename T>
+    static inline T sine(T x) {
+        T sin = 0;
+        //always wrap input angle to -PI..PI
+        while (x < -3.14159265)
+            x += 6.28318531;
+        while (x > 3.14159265)
+            x -= 6.28318531;
+        //compute sine
+        if (x < 0) {
+            sin = 1.27323954 * x + .405284735 * x * x;
+            if (sin < 0)
+                sin = .225 * (sin * -sin - sin) + sin;
+            else
+                sin = .225 * (sin * sin - sin) + sin;
+        } else {
+            sin = 1.27323954 * x - 0.405284735 * x * x;
+            if (sin < 0)
+                sin = .225 * (sin * -sin - sin) + sin;
+            else
+                sin = .225 * (sin * sin - sin) + sin;
+        }
+        return sin;
+    }
+
+    template <typename T>
+    static inline T cosine(T x) {
+        //compute cosine: sin(x + PI/2) = cos(x)
+        return sine(x+1.57079632);
+    }
+
+    template<typename Scalar>
+    static SO3<Scalar> expFast(const Point3_<Scalar>& l)
+    {
+        Scalar theta_sq = l.dot(l);
+        Scalar theta    = sqrt(theta_sq);
+        Scalar half_theta = static_cast<Scalar>(0.5) * theta;
+
+        Scalar imag_factor;
+        Scalar real_factor;
+
+        if (theta < static_cast<Scalar>(1e-10)) {
+          Scalar theta_po4 = theta_sq * theta_sq;
+          imag_factor = static_cast<Scalar>(0.5) -
+                        static_cast<Scalar>(1.0 / 48.0) * theta_sq +
+                        static_cast<Scalar>(1.0 / 3840.0) * theta_po4;
+          real_factor = static_cast<Scalar>(1) -
+                        static_cast<Scalar>(0.5) * theta_sq +
+                        static_cast<Scalar>(1.0 / 384.0) * theta_po4;
+        } else {
+          Scalar sin_half_theta = sine(half_theta);
+          imag_factor = sin_half_theta / theta;
+          real_factor = cosine(half_theta);
+        }
+
+        return SO3<Scalar>( imag_factor * l.x, imag_factor * l.y,
+            imag_factor * l.z,real_factor);
+    }
+
     inline Precision SIGN(const Precision& v){return v>0?1.:-1.;}
 
     /// This is an unsafe operation.
@@ -406,11 +468,11 @@ public:
         Precision mag2 = w * w + x * x + y * y + z * z;
         if (  mag2!=0.f && (fabs(mag2 - 1.0f) > 0.001))
         {
-            Precision mag = sqrt(mag2);
-            w /= mag;
-            x /= mag;
-            y /= mag;
-            z /= mag;
+            Precision mag = 1./sqrt(mag2);
+            w *= mag;
+            x *= mag;
+            y *= mag;
+            z *= mag;
         }
     }
 

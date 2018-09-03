@@ -37,12 +37,18 @@
 #include <utility>
 #include <vector>
 #include "GSLAM.h"
-#define USE_OPTIMIZER_PLUGIN(OPT_CLASS)              \
-  extern "C" {                                       \
-  SPtr<GSLAM::Optimizer> createOptimizerInstance() { \
-    return SPtr<GSLAM::Optimizer>(new OPT_CLASS());  \
-  }                                                  \
-  }
+#define USE_OPTIMIZER_PLUGIN(OPT_CLASS)                                \
+  extern "C" SPtr<GSLAM::Optimizer> createOptimizerInstance() {        \
+    return SPtr<GSLAM::Optimizer>(new OPT_CLASS());                    \
+  }                                                                    \
+  class OPT_CLASS##_Register {                                         \
+   public:                                                             \
+    OPT_CLASS##_Register() {                                           \
+      GSLAM::SvarWithType<                                             \
+          GSLAM::funcCreateOptimizerInstance>::instance()["Default"] = \
+          createOptimizerInstance;                                     \
+    }                                                                  \
+  } OPT_CLASS##_Register_instance;
 
 namespace GSLAM {
 
@@ -185,8 +191,8 @@ class Optimizer {
   // TRACKING: Update relative pose agaist the first frame with known or unknown
   // depth
   virtual bool optimizePose(
-      std::vector<std::pair<CameraAnchor, CameraAnchor> >& matches,// NOLINT
-      std::vector<IdepthEstimation>& firstIDepth,// NOLINT
+      std::vector<std::pair<CameraAnchor, CameraAnchor> >& matches,  // NOLINT
+      std::vector<IdepthEstimation>& firstIDepth,                    // NOLINT
       GSLAM::SE3& relativePose,  // T_{12} // NOLINT
       KeyFrameEstimzationDOF dof = UPDATE_KF_SE3, double* information = NULL) {
     return false;
@@ -195,7 +201,7 @@ class Optimizer {
   // Update pose with 3D-2D corrospondences
   virtual bool optimizePnP(
       const std::vector<std::pair<GSLAM::Point3d, CameraAnchor> >& matches,
-      GSLAM::SE3& pose, KeyFrameEstimzationDOF dof = UPDATE_KF_SE3,// NOLINT
+      GSLAM::SE3& pose, KeyFrameEstimzationDOF dof = UPDATE_KF_SE3,  // NOLINT
       double* information = NULL) {
     return false;
   }
@@ -203,9 +209,10 @@ class Optimizer {
   // Update pose with 3D-3D corrospondences
   virtual bool optimizeICP(
       const std::vector<std::pair<GSLAM::Point3d, GSLAM::Point3d> >&
-          matches,  // T_{12}
-      GSLAM::SIM3& pose,  //NOLINT
-      KeyFrameEstimzationDOF dof = UPDATE_KF_SE3, double* information = NULL) {
+          matches,        // T_{12}
+      GSLAM::SIM3& pose,  // NOLINT
+      KeyFrameEstimzationDOF dof = UPDATE_KF_SE3,
+      double* information = NULL) {
     return false;
   }
 
@@ -219,13 +226,16 @@ class Optimizer {
 
   // MAPPING: Do bundle adjust with auto calibration or not: BUNDLEADJUST,
   // INVDEPTH_BUNDLE, POSEGRAPH
-  virtual bool optimize(BundleGraph& graph) { return false; }// NOLINT
-  virtual bool magin(BundleGraph& graph) {// NOLINT
+  virtual bool optimize(BundleGraph& graph) { return false; }  // NOLINT
+  virtual bool magin(BundleGraph& graph) {                     // NOLINT
     return false;
   }  // Convert bundle graph to pose graph
 
   static SPtr<Optimizer> create(std::string pluginName = "") {
     if (pluginName.empty()) {
+      funcCreateOptimizerInstance createFunc =
+          SvarWithType<funcCreateOptimizerInstance>::instance()["Default"];
+      if (createFunc) return createFunc();
       pluginName = svar.GetString("OptimizerPlugin", "libgslam_optimizer");
     }
     SPtr<SharedLibrary> plugin = Registry::get(pluginName);
@@ -241,5 +251,8 @@ class Optimizer {
 
   OptimzeConfig _config;
 };
+
+typedef SPtr<Optimizer> OptimizerPtr;
+
 }  // namespace GSLAM
 #endif  // GSLAM_CORE_OPTIMIZER_H_
