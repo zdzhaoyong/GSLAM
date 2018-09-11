@@ -307,6 +307,17 @@ public:
         return log();
     }
 
+    SO3<Precision> getRotation()const{return get_rotation();}
+    Point3_<Precision> getTranslation()const{return get_translation();}
+
+    void setRotation(SO3<Precision> R){my_rotation=R;}
+    void setTranslation(Point3_<Precision> t){my_translation=t;}
+
+    SE3  plus (const SE3& rq) const{return (*this)*rq;}
+    Point3_<Precision> trans(const Point3_<Precision>& p) const{return (*this)*p;}
+
+    std::string toString()const{std::stringstream sst;sst<<*this;return sst.str();}
+
 protected:
     SO3<Precision> my_rotation;
     Vec3 my_translation;

@@ -42,7 +42,8 @@ void SLAMVisualizer::handle(const SPtr<GObject>& obj){
     }
     else if(FramePtr e=std::dynamic_pointer_cast<MapFrame>(obj))
     {
-        e->setImage(GImage());
+        if(svar.GetInt("FreeKeyFrameImage",1))
+            e->setImage(GImage());
         if(_vis)
             _vis->update();
         updateGL();

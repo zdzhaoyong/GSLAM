@@ -526,7 +526,7 @@ void MainWindow::runSLAMMain()
         }
 
         frameVis->showFrame(frame);
-        gimageVis->imshow("CurrentImage",frame->getImage());
+//        gimageVis->imshow("CurrentImage",frame->getImage());
 
         if(status==ONESTEP){
             status=PAUSE;

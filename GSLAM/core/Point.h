@@ -2,6 +2,7 @@
 #define POINT_H
 
 #include <iostream>
+#include <sstream>
 #include <math.h>
 
 #ifdef HAS_TOON
@@ -93,6 +94,21 @@ struct Point2_
     {
         return x*a.x+y*a.y;
     }
+
+    Precision at(int i)const{return (*this)[i];}
+    Precision getX()const{return x;}
+    Precision getY()const{return y;}
+
+    void setX(Precision X){x=X;}
+    void setY(Precision Y){y=Y;}
+
+    Point2_<Precision> add(const Point2_<Precision>& r)const{return (*this)+r;}
+    Point2_<Precision> plus(const Point2_<Precision>& r)const{return (*this)+r;}
+    Point2_<Precision> minus(const Point2_<Precision>& r)const{return (*this)-r;}
+    Point2_<Precision> time(Precision r)const{return (*this)*r;}
+    Point2_<Precision> divide(Precision r)const{return (*this)/r;}
+
+    std::string toString()const{std::stringstream sst;sst<<*this;return sst.str();}
 
     friend inline std::ostream& operator <<(std::ostream& os,const Point2_& p)
     {
@@ -210,6 +226,23 @@ struct Point3_
     {
         return Point3_<Scalar>(x,y,z);
     }
+
+    Precision at(int i)const{return (*this)[i];}
+    Precision getX()const{return x;}
+    Precision getY()const{return y;}
+    Precision getZ()const{return z;}
+
+    void setX(Precision X){x=X;}
+    void setY(Precision Y){y=Y;}
+    void setZ(Precision Z){z=Z;}
+
+    Point3_<Precision> add(const Point3_<Precision>& r)const{return (*this)+r;}
+    Point3_<Precision> plus(const Point3_<Precision>& r)const{return (*this)+r;}
+    Point3_<Precision> minus(const Point3_<Precision>& r)const{return (*this)-r;}
+    Point3_<Precision> time(Precision r)const{return (*this)*r;}
+    Point3_<Precision> divide(Precision r)const{return (*this)/r;}
+
+    std::string toString()const{std::stringstream sst;sst<<*this;return sst.str();}
 
 #ifdef EIGEN_MATRIX_H
     template <typename Scalar>
