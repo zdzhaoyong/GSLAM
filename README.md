@@ -29,11 +29,18 @@ GSLAM is aimed to provide a general open-source SLAM framework and benchmark wit
 
 #### 2.1.1 Install dependency
 
-**OpenCV** : sudo apt-get install libopencv-dev 
+**Qt** : REQUIRED, Used by the gslam GUI
 
-**Qt** : sudo apt-get install build-essential g++ libqt4-core libqt4-dev libqt4-gui qt4-doc qt4-designer 
+```
+sudo apt-get install libqt4-dev
+```
 
-**OpenGL**: sudo apt-get install freeglut3 freeglut3-dev libglew-dev libglew1.10
+**OpenCV** : Optional, Used by some dataset plugins and EstimatorOpenCV
+
+```
+sudo apt-get install libopencv-dev 
+```
+
 
 #### 2.1.2 Compile and insall GSLAM
 
