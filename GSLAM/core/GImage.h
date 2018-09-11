@@ -333,6 +333,9 @@ public:
 
     const GImage row(int idx=0)const{return GImage(1,cols,type(),data+elemSize()*cols*idx);}
 
+    int getWidth()const{return cols;}
+    int getHeight()const{return rows;}
+
 private:
 
     template<typename _Tp> static inline _Tp* alignPtr(_Tp* ptr, int n=(int)sizeof(_Tp))

@@ -40,6 +40,7 @@ class MapFrame;
 class MapPoint;
 class Map;
 class SLAM;
+class FrameConnection;
 
 typedef size_t                 NodeId;
 typedef size_t                 WordId;
@@ -62,10 +63,13 @@ typedef size_t         FrameID;
 typedef SPtr<GObject>  GObjectPtr;
 typedef SPtr<MapFrame> FramePtr;
 typedef SPtr<MapPoint> PointPtr;
+typedef SPtr<FrameConnection> FrameConnectionPtr;
 typedef SPtr<Map>      MapPtr;
 typedef SPtr<SLAM>     SLAMPtr;
 typedef std::vector<FramePtr> FrameArray;
 typedef std::vector<PointPtr> PointArray;
+typedef std::map<GSLAM::FrameID, FrameConnectionPtr > FrameConnectionMap;
+typedef std::vector<std::pair<FrameID,size_t> > MapPointObsVec;
 typedef GSLAM::Point3d CameraAnchor;        // for both Pinhole projection and Sphere projection
 typedef GSLAM::Point2d IdepthEstimation;    // [idepth,invSqSigma]^T
 typedef GSLAM::SLAMPtr (*funcCreateSLAMInstance)();
@@ -110,8 +114,8 @@ class GObjectHandle
 {
 public:
     virtual ~GObjectHandle(){}
-    virtual void handle(const SPtr<GObject>& obj){}
-    void handle(GObject* obj){handle(SPtr<GObject>(obj));}
+    virtual void handle(const GObjectPtr& obj){}
+    void handle(GObject* obj){handle(GObjectPtr(obj));}
 };
 
 /**
@@ -143,6 +147,13 @@ public:
 
     virtual int        observationNum()const{return -1;}
     virtual bool       getObservations(std::map<FrameID,size_t>& obs)const{return false;}
+    virtual MapPointObsVec getObservations()const{
+        MapPointObsVec r;
+        std::map<FrameID,size_t> m;
+        getObservations(m);
+        r.insert(r.end(),m.begin(),m.end());
+        return r;
+    }
     virtual bool       addObservation(GSLAM::FrameID frId,size_t featId){return false;}
     virtual bool       eraseObservation(GSLAM::FrameID frId){return false;}
     virtual bool       clearObservation(){return false;}
@@ -163,6 +174,7 @@ public:
     virtual int  matchesNum(){return 0;}
 
     virtual bool getMatches(std::vector<std::pair<int,int> >& matches){return false;}
+    std::vector<std::pair<int,int> > getMatches(){std::vector<std::pair<int,int> > r;getMatches(r);return r;}
     virtual bool getChild2Parent(GSLAM::SIM3& sim3){return false;}
     virtual bool getChild2Parent(GSLAM::SE3& se3){return false;}
     virtual bool getInformation(double* info){return false;}
@@ -226,26 +238,32 @@ public:
     virtual bool    getKeyPoint(int idx, KeyPoint &pt) const{return false;}
     virtual bool    getKeyPoints(std::vector<Point2f>& keypoints)const{return false;}
     virtual bool    getKeyPoints(std::vector<KeyPoint>& keypoints) const{return false;}
+    virtual std::vector<KeyPoint>  getKeyPoints() const{std::vector<KeyPoint> r;getKeyPoints(r);return r;}
     virtual bool    getKeyPointColor(int idx,ColorType& color){return false;}
     virtual bool    getKeyPointIDepthInfo(int idx,Point2d& idepth){return false;}
     virtual PointID getKeyPointObserve(int idx){return 0;}
     virtual GImage  getDescriptor(int idx=-1)const{return GImage();}        // idx<0: return all descriptors
     virtual bool    getBoWVector(BowVector& bowvec)const{return false;}
+    virtual BowVector getBoWVector()const{BowVector r;getBoWVector(r);return r;}
     virtual bool    getFeatureVector(FeatureVector& featvec)const{return false;}
+    virtual FeatureVector getFeatureVector()const{FeatureVector r;getFeatureVector(r);return r;}
     virtual std::vector<size_t> getFeaturesInArea(const float& x,const float& y,
                                           const float& r,bool precisely=true)const{return std::vector<size_t>();}
 
     // MapPoint <-> KeyPoint  : MapPoint Observation usually comes along Mappoint::*obs*
     virtual int     observationNum()const{return 0;}
     virtual bool    getObservations(std::map<GSLAM::PointID,size_t>& obs)const{return false;}
+    virtual std::map<GSLAM::PointID,size_t>    getObservations()const{std::map<GSLAM::PointID,size_t> r;getObservations(r);return r;}
     virtual bool    addObservation(const GSLAM::PointPtr& pt,size_t featId,bool add2Point=false){return false;}
     virtual bool    eraseObservation(const GSLAM::PointPtr& pt,bool erasePoint=false){return false;}
     virtual bool    clearObservations(){return false;}
 
     virtual SPtr<FrameConnection> getParent(GSLAM::FrameID parentId)const{return SPtr<FrameConnection>();}
     virtual SPtr<FrameConnection> getChild(GSLAM::FrameID childId)const{return SPtr<FrameConnection>();}
-    virtual bool    getParents(std::map<GSLAM::FrameID, SPtr<FrameConnection> >& parents)const{return false;}
-    virtual bool    getChildren(std::map<GSLAM::FrameID, SPtr<FrameConnection> >& children)const{return false;}
+    virtual bool    getParents(FrameConnectionMap& parents)const{return false;}
+    virtual bool    getChildren(FrameConnectionMap& children)const{return false;}
+    FrameConnectionMap getParents()const{FrameConnectionMap r;getParents(r);return r;}
+    FrameConnectionMap getChildren()const{FrameConnectionMap r;getChildren(r);return r;}
     virtual bool    addParent(GSLAM::FrameID parentId, const SPtr<FrameConnection>& parent){return false;}
     virtual bool    addChildren(GSLAM::FrameID childId, const SPtr<FrameConnection>& child){return false;}
     virtual bool    eraseParent(GSLAM::FrameID parentId){return false;}
@@ -292,6 +310,11 @@ public:
     virtual bool insertMapFrame(const FramePtr& frame){return false;}
     virtual bool eraseMapFrame(const FrameID& frame){return false;}
     virtual bool obtainCandidates(const FramePtr& frame,LoopCandidates& candidates){return false;}
+    virtual LoopCandidates obtainCandidates(const FramePtr& frame){
+        LoopCandidates c;
+        obtainCandidates(frame,c);
+        return c;
+    }
 };
 typedef SPtr<LoopDetector> LoopDetectorPtr;
 
@@ -316,10 +339,17 @@ public:
     virtual PointPtr getPoint(const PointID& id)const{return PointPtr();}
     virtual bool     getFrames(FrameArray& frames)const{return false;}
     virtual bool     getPoints(PointArray& points)const{return false;}
+    virtual FrameArray  getFrames()const{FrameArray r;getFrames(r);return r;}
+    virtual PointArray  getPoints()const{PointArray r;getPoints(r);return r;}
 
     virtual bool     setLoopDetector(const LoopDetectorPtr& loopdetector){return false;}
     virtual LoopDetectorPtr getLoopDetector()const{return LoopDetectorPtr();}
     virtual bool     obtainCandidates(const FramePtr& frame,LoopCandidates& candidates){return false;}
+    virtual LoopCandidates obtainCandidates(const FramePtr& frame){
+        LoopCandidates c;
+        obtainCandidates(frame,c);
+        return c;
+    }
 
     /// Save or load the map from/to the file
     virtual bool save(std::string path)const{return false;}
@@ -352,6 +382,8 @@ public:
     virtual bool    setCallback(GObjectHandle* cbk){_handle=cbk;return true;}
     virtual bool    track(FramePtr& frame){return false;}
     virtual bool    finalize(){return false;}
+
+    bool feed(FramePtr frame){return track(frame);}
 
     static SLAMPtr create(const std::string& slamPlugin);
 
