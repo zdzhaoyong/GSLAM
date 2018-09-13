@@ -103,10 +103,9 @@ struct Point2_
     void setY(Precision Y){y=Y;}
 
     Point2_<Precision> add(const Point2_<Precision>& r)const{return (*this)+r;}
-    Point2_<Precision> plus(const Point2_<Precision>& r)const{return (*this)+r;}
-    Point2_<Precision> minus(const Point2_<Precision>& r)const{return (*this)-r;}
-    Point2_<Precision> time(Precision r)const{return (*this)*r;}
-    Point2_<Precision> divide(Precision r)const{return (*this)/r;}
+    Point2_<Precision> sub(const Point2_<Precision>& r)const{return (*this)-r;}
+    Point2_<Precision> mul(Precision r)const{return (*this)*r;}
+    Point2_<Precision> div(Precision r)const{return (*this)/r;}
 
     std::string toString()const{std::stringstream sst;sst<<*this;return sst.str();}
 
@@ -237,10 +236,9 @@ struct Point3_
     void setZ(Precision Z){z=Z;}
 
     Point3_<Precision> add(const Point3_<Precision>& r)const{return (*this)+r;}
-    Point3_<Precision> plus(const Point3_<Precision>& r)const{return (*this)+r;}
-    Point3_<Precision> minus(const Point3_<Precision>& r)const{return (*this)-r;}
-    Point3_<Precision> time(Precision r)const{return (*this)*r;}
-    Point3_<Precision> divide(Precision r)const{return (*this)/r;}
+    Point3_<Precision> sub(const Point3_<Precision>& r)const{return (*this)-r;}
+    Point3_<Precision> mul(Precision r)const{return (*this)*r;}
+    Point3_<Precision> div(Precision r)const{return (*this)/r;}
 
     std::string toString()const{std::stringstream sst;sst<<*this;return sst.str();}
 

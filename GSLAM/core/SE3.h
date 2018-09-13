@@ -313,7 +313,7 @@ public:
     void setRotation(SO3<Precision> R){my_rotation=R;}
     void setTranslation(Point3_<Precision> t){my_translation=t;}
 
-    SE3  plus (const SE3& rq) const{return (*this)*rq;}
+    SE3  mul (const SE3& rq) const{return (*this)*rq;}
     Point3_<Precision> trans(const Point3_<Precision>& p) const{return (*this)*p;}
 
     std::string toString()const{std::stringstream sst;sst<<*this;return sst.str();}

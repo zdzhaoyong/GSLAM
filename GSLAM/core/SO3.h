@@ -502,7 +502,7 @@ public:
     void setY(Precision Y){y=Y;}
     void setZ(Precision Z){z=Z;}
     void setW(Precision W){w=W;}
-    SO3  plus (const SO3& rq) const{return (*this)*rq;}
+    SO3  mul (const SO3& rq) const{return (*this)*rq;}
     Point3_<Precision> trans(const Point3_<Precision>& p) const{return (*this)*p;}
 
     std::string toString()const{std::stringstream sst;sst<<*this;return sst.str();}
