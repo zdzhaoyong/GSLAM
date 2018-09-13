@@ -111,7 +111,7 @@ struct Point2_
 
     friend inline std::ostream& operator <<(std::ostream& os,const Point2_& p)
     {
-        os<<p.x<<" "<<p.y;
+        os<<std::to_string(p.x)<<" "<<std::to_string(p.y);
         return os;
     }
 
@@ -165,7 +165,7 @@ struct Point3_
 
     friend inline std::ostream& operator <<(std::ostream& os,const Point3_& p)
     {
-        os<<p.x<<" "<<p.y<<" "<<p.z;
+        os<<std::to_string(p.x)<<" "<<std::to_string(p.y)<<" "<<std::to_string(p.z);
         return os;
     }
 
