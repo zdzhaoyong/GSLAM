@@ -7,12 +7,12 @@
 # 3. This notice may not be removed or altered from any source distribution.
 
 ######################################################################################
-# PICMake VERSION 1.2.2
+# PICMake VERSION 1.2.4
 # HISTORY:
 #   1.0.0 2017.01.04 : first commit, one include for one target.
 #   1.1.0 2017.01.09 : support multi targets, reorgnized functions and macros.
 #   1.1.1 2017.01.09 : added pi_install with install and uninstall support.
-#   1.1.2 2017.01.10 : added pi_parse_arguments to support cmake version less than 3.1 
+#   1.1.2 2017.01.10 : added pi_parse_arguments to support cmake version less than 3.1
 #                      modified pi_install&pi_collect_packages&pi_add_target
 #                      fixed bug of failed make uninstall
 #   1.1.3 2017.03.05 : fixed bug of pi_install when add header files
@@ -20,6 +20,8 @@
 #   1.2.1 2017.09.01 : added lisence and auto get PI_CMAKE_VERSION, change REQUIRED to MODULES for auto package collect
 #   1.2.2 2017.09.12 : fixed bug of pi_add_target should not call return() in macros when dependency not meet
 #   1.2.3 2017.12.27 : fixed bug of multi pi_install
+#   1.2.4 2018.04.16 : enable auto CUDA support
+#   1.2.5 2018.09.17 : add GLOBAL value TARGETS2COMPILE, let add_definition only for one target
 ######################################################################################
 #                               FUNCTIONS
 # pi_collect_packagenames(<RESULT_NAME>　[VERBOSE] [path1 path2 ...])
@@ -61,9 +63,9 @@ function(pi_collect_packagenames RESULT_NAME)
   if(NOT ARGN)
     list(APPEND COLLECT_PATHS ${CMAKE_MODULE_PATH} ${CMAKE_ROOT}/Modules)
   else()
-    set(COLLECT_PATHS ${ARGN})  
+    set(COLLECT_PATHS ${ARGN})
   endif()
-  
+
   message("COLLECT_PATHS: ${COLLECT_PATHS}")
 
   foreach(COLLECT_PATH ${COLLECT_PATHS})
@@ -144,11 +146,11 @@ function(pi_install)
     message("PI_INSTALL_TARGETS: ${PI_INSTALL_TARGETS}")
     message("PI_INSTALL_CMAKE: ${PI_INSTALL_CMAKE}")
   endif()
-  
+
   if(NOT PI_INSTALL_BIN_DESTINATION)
     set(PI_INSTALL_BIN_DESTINATION bin)
   endif()
-  
+
   if(NOT PI_INSTALL_LIB_DESTINATION)
     set(PI_INSTALL_LIB_DESTINATION lib)
   endif()
@@ -166,7 +168,7 @@ function(pi_install)
       install(DIRECTORY ${ABSOLUTE_PATH} DESTINATION "${PI_INSTALL_HEADER_DESTINATION}" FILES_MATCHING PATTERN "*.hpp")
     else()
       #message("install(FILES ${ABSOLUTE_PATH} DESTINATION ${HEADER_DESTINATION} COMPONENT main) ")
-      install(FILES ${ABSOLUTE_PATH} DESTINATION ${PI_INSTALL_HEADER_DESTINATION} )      
+      install(FILES ${ABSOLUTE_PATH} DESTINATION ${PI_INSTALL_HEADER_DESTINATION} )
     endif()
   endforeach()
 
@@ -184,7 +186,7 @@ function(pi_install)
     configure_file("${CONFG_FILE}" "${PROJECT_BINARY_DIR}/${CONFIG_NAME}.cmake" @ONLY)
     install(FILES "${PROJECT_BINARY_DIR}/${CONFIG_NAME}.cmake" DESTINATION ${CMAKE_ROOT}/Modules)
   endforeach()
-  
+
 
   # Auto uninstall
 
@@ -273,7 +275,7 @@ function(pi_add_target_f TARGET_NAME TARGET_TYPE)
   endif(ARGC LESS 2)
 
   string(TOUPPER ${TARGET_TYPE} TARGET_TYPE)
-  
+
   pi_parse_arguments(PI_TARGET "" "" "MODULES;REQUIRED;DEPENDENCY" ${ARGN})
   set(TARGET_MODULES ${PI_TARGET_MODULES})
   set(TARGET_REQUIRED ${PI_TARGET_REQUIRED})
@@ -282,23 +284,29 @@ function(pi_add_target_f TARGET_NAME TARGET_TYPE)
   set(TARGET_COMPILEFLAGS)
   set(TARGET_LINKFLAGS)
   set(TARGET_DEFINITIONS)
-  
+
   if(NOT PI_TARGET_UNPARSED_ARGUMENTS)
     set(PI_TARGET_UNPARSED_ARGUMENTS ${CMAKE_CURRENT_SOURCE_DIR})
   endif()
 
   set(TARGET_SRCS )
+  set(CUDA_SRCS )
   foreach(PI_TARGET_SRC ${PI_TARGET_UNPARSED_ARGUMENTS})
       get_filename_component(ABSOLUTE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/${PI_TARGET_SRC}" ABSOLUTE)
+      get_filename_component(EXT_PATH "${CMAKE_CURRENT_SOURCE_DIR}/${PI_TARGET_SRC}" EXT)
       if(IS_DIRECTORY ${ABSOLUTE_PATH})
-        file(GLOB_RECURSE PATH_SOURCE_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} ${PI_TARGET_SRC}/*.cpp ${PI_TARGET_SRC}/*.c ${PI_TARGET_SRC}/*.cc])
+        file(GLOB_RECURSE PATH_SOURCE_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} ${PI_TARGET_SRC}/*.cpp ${PI_TARGET_SRC}/*.c ${PI_TARGET_SRC}/*.cc)
+        file(GLOB_RECURSE PATH_CUDA_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} ${PI_TARGET_SRC}/*.cu)
         list(APPEND TARGET_SRCS ${PATH_SOURCE_FILES})
+        list(APPEND CUDA_SRCS ${PATH_CUDA_FILES})
+      elseif("${ABSOLUTE_PATH}" MATCHES ".cu")
+        list(APPEND CUDA_SRCS ${PI_TARGET_SRC})
       else()
         list(APPEND TARGET_SRCS ${PI_TARGET_SRC})
       endif()
   endforeach()
 
-  if(NOT TARGET_SRCS)
+  if(NOT TARGET_SRCS AND NOT CUDA_SRCS)
     message("add_target(${ARGV}) need at least 1 source file.")
     return()
   endif()
@@ -307,50 +315,78 @@ function(pi_add_target_f TARGET_NAME TARGET_TYPE)
     message("TARGET_TYPE (${TARGET_TYPE}) should be BIN STATIC or SHARED")
   endif()
 
+  set(USE_CUDA FALSE)
+
   foreach(MODULE_NAME ${TARGET_REQUIRED})
     string(TOUPPER ${MODULE_NAME} MODULE_NAME_UPPER)
     if(TARGET ${MODULE_NAME})
-      #message("${MODULE_NAME} is a existed target")
+      # message("${MODULE_NAME} is a existed target")
       list(APPEND TARGET_LINKFLAGS ${MODULE_NAME})
     elseif(${MODULE_NAME_UPPER}_FOUND)
       list(APPEND TARGET_COMPILEFLAGS ${${MODULE_NAME_UPPER}_INCLUDES})
       list(APPEND TARGET_LINKFLAGS ${${MODULE_NAME_UPPER}_LIBRARIES})
       list(APPEND TARGET_DEFINITIONS ${${MODULE_NAME_UPPER}_DEFINITIONS})
+
+      if("${MODULE_NAME_UPPER}" STREQUAL "CUDA")
+          set(USE_CUDA TRUE)
+      endif()
     else()
       message("${TARGET_NAME} aborded since can't find dependency ${MODULE_NAME}.")
       return()
     endif()
   endforeach()
-  
+
   foreach(MODULE_NAME ${TARGET_MODULES})
     string(TOUPPER ${MODULE_NAME} MODULE_NAME_UPPER)
     if(TARGET ${MODULE_NAME})
       #message("${MODULE_NAME} is a existed target")
       list(APPEND TARGET_LINKFLAGS ${MODULE_NAME})
     elseif(${MODULE_NAME_UPPER}_FOUND)
+
       list(APPEND TARGET_COMPILEFLAGS ${${MODULE_NAME_UPPER}_INCLUDES})
       list(APPEND TARGET_LINKFLAGS ${${MODULE_NAME_UPPER}_LIBRARIES})
       list(APPEND TARGET_DEFINITIONS ${${MODULE_NAME_UPPER}_DEFINITIONS})
+
+      if("${MODULE_NAME_UPPER}" STREQUAL "CUDA")
+          set(USE_CUDA TRUE)
+      endif()
+
     endif()
   endforeach()
 
   include_directories(${TARGET_COMPILEFLAGS})
-#  add_definitions(${TARGET_DEFINITIONS})
+# add_definitions(${TARGET_DEFINITIONS})
 
   if(TARGET_TYPE STREQUAL "BIN")
     set_property( GLOBAL APPEND PROPERTY APPS2COMPILE  " ${TARGET_NAME}")
-    add_executable(${TARGET_NAME} ${CMAKE_CURRENT_SOURCE_DIR} ${TARGET_SRCS})
+    if(USE_CUDA)
+        cuda_add_executable(${TARGET_NAME} ${CMAKE_CURRENT_SOURCE_DIR} ${TARGET_SRCS} ${CUDA_SRCS})
+    else()
+        add_executable(${TARGET_NAME} ${CMAKE_CURRENT_SOURCE_DIR} ${TARGET_SRCS})
+    endif()
   elseif(TARGET_TYPE STREQUAL "STATIC")
     set_property( GLOBAL APPEND PROPERTY LIBS2COMPILE  " ${CMAKE_STATIC_LIBRARY_PREFIX}${TARGET_NAME}${CMAKE_STATIC_LIBRARY_SUFFIX}")
-    add_library(${TARGET_NAME} STATIC ${CMAKE_CURRENT_SOURCE_DIR} ${TARGET_SRCS})
+
+    if(USE_CUDA)
+        cuda_add_library(${TARGET_NAME} STATIC ${CMAKE_CURRENT_SOURCE_DIR} ${TARGET_SRCS} ${CUDA_SRCS})
+    else()
+        add_library(${TARGET_NAME} STATIC ${CMAKE_CURRENT_SOURCE_DIR} ${TARGET_SRCS})
+    endif()
   elseif(TARGET_TYPE STREQUAL "SHARED")
     set_property( GLOBAL APPEND PROPERTY LIBS2COMPILE  " ${CMAKE_SHARED_LIBRARY_PREFIX}${TARGET_NAME}${CMAKE_SHARED_LIBRARY_SUFFIX}")
-    add_library(${TARGET_NAME} SHARED ${CMAKE_CURRENT_SOURCE_DIR} ${TARGET_SRCS})
+
+    if(USE_CUDA)
+        cuda_add_library(${TARGET_NAME} SHARED ${CMAKE_CURRENT_SOURCE_DIR} ${TARGET_SRCS} ${CUDA_SRCS})
+        #message("cuda_add_library(${TARGET_NAME} SHARED ${CMAKE_CURRENT_SOURCE_DIR} ${TARGET_SRCS} ${CUDA_SRCS})")
+    else()
+        add_library(${TARGET_NAME} SHARED ${CMAKE_CURRENT_SOURCE_DIR} ${TARGET_SRCS})
+    endif()
+
     if(PROJECT_VERSION)
       set_target_properties(${TARGET_NAME} PROPERTIES VERSION ${PROJECT_VERSION})
     endif()
     if(PROJECT_SOVERSION)
-      set_target_properties(${TARGET_NAME} PROPERTIES SOVERSION ${PROJECT_SOVERSION})      
+      set_target_properties(${TARGET_NAME} PROPERTIES SOVERSION ${PROJECT_SOVERSION})
     endif()
     #message("add_library(${TARGET_NAME} SHARED ${CMAKE_CURRENT_SOURCE_DIR} ${TARGET_SRCS})")
   else()
@@ -365,6 +401,7 @@ function(pi_add_target_f TARGET_NAME TARGET_TYPE)
   #message("TARGET_MODULES: ${TARGET_MODULES}")
   #message("TARGET_REQUIRED: ${TARGET_REQUIRED}")
   #message("TARGET_COMPILEFLAGS: ${TARGET_COMPILEFLAGS}")
+
   target_compile_definitions(${TARGET_NAME} PRIVATE ${TARGET_DEFINITIONS})
   target_link_libraries(${TARGET_NAME} ${TARGET_LINKFLAGS} ${TARGET_DEPENDENCY})
   list(APPEND TARGET_MODULES ${TARGET_REQUIRED})
@@ -372,6 +409,7 @@ function(pi_add_target_f TARGET_NAME TARGET_TYPE)
       #message("Compile ${TARGET_NAME} with AUTOMOC (${TARGET_MODULES})")
       set_target_properties(${TARGET_NAME} PROPERTIES AUTOMOC TRUE)
   endif()
+  set_property( GLOBAL APPEND PROPERTY TARGETS2COMPILE  ${TARGET_NAME})
 
 endfunction(pi_add_target_f)
 
@@ -385,7 +423,7 @@ macro(pi_add_target TARGET_NAME TARGET_TYPE)
   endif(ARGC LESS 2)
 
   string(TOUPPER ${TARGET_TYPE} TARGET_TYPE)
-  
+
   pi_parse_arguments(PI_TARGET "" "" "MODULES;REQUIRED;DEPENDENCY" ${ARGN})
   set(TARGET_MODULES ${PI_TARGET_MODULES})
   set(TARGET_REQUIRED ${PI_TARGET_REQUIRED})
@@ -394,7 +432,7 @@ macro(pi_add_target TARGET_NAME TARGET_TYPE)
   if(TARGET_MODULES OR TARGET_REQUIRED)
     pi_collect_packages(VERBOSE MODULES ${TARGET_MODULES} ${TARGET_REQUIRED})
   endif()
-  
+
   pi_add_target_f(${TARGET_NAME} ${TARGET_TYPE} ${ARGN})
 
 endmacro(pi_add_target)
@@ -467,7 +505,7 @@ macro(pi_add_targets )
     endforeach()
   endif(ARGC LESS 2)
 
-  
+
 
 
 endmacro(pi_add_targets)
@@ -491,7 +529,7 @@ macro(pi_collect_packages)
   if(NOT PI_COLLECT_VERBOSE)
     set(PI_COLLECT_FLAGS QUIET)
   endif()
-  
+
   if(PI_COLLECTED_PACKAGES)
     if(PI_COLLECT_MODULES)
       list(REMOVE_ITEM PI_COLLECT_MODULES ${PI_COLLECTED_PACKAGES})
@@ -504,11 +542,15 @@ macro(pi_collect_packages)
   endif()
 
   foreach(PACKAGE_NAME ${PI_COLLECT_REQUIRED})
-    find_package(${PACKAGE_NAME} REQUIRED ${PI_COLLECT_FLAGS})
+     if(NOT ${PACKAGE_NAME}_FOUND)
+        find_package(${PACKAGE_NAME} REQUIRED ${PI_COLLECT_FLAGS})
+     endif()
   endforeach()
-  
+
   foreach(PACKAGE_NAME ${PI_COLLECT_MODULES})
-    find_package(${PACKAGE_NAME} ${PI_COLLECT_FLAGS})
+      if(NOT ${PACKAGE_NAME}_FOUND)
+        find_package(${PACKAGE_NAME} ${PI_COLLECT_FLAGS})
+      endif()
   endforeach()
 
   list(APPEND PI_COLLECT_MODULES ${PI_COLLECT_REQUIRED})
@@ -527,7 +569,7 @@ macro(pi_collect_packages)
       list(APPEND ${RESULT_NAME} ${PACKAGE_NAME})
     endif()
   endforeach()
-  
+
 endmacro()
 
 # pi_check_module_part(<module_name> <part_source> <part_target>)
@@ -548,6 +590,7 @@ endmacro()
 macro(pi_check_modules)
   foreach(MODULE_NAME ${ARGV})
     pi_check_module_part(${MODULE_NAME} INCLUDE_DIR INCLUDES)
+    pi_check_module_part(${MODULE_NAME} INCLUDE_DIRS INCLUDES)
     pi_check_module_part(${MODULE_NAME} LIBS LIBRARIES)
     pi_check_module_part(${MODULE_NAME} LIBRARY LIBRARIES)
     pi_check_module_part(${MODULE_NAME} found FOUND)
@@ -556,7 +599,7 @@ macro(pi_check_modules)
     if(${MODULE_NAME_UPPER}_FOUND)
       list(APPEND ${MODULE_NAME_UPPER}_DEFINITIONS -DHAS_${MODULE_NAME_UPPER})
       list(REMOVE_DUPLICATES ${MODULE_NAME_UPPER}_DEFINITIONS)
-    endif()    
+    endif()
   endforeach()
 endmacro()
 
@@ -596,3 +639,4 @@ endmacro()
 
 set(PICMAKE_UTILS_LOADED TRUE)
 set(PICMAKE_LOADED TRUE)
+
