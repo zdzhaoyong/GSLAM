@@ -105,7 +105,7 @@ class Estimator : public GObject {
   }
 
   // 3D corrospondences
-  virtual bool findSIM3(const SIM3& S, const std::vector<Point3d>& from,
+  virtual bool findSIM3(SIM3& S, const std::vector<Point3d>& from,
                         const std::vector<Point3d>& to, int method = 0,
                         double ransacThreshold = -1,
                         std::vector<uchar>* mask = NULL) const {
@@ -129,7 +129,7 @@ class Estimator : public GObject {
 
   // 2D&3D corrospondences
   virtual bool findPnPRansac(
-      const SE3& world2camera, const std::vector<Point3d>& objectPoints,
+      SE3& world2camera, const std::vector<Point3d>& objectPoints,
       const std::vector<Point2d>& imagePoints, const GSLAM::Camera& camera,
       bool useExtrinsicGuess = false, int iterationsCount = 100,
       float reprojectionError = 8.0, int minInliersCount = 100,
