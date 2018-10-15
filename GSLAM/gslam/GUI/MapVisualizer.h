@@ -1,7 +1,7 @@
 #include <GSLAM/core/GSLAM.h>
 
 namespace GSLAM{
-
+typedef unsigned int uint;
 class MapVisualizer : public GSLAM::GObject
 {
 public:
