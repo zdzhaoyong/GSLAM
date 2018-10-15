@@ -2,6 +2,7 @@
 #define GSLAM_TILEMANAGER_H
 
 #include <GSLAM/core/GSLAM.h>
+#include <GSLAM/core/TileProjection.h>
 
 namespace GSLAM {
 
@@ -143,14 +144,39 @@ typedef SPtr<TerrainTileWithInfo> TerrainTileWithInfoPtr;
 class TileManager: public GObject
 {
 public:
+    struct TileArea{
+    public:
+        TileArea():level(0),min(0,0),max(0,0){}
+
+        Point2i getSize()const{return max-min;}
+        Point2i getMin()const{return min;}
+        Point2i getMax()const{return max;}
+
+        void    setLevel(int level_){level=level_;}
+        void    setMin(const Point2i& min_){min=min_;}
+        void    setMax(const Point2i& max_){max=max_;}
+
+        int     level;
+        Point2i min,max;
+    };
+
     virtual ~TileManager(){}
     virtual std::string type()const{return "TileManager";}
 
     virtual TilePtr getTile(int x,int y,int z){return TilePtr();}
     virtual bool    setTile(int x,int y,int z, const TilePtr& tile){return false;}
-    virtual int     maxZoomLevel()const{return -1;}
+    virtual int     maxZoomLevel()const{return _area.level;}
     virtual int     minZoomLevel()const{return -1;}
     virtual bool    save(const std::string& file){return false;}
+
+    TileArea          getTileArea()const{return   TileArea();}
+    TileProjectionPtr getProjection()const{return TileProjectionPtr();}
+
+    void setTileArea(TileArea area){_area=area;}
+    void setProjection(TileProjectionPtr projection){_projection=projection;}
+protected:
+    TileArea _area;
+    TileProjectionPtr _projection;
 };
 typedef SPtr<TileManager> TileManagerPtr;
 
