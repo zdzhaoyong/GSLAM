@@ -149,6 +149,7 @@ public:
         TileArea():level(0),min(0,0),max(0,0){}
 
         Point2i getSize()const{return max-min;}
+        int     getLevel()const{return level;}
         Point2i getMin()const{return min;}
         Point2i getMax()const{return max;}
 
@@ -169,8 +170,8 @@ public:
     virtual int     minZoomLevel()const{return -1;}
     virtual bool    save(const std::string& file){return false;}
 
-    TileArea          getTileArea()const{return   TileArea();}
-    TileProjectionPtr getProjection()const{return TileProjectionPtr();}
+    TileArea          getTileArea()const{return   _area;}
+    TileProjectionPtr getProjection()const{return _projection;}
 
     void setTileArea(TileArea area){_area=area;}
     void setProjection(TileProjectionPtr projection){_projection=projection;}

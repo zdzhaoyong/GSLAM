@@ -17,8 +17,8 @@ public:
 
     int width()const {return _width;}
     int height()const {return _height;}
-    void setWidth(int const& value){_width=value;}
-    void setHeight(int const& value){_height=value;}
+    void setWidth(int value){_width=value;}
+    void setHeight(int value){_height=value;}
 
 private:
     int _width, _height;
@@ -248,7 +248,7 @@ public:
      *
      * @return pixel position of given lat/lng position
      */
-    virtual Point2i fromLatLngToPixel(double lat, double lng, int const& zoom)=0;
+    virtual Point2i fromLatLngToPixel(double lat, double lng, int zoom)=0;
     /**
      * @brief Get pixel position from lat/lng
      *
@@ -257,7 +257,7 @@ public:
      *
      * @return pixel position of given lat/lng position
      */
-    Point2i fromLatLngToPixel(const PointWithLatLng &p,const int &zoom)
+    Point2i fromLatLngToPixel(const PointWithLatLng &p,int zoom)
     {
         return fromLatLngToPixel(p.lat(), p.lng(), zoom);
     }
@@ -272,9 +272,9 @@ public:
      *
      * @return tile index
      */
-    virtual Point2i fromLatLngToTileXY(double lat, double lng, int const& zoom) = 0;
+    virtual Point2i fromLatLngToTileXY(double lat, double lng, int zoom) = 0;
 
-    Point2i fromLatLngToTileXY(const PointWithLatLng& p, const int& zoom)
+    Point2i fromLatLngToTileXY(const PointWithLatLng& p, int zoom)
     {
         return fromLatLngToTileXY(p.lat(), p.lng(), zoom);
     }
@@ -289,7 +289,7 @@ public:
      * @return current lng(x)/lat(y) position
      */
 
-    virtual PointWithLatLng fromPixelToLatLng(const int &x,const int &y,const int &zoom)=0;
+    virtual PointWithLatLng fromPixelToLatLng(int x,int y,int zoom)=0;
     /**
      * @brief Get lat/lng from pixel position
      *
@@ -298,7 +298,7 @@ public:
      *
      * @return current lng(x)/lat(y) position
      */
-    PointWithLatLng fromPixelToLatLng(const pi::Point2i &p,const int &zoom)
+    PointWithLatLng fromPixelToLatLng(const Point2i &p,int zoom)
     {
         return fromPixelToLatLng(p.x, p.y, zoom);
     }
@@ -311,9 +311,9 @@ public:
      *
      * @return current active tile position
      */
-    virtual Point2i fromPixelToTileXY(const pi::Point2i &p)
+    virtual Point2i fromPixelToTileXY(const Point2i &p)
     {
-        return pi::Point2i((int) (p.x / tileSize().width()), (int) (p.y / tileSize().height()));
+        return Point2i((int) (p.x / tileSize().width()), (int) (p.y / tileSize().height()));
     }
 
     /**
@@ -323,22 +323,22 @@ public:
      *
      * @return current tile's pixel position
      */
-    virtual Point2i fromTileXYToPixel(const pi::Point2i &p)
+    virtual Point2i fromTileXYToPixel(const Point2i &p)
     {
-        return pi::Point2i((p.x * tileSize().width()), (p.y * tileSize().height()));
+        return Point2i((p.x * tileSize().width()), (p.y * tileSize().height()));
     }
 
 
-    virtual  Size getTileMatrixMinXY(const int &zoom)=0;
-    virtual  Size getTileMatrixMaxXY(const int &zoom)=0;
+    virtual  Size getTileMatrixMinXY(int zoom)=0;
+    virtual  Size getTileMatrixMaxXY(int zoom)=0;
 
-    virtual Size getTileMatrixSizeXY(const int &zoom);
-    int getTileMatrixItemCount(const int &zoom);
+    virtual Size getTileMatrixSizeXY(int zoom);
+    int getTileMatrixItemCount(int zoom);
 
-    virtual Size getTileMatrixSizePixel(const int &zoom);
+    virtual Size getTileMatrixSizePixel(int zoom);
 
 
-    virtual double getGroundResolution(const int &zoom, const double &latitude);
+    virtual double getGroundResolution(int zoom, const double &latitude);
     virtual int getBestZoom(const double &gsd, const double &lat);
 
     double degreesToRadians(const double &deg)const
@@ -402,11 +402,11 @@ public:
     virtual double axis() const;
     virtual double flattening()const;
 
-    virtual pi::Point2i fromLatLngToPixel(double lat, double lng, int const& zoom);
-    virtual pi::Point2i fromLatLngToTileXY(double lat, double lng, int const& zoom);
-    virtual PointWithLatLng fromPixelToLatLng(const int &x,const int &y,const int &zoom);
-    virtual Size getTileMatrixMinXY(const int &zoom);
-    virtual Size getTileMatrixMaxXY(const int &zoom);
+    virtual Point2i fromLatLngToPixel(double lat, double lng, int zoom);
+    virtual Point2i fromLatLngToTileXY(double lat, double lng, int zoom);
+    virtual PointWithLatLng fromPixelToLatLng(int x,int y,int zoom);
+    virtual Size getTileMatrixMinXY(int zoom);
+    virtual Size getTileMatrixMaxXY(int zoom);
 
 private:
     double clip(double const& n, double const& minValue, double const& maxValue)const;
@@ -423,13 +423,13 @@ typedef SPtr<MercatorProjection> MecatorProjectionPtr;
 class GCJ02Projection: public MercatorProjection
 {
 public:
-    virtual pi::Point2i fromLatLngToPixel(double lat, double lng, int const& zoom)
+    virtual Point2i fromLatLngToPixel(double lat, double lng, int zoom)
     {
         auto gcj=GPSConverter::gps84_To_Gcj02(lat,lng);
         return MercatorProjection::fromLatLngToPixel(gcj.lat(),gcj.lng(),zoom);
     }
 
-    virtual PointWithLatLng fromPixelToLatLng(const int &x,const int &y,const int &zoom)
+    virtual PointWithLatLng fromPixelToLatLng(int x,int y,int zoom)
     {
         PointWithLatLng gcj=MercatorProjection::fromPixelToLatLng(x,y,zoom);
         return GPSConverter::gcj_To_Gps84(gcj.lat(),gcj.lng());
@@ -439,13 +439,13 @@ typedef SPtr<GCJ02Projection> GCJ02ProjectionPtr;
 
 class BaiduProjection : public MercatorProjection
 {
-    virtual pi::Point2i fromLatLngToPixel(double lat, double lng, int const& zoom)
+    virtual Point2i fromLatLngToPixel(double lat, double lng, int zoom)
     {
         auto bd=GPSConverter::gps84_To_Bd09(lat,lng);
         return MercatorProjection::fromLatLngToPixel(bd.lat(),bd.lng(),zoom);
     }
 
-    virtual PointWithLatLng fromPixelToLatLng(const int &x,const int &y,const int &zoom)
+    virtual PointWithLatLng fromPixelToLatLng(int x,int y,int zoom)
     {
         PointWithLatLng bd=MercatorProjection::fromPixelToLatLng(x,y,zoom);
         return GPSConverter::bd09_To_Gps84(bd.lat(),bd.lng());
@@ -453,7 +453,7 @@ class BaiduProjection : public MercatorProjection
 };
 typedef SPtr<BaiduProjection> BaiduProjectionPtr;
 
-inline Size PureProjection::getTileMatrixSizeXY(const int &zoom)
+inline Size PureProjection::getTileMatrixSizeXY(int zoom)
 {
     Size sMin = getTileMatrixMinXY(zoom);
     Size sMax = getTileMatrixMaxXY(zoom);
@@ -461,13 +461,13 @@ inline Size PureProjection::getTileMatrixSizeXY(const int &zoom)
     return  Size(sMax.width() - sMin.width() + 1, sMax.height() - sMin.height() + 1);
 }
 
-inline int PureProjection::getTileMatrixItemCount(const int &zoom)
+inline int PureProjection::getTileMatrixItemCount(int zoom)
 {
     Size s = getTileMatrixSizeXY(zoom);
     return (s.width() * s.height());
 }
 
-inline Size PureProjection::getTileMatrixSizePixel(const int &zoom)
+inline Size PureProjection::getTileMatrixSizePixel(int zoom)
 {
     Size s = getTileMatrixSizeXY(zoom);
     return Size(s.width() * tileSize().width(), s.height() * tileSize().height());
@@ -476,7 +476,7 @@ inline Size PureProjection::getTileMatrixSizePixel(const int &zoom)
 
 
 
-inline double PureProjection::getGroundResolution(const int &zoom, const double &latitude)
+inline double PureProjection::getGroundResolution(int zoom, const double &latitude)
 {
     return (cos(latitude * (PI / 180)) * 2 * PI * axis()) / (1.0*getTileMatrixSizePixel(zoom).width());
 }
@@ -645,9 +645,9 @@ inline MercatorProjection::MercatorProjection() :
 {
 }
 
-inline pi::Point2i MercatorProjection::fromLatLngToPixel(double lat, double lng, const int &zoom)
+inline Point2i MercatorProjection::fromLatLngToPixel(double lat, double lng, int zoom)
 {
-    pi::Point2i ret;// = Point.Empty;
+    Point2i ret;// = Point.Empty;
 
     lat = clip(lat, MinLatitude, MaxLatitude);
     lng = clip(lng, MinLongitude, MaxLongitude);
@@ -666,14 +666,14 @@ inline pi::Point2i MercatorProjection::fromLatLngToPixel(double lat, double lng,
     return ret;
 }
 
-inline pi::Point2i MercatorProjection::fromLatLngToTileXY(double lat, double lng, int const& zoom)
+inline Point2i MercatorProjection::fromLatLngToTileXY(double lat, double lng, int zoom)
 {
-    pi::Point2i ps = fromLatLngToPixel(lat, lng, zoom);
-    return pi::Point2i(ps.x/_tileSize.width(), ps.y/_tileSize.height());
+    Point2i ps = fromLatLngToPixel(lat, lng, zoom);
+    return Point2i(ps.x/_tileSize.width(), ps.y/_tileSize.height());
 }
 
 
-inline PointWithLatLng MercatorProjection::fromPixelToLatLng(const int &x, const int &y, const int &zoom)
+inline PointWithLatLng MercatorProjection::fromPixelToLatLng(int x, int y, int zoom)
 {
     PointWithLatLng ret;// = internals::PointLatLng.Empty;
 
@@ -724,13 +724,13 @@ inline double MercatorProjection::flattening() const
     return (1.0 / 298.257223563);
 }
 
-inline Size MercatorProjection::getTileMatrixMaxXY(const int &zoom)
+inline Size MercatorProjection::getTileMatrixMaxXY(int zoom)
 {
     int xy = (1 << zoom);
     return  Size(xy - 1, xy - 1);
 }
 
-inline Size MercatorProjection::getTileMatrixMinXY(const int &zoom)
+inline Size MercatorProjection::getTileMatrixMinXY(int zoom)
 {
     return Size(0, 0);
 }

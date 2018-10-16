@@ -37,6 +37,7 @@
 #include <vector>
 #include "GSLAM.h"
 
+// FIXME: SvarWithType can not be found if not use GSLAM namespace
 #define USE_ESTIMATOR_PLUGIN(EST_CLASS)                                  \
   extern "C" SPtr<GSLAM::Estimator> createEstimatorInstance() {          \
     return SPtr<GSLAM::Estimator>(new EST_CLASS());                      \
