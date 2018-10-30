@@ -270,7 +270,7 @@ void MainWindow::keyPressEvent(QKeyEvent *e)
         break;
 
     default:
-        svar.i["KeyPressMsg"] = e->key();
+        svar.GetInt("KeyPressMsg",0) = e->key();
         break;
     }
 }

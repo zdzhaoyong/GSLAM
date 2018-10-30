@@ -73,8 +73,8 @@ public:
     {
         std::ostringstream ost;
         ost<<"[";
-        for(size_t i=0;i<data.size()-1;i++)
-            ost<<data.at(i)<<" ";
+        for(size_t i=0;i<data.size();i++)
+            ost<<data.at(i)<<(i+1==data.size()?"]":" ");
         ost<<data.at(size()-1)<<"]";
         return ost.str();
     }

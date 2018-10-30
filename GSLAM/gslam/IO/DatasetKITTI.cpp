@@ -36,15 +36,27 @@ public:
         string typeStr  =var.GetString("VideoType",Svar::getBaseName(dataset));
         cameraIdx    =var.GetInt("CameraIdx",0);
         skip         =var.GetInt("VideoSkip",0);
+        if(datasetFolder.empty()) datasetFolder=".";
 
         if(!loadCameras()) {
+            LOG(ERROR)<<"Failed loadCameras.";
             return false;
         }
-        if(!updateCameraMask()) return false;
-        if(!updateDatasetType(typeStr)) return false;
+        if(!updateCameraMask()) {
+            LOG(ERROR)<<"Failed updateCameraMask.";
+            return false;
+        }
+        if(!updateDatasetType(typeStr))
+        {
+            LOG(ERROR)<<"Failed updateDatasetType.";
+            return false;
+        }
 
         ifstream  times(datasetFolder+"/times.txt");
-        if(!times.is_open()) return false;
+        if(!times.is_open()) {
+            LOG(ERROR)<<"Failed open "<<datasetFolder+"/times.txt";
+            return false;
+        }
 
         string line;
         while(getline(times,line))
@@ -106,7 +118,11 @@ public:
 
     bool loadCameras(){
         ifstream ifs(datasetFolder+"/calib.txt");
-        if(!ifs.is_open()) return false;
+        if(!ifs.is_open())
+        {
+            LOG(ERROR)<<"Can't open "<<datasetFolder+"/calib.txt";
+            return false;
+        }
 
         string line;
         for(int i=0;i<4&&getline(ifs,line);i++){

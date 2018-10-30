@@ -10,36 +10,37 @@ using namespace std;
 
 int main(int argc,char** argv)
 {
+    svar.Arg<std::string>("Act","Tests","The default action going to excute. use \"Act=Tests\" to excute module testing.");
+    svar.Arg<std::string>("SLAM","","The SLAM plugin path,eg. libgslam.so");
+    svar.Arg<std::string>("Dataset","","The Dataset location with extesion.");
+    svar.Arg<double>("PlaySpeed",1.,"The Dataset play speed factor, 1 means the original speed.");
     timer.enter("Main");
-    svar.ParseMain(argc,argv);
+    auto unParsed=svar.ParseMain(argc,argv);
     int    ret=0;
 
+    string& act=svar.GetString("Act","Tests");
 #if defined(HAS_QT)
-    string act=svar.GetString("Act","SLAM");
+    if(unParsed.size()
+            ||!svar.GetString("SLAM","").empty()
+            ||!svar.GetString("Dataset").empty()) act="SLAM";
     if("SLAM"==act)
     {
         {
-            QApplication app(svar.i["argc"],(char**)svar.GetPointer("argv"));
+            QApplication app(svar.GetInt("argc"),(char**)svar.GetPointer("argv"));
             GSLAM::MainWindow mainwindow;
             mainwindow.show();
-//            for(int i=1;i<argc;i++)
-//            {
-//                string arg=argv[i];
-//                if(arg.find('=')==string::npos&&arg.front()!='-')
-//                {
-//                    mainwindow.slotOpen(arg.c_str());
-//                }
-
-//            }
+            for(std::string arg:unParsed)
+            {
+                mainwindow.slotOpen(arg.c_str());
+            }
             ret=app.exec();
         }
     }
-#else
-    string act=svar.GetString("Act","Tests");
 #endif
+
     if("Tests"==act)
     {
-        testing::InitGoogleTest(&svar.i["argc"],(char**)svar.GetPointer("argv"));
+        testing::InitGoogleTest(&svar.GetInt("argc"),(char**)svar.GetPointer("argv"));
         ret=RUN_ALL_TESTS();
     }
     timer.leave("Main");
