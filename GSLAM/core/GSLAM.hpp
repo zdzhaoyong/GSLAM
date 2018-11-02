@@ -8,6 +8,10 @@
   4. Other data structures
  */
 
+
+// GSLAM.h
+
+
 #ifndef GSLAM_H
 #define GSLAM_H
 
@@ -489,7 +493,8 @@ inline MapPtr SLAM::getMap()const
 
 inline bool SLAM::setSvar(Svar &var)
 {
-    svar=var;
+    for(auto it:var.get_data())
+        svar.insert(it.first,it.second);
     return true;
 }
 
@@ -507,3 +512,5 @@ inline SLAMPtr SLAM::create(const std::string& slamPlugin){
 
 
 #endif
+
+

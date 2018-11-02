@@ -331,6 +331,7 @@ class GSLAM_API Svar {
     std::shared_ptr<SvarWithType<Svar> > c;
     std::shared_ptr<SvarWithType<void*> > p;
     std::shared_ptr<Scommand> parser;
+    std::shared_ptr<SvarWithType<ArgumentInfo> > args;
   };
   std::shared_ptr<Data> a;
 };  // end of class Svar
@@ -1000,8 +1001,11 @@ template <typename T>
 void Svar::Arg(const std::string& name, T def, const std::string& help) {
   std::stringstream sst;
   sst << def;
-  insert(name, sst.str(), false);
-  ArgumentInfo& argInfo = SvarWithType<ArgumentInfo>::instance()[name];
+  if (!sst.str().empty()) insert(name, sst.str(), false);
+  if (!a->args)
+    a->args = std::shared_ptr<SvarWithType<ArgumentInfo> >(
+        new SvarWithType<ArgumentInfo>());
+  ArgumentInfo& argInfo = (*a->args)[name];
   argInfo.introduction = help;
   argInfo.type = typeid(T).name();
   argInfo.def = sst.str();
@@ -1110,7 +1114,7 @@ inline std::string Svar::help() {
   int namePartWidth = GetInt("NamePartWidth", 16);
   int statusPartWidth = GetInt("StatusPartWidth", 30);
   int introPartWidth = GetInt("IntroPartWidth", 40);
-  auto& inst = SvarWithType<ArgumentInfo>::instance();
+  auto& inst = *(a->args);
   sst << std::setw(namePartWidth + 1) << std::setiosflags(std::ios::left)
       << "argument" << std::setw(statusPartWidth + 1) << "type(default->setted)"
       << std::setiosflags(std::ios::left) << "introduction" << std::endl;
