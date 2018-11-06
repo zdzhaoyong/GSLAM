@@ -30,9 +30,12 @@
 //
 // Svar: A light-weight, efficient, thread-safe parameter setting, dynamic
 // variable sharing and command calling util class.
-// Usages:
-// * Arguments Parsing
-// *
+// Features:
+// * Arguments parsing with help information
+// * Support a very tiny script language with variable, function and condition
+// * Thread-safe variable binding and sharing
+// * Function binding and calling with Scommand
+// * Support tree structure presentation, save&load with XML, JSON and YAML formats
 
 #ifndef GSLAM_SVAR_H
 #define GSLAM_SVAR_H

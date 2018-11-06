@@ -202,7 +202,7 @@ public:
         // Representation through Encapsulation of Manifolds"
         // Information Fusion, 2011
 
-        if (n < NEAR_ZERO||true)
+        if (n < NEAR_ZERO)
         {
             //If n is too small
             A_inv = 2./l.w - 2.*(1.0-squared_w)/(l.w*squared_w);
@@ -326,5 +326,11 @@ protected:
 typedef SE3<double> SE3d;
 typedef SE3<float > SE3f;
 
+}
+
+namespace GSLAM {
+typedef pi::SE3<double> SE3d;
+typedef pi::SE3<float>  SE3f;
+typedef SE3d SE3;
 }
 #endif // SE3_H

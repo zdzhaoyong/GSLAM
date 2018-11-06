@@ -210,4 +210,9 @@ typedef SIM3<float>  SIM3f;
 
 } // end of namespace pi
 
+namespace GSLAM {
+typedef pi::SIM3<double> SIM3d;
+typedef pi::SIM3<float>  SIM3f;
+typedef SIM3d SIM3;
+}
 #endif // SIM3_H

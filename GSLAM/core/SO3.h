@@ -444,9 +444,14 @@ public:
     // Multiplying a quaternion q with a vector v applies the q-rotation to v
     Point3_<Precision> operator* (const Point3_<Precision>& p) const
     {
-        SO3 so3_p(p.x,p.y,p.z,0);
-        so3_p=(*this)*so3_p*inv();
-        return Point3_<Precision>(so3_p.x,so3_p.y,so3_p.z);
+        // Note that this algorithm comes from the optimization by hand
+        // of the conversion to a Matrix followed by a Matrix/Vector product.
+        // It appears to be much faster than the common algorithm found
+        // in the literature (30 versus 39 flops). It also requires two
+        // Vector3 as temporaries.
+        Point3_<Precision> uv = Point3_<Precision>(x,y,z).cross(p);
+        uv = uv + uv;
+        return p + w * uv + Point3_<Precision>(x,y,z).cross(uv);
     }
 
     // Convert from Axis Angle
@@ -541,5 +546,11 @@ inline std::istream& operator >> (std::istream& is,SO3<Precision>& so3)
 
 
 } //end of namespace
+
+namespace GSLAM {
+typedef pi::SO3<double> SO3d;
+typedef pi::SO3<float>  SO3f;
+typedef SO3d SO3;
+}
 
 #endif // ZY_SO3_H
