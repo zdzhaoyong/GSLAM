@@ -121,6 +121,7 @@ class ThreadPool {
   auto Add(F&& f, Args&& ... args)
       ->std::future<typename std::result_of<F(Args...)>::type>;
 
+  size_t taskNumLeft() { return tasks.size(); }
  private:
   // Keep track of threads so we can join them
   std::vector<std::thread> workers;
