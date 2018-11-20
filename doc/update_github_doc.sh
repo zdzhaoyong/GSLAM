@@ -69,6 +69,25 @@ rm -rf html
 ################################################################################
 ##### Generate the Doxygen code documentation and log the output.          #####
 echo 'Generating Doxygen code documentation from ' $DOXYFILE ' ...'
+GSLAM_HEADER=$Here_Path/../GSLAM/core/GSLAM.h
+#define GSLAM_VERSION_MAJOR 2
+#define GSLAM_VERSION_MINOR 4
+#define GSLAM_VERSION_PATCH 6
+REG_MAJOR="define GSLAM_VERSION_MAJOR ([0-9]+)"
+REG_MINOR="define GSLAM_VERSION_MINOR ([0-9]+)"
+REG_PATCH="define GSLAM_VERSION_PATCH ([0-9]+)"
+
+while read line
+do
+  if [[ $line =~ $REG_MAJOR ]];then
+    GSLAM_VERSION_MAJOR=${BASH_REMATCH[1]}
+  elif [[ $line =~ $REG_MINOR ]];then
+    GSLAM_VERSION_MINOR=${BASH_REMATCH[1]}
+  elif [[ $line =~ $REG_PATCH ]];then
+    GSLAM_VERSION_PATCH=${BASH_REMATCH[1]}
+  fi
+done < $GSLAM_HEADER
+export PROJECT_NUMBER="$GSLAM_VERSION_MAJOR.$GSLAM_VERSION_MINOR.$GSLAM_VERSION_PATCH"
 # Redirect both stderr and stdout to the log file AND the console.
 export OUTPUT_DIRECTORY=$(pwd)
 cd $Here_Path
