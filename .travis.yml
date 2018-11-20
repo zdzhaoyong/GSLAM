@@ -52,6 +52,7 @@ before_script:
       sudo apt-get update -qq
       sudo apt-get -y install qt54base
       sudo apt-get -y install libopencv-dev  
+      sudo apt-get -y install doxygen doxygen-doc doxygen-latex doxygen-gui graphviz
 
       cd ${TRAVIS_BUILD_DIR}/deps
       if [[ -z "$(ls -A ceres-solver)" ]]; then
@@ -67,10 +68,6 @@ before_script:
       make -j2
       make install
       cd ${TRAVIS_BUILD_DIR}
-      echo https://${TRAVIS_USERNAME}:${TRAVIS_PASSWORD}@github.com > ~/.git-credentials
-      git config --global user.name "${TRAVIS_USERNAME}"
-      git config --global user.email "${TRAVIS_EMAIL}"
-      git config --global credential.helper store
     fi
 
 script:
@@ -89,6 +86,10 @@ script:
   - cmake .. -DCMAKE_BUILD_TYPE=Release -DTESTS_ENABLED=ON ${CMAKE_OPTIONS}
   - make -j2
   - ./bin/gslam Act=Tests
+  
+# Generate and deploy documentation
+after_success:
+  - cd $TRAVIS_BUILD_DIR/build/GSLAM/build
   - |
     if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
        bash ../doc/update_github_doc.sh
