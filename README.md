@@ -6,6 +6,9 @@
 
 ## 1. Introduction
 
+Wiki: https://github.com/zdzhaoyong/GSLAM/wiki
+API Documentation: https://zdzhaoyong.github.io/GSLAM/html
+
 ### 1.1. What is GSLAM?
 GSLAM is aimed to provide a general open-source SLAM framework and benchmark with following features :
 
