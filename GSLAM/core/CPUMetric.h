@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include <thread>
 
-#ifdef __linux
+#ifdef __unix
 #include <unistd.h>
 
 namespace GSLAM{
