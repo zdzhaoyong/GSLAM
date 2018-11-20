@@ -752,6 +752,7 @@ inline bool Svar::insert(std::string name, std::string var,
                          bool overwrite)  // default overwrite
 {
   data->insert(name, var, overwrite);
+  return true;
 }
 
 inline std::string Svar::getvar(std::string name) {

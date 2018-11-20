@@ -68,7 +68,7 @@ public:
             else  
 				return _image;
         }
-        else return _thumbnail;
+        return _thumbnail;
     }   // Just return the image if only one channel is available
 
     // When the frame contains IMUs or GPSs

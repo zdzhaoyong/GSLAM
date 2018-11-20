@@ -11,9 +11,20 @@
 
 
 #ifdef ANDROID
-#define __throw()
+#define MALLOC_SUFFIX
+#define FREE_SUFFIX
+#define REALLOC_SUFFIX
+#define CALLOC_SUFFIX
+#elif __linux
+#define MALLOC_SUFFIX throw()
+#define FREE_SUFFIX throw()
+#define REALLOC_SUFFIX throw()
+#define CALLOC_SUFFIX throw()
 #else
-#define __throw() throw()
+#define MALLOC_SUFFIX __result_use_check __alloc_size(1)
+#define FREE_SUFFIX 
+#define REALLOC_SUFFIX __result_use_check __alloc_size(2)
+#define CALLOC_SUFFIX __result_use_check __alloc_size(1,2)
 #endif
 
 
@@ -67,7 +78,7 @@ static char calloc_scratch[4096];
 static char* calloc_ptr = calloc_scratch;
 
 
-void *malloc(size_t size) __throw()
+void *malloc(size_t size) MALLOC_SUFFIX
 {
     lock_guard_t lock(alloc_lock);
     void *ptr = libc_malloc(size);
@@ -79,14 +90,14 @@ void *malloc(size_t size) __throw()
     return ptr;
 }
 
-void free(void* ptr) __throw()
+void free(void* ptr) FREE_SUFFIX
 {
     lock_guard_t lock(alloc_lock);
     GSLAM::MemoryMetric::instanceCPU().FreeAllocation(ptr);
     libc_free(ptr);
 }
 
-void *realloc(void *ptr, size_t newsize) __throw() {
+void *realloc(void *ptr, size_t newsize) REALLOC_SUFFIX {
     lock_guard_t lock(alloc_lock);
 
     auto newptr = libc_realloc(ptr, newsize);
@@ -97,7 +108,7 @@ void *realloc(void *ptr, size_t newsize) __throw() {
     return newptr;
 }
 
-void *calloc(size_t nmemb, size_t size) __throw() {
+void *calloc(size_t nmemb, size_t size) CALLOC_SUFFIX {
     lock_guard_t lock(alloc_lock);
 
     // need to be careful with calloc since dlsym will use it! need to do this
@@ -132,7 +143,7 @@ void *operator new(std::size_t size) {
     }
 }
 
-void *operator new(std::size_t size, const std::nothrow_t &nothrow_value) __throw() {
+void *operator new(std::size_t size, const std::nothrow_t &nothrow_value) MALLOC_SUFFIX {
     (void)nothrow_value;
     try {
         return operator new(size);
@@ -153,7 +164,7 @@ void *operator new[](std::size_t size) {
     }
 }
 
-void *operator new[](std::size_t size, const std::nothrow_t &nothrow_value) __throw() {
+void *operator new[](std::size_t size, const std::nothrow_t &nothrow_value) MALLOC_SUFFIX {
     (void)nothrow_value;
     try {
         return operator new[](size);

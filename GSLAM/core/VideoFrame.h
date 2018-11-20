@@ -176,7 +176,7 @@ inline Camera FrameMono::getCamera(int idx)
     GSLAM::ReadMutex lock(_mutexPose);
     if(idx==0)
         return _camera;
-    else if(idx==1)
+    else
         return _recCamera;
 }
 
