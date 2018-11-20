@@ -1,5 +1,5 @@
-#ifndef GIMAGE
-#define GIMAGE
+#ifndef GSLAM_CORE_GIMAGE_H
+#define GSLAM_CORE_GIMAGE_H
 #include <stdint.h>
 #include <string.h>
 #include <assert.h>
@@ -131,7 +131,7 @@ public:
 
     }
 
-    GImage(int rows_,int cols_,int type=GImageType<>::Type,uchar* src=NULL,bool copy=false)
+    GImage(int rows_,int cols_,int type=GImageType<>::Type,uchar* src=NULL,bool copy=false,int imageAlign=16)
         :cols(cols_),rows(rows_),flags(type),data(NULL),refCount(NULL)
     {
         if(src&&!copy)
@@ -143,7 +143,7 @@ public:
         int byteNum=total()*elemSize();
         if(byteNum<=0) return;
         int alignBytes=alignSize(byteNum, (int)sizeof(*refCount));
-        data=(uchar*)fastMalloc(alignBytes+sizeof(int*));
+        data=(uchar*)fastMalloc(alignBytes+sizeof(int*),imageAlign);
         if(!data)
         {
             cols=0;rows=0;return ;
@@ -185,14 +185,14 @@ public:
         return *this;
     }
 
-    static GImage create(int rows,int cols,int type=GImageType<>::Type,uchar* src=NULL,bool copy=false)
+    static GImage create(int rows,int cols,int type=GImageType<>::Type,uchar* src=NULL,bool copy=false,int imageAlign=16)
     {
         return GImage(rows,cols,type,src,copy);
     }
 
-    static GImage zeros(int rows,int cols,int type=GImageType<>::Type,uchar* src=NULL,bool copy=false)
+    static GImage zeros(int rows,int cols,int type=GImageType<>::Type,uchar* src=NULL,bool copy=false,int imageAlign=16)
     {
-        GImage result(rows,cols,type,src,copy);
+        GImage result(rows,cols,type,src,copy,imageAlign);
         memset(result.data,0,result.total()*result.elemSize());
         return result;
     }
@@ -343,12 +343,12 @@ private:
         return (_Tp*)(((size_t)ptr + n-1) & -n);
     }
 
-    void* fastMalloc( size_t size ) const
+    void* fastMalloc( size_t size ,int imageAlign=16) const
     {
-        uchar* udata = (uchar*)malloc(size + sizeof(void*) + 16);
+        uchar* udata = (uchar*)malloc(size + sizeof(void*) + imageAlign);
         if(!udata)
             return NULL;
-        uchar** adata = alignPtr((uchar**)udata + 1, 16);
+        uchar** adata = alignPtr((uchar**)udata + 1, imageAlign);
         adata[-1] = udata;
         return adata;
     }

@@ -45,6 +45,7 @@
 #include <vector>
 
 #define HAS_GSLAM
+
 #if defined(HAS_GSLAM)
 #include <GSLAM/core/Glog.h>
 #include <GSLAM/core/Mutex.h>
@@ -210,7 +211,7 @@ class Subscriber {
     if (!impl_) return;
     if (impl_->unsubscribed_) return;
     if (impl_->workthread_ &&
-        impl_->workthread_->taskNumLeft() < impl_->queue_size_) {
+        impl_->workthread_->taskNumLeft() < impl_->queue_size_) {// FIXME: what to do when queue size large
       impl_->workthread_->Add([this, message]() { impl_->callback_(message); });
       return;
     }
@@ -362,6 +363,29 @@ class Messenger {
                      std::function<void(const std::shared_ptr<M>&)>(fp));
   }
 
+  template <class M>
+  Subscriber subscribe(const std::string& topic, int queue_size,
+                       void (*fp)(const M&)){
+      std::function<void(const std::shared_ptr<M>&)> cbk=
+              [fp](const std::shared_ptr<M>& msg){
+          fp(*msg);
+    };
+      return subscribe(topic,queue_size,cbk);
+  }
+
+
+  template <class T, class M>
+  Subscriber subscribe(const std::string& topic, uint32_t queue_size,
+                       void (T::*fp)(const M&), T* obj) {
+      std::function<void(const std::shared_ptr<M>&)> cbk=
+              [fp,obj](const std::shared_ptr<M>& msg){
+          std::function<void(const M&)> call =
+                  std::bind(fp, obj, std::placeholders::_1);
+          call(*msg);
+    };
+    return subscribe(topic, queue_size, cbk);
+  }
+
   bool findSubscriber(const std::shared_ptr<Publisher::Impl>& pub) {
     std::unique_lock<std::mutex> lock(d->mutex_);
     auto it = d->subscribers_.find(pub->topic_);
@@ -421,6 +445,7 @@ void Publisher::publish(const std::shared_ptr<M>& message) const {
 
   if (impl_->workthread_ &&
       impl_->workthread_->taskNumLeft() < impl_->queue_size_) {
+      // FIXME: what to do when queue size large
     impl_->workthread_->Add([this, message]() {
 
       std::vector<Subscriber> subscribers;
@@ -457,4 +482,3 @@ void Publisher::publish(const M& m) const {
 }  // end of namespace GSLAM
 
 #endif
-

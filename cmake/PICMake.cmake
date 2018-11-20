@@ -7,7 +7,7 @@
 # 3. This notice may not be removed or altered from any source distribution.
 
 ######################################################################################
-# PICMake VERSION 1.2.4
+# PICMake VERSION 1.2.6
 # HISTORY:
 #   1.0.0 2017.01.04 : first commit, one include for one target.
 #   1.1.0 2017.01.09 : support multi targets, reorgnized functions and macros.
@@ -22,6 +22,7 @@
 #   1.2.3 2017.12.27 : fixed bug of multi pi_install
 #   1.2.4 2018.04.16 : enable auto CUDA support
 #   1.2.5 2018.09.17 : add GLOBAL value TARGETS2COMPILE, let add_definition only for one target
+#   1.2.6 2018.11.19 : add AUTORCC AUTOUIC support and compile flags tips when reporting targets
 ######################################################################################
 #                               FUNCTIONS
 # pi_collect_packagenames(<RESULT_NAME>　[VERBOSE] [path1 path2 ...])
@@ -118,6 +119,18 @@ function(pi_report_target )
   message(STATUS "The following targets will to be build:")
   message(STATUS "LIBS(${CMAKE_LIBRARY_OUTPUT_DIRECTORY}): ${LIBS2COMPILE}")
   message(STATUS "APPS(${CMAKE_RUNTIME_OUTPUT_DIRECTORY}): ${APPS2COMPILE}")
+
+  if("${CMAKE_BUILD_TYPE}" STREQUAL "Release")
+    message( STATUS "C++ flags (Release): ${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_RELEASE}")
+  elseif("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
+    message( STATUS "C++ flags (Debug):   ${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_DEBUG}")
+  elseif("${CMAKE_BUILD_TYPE}" STREQUAL "RelWithDebInfo")
+    message( STATUS "C++ flags (RelWithDebInfo):   ${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_RELWITHDEBINFO}")
+  elseif("${CMAKE_BUILD_TYPE}" STREQUAL "MinSizeRel")
+    message( STATUS "C++ flags (MinSizeRel):   ${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_MINSIZEREL}")
+  else()
+    message( STATUS "C++ flags (Default):   ${CMAKE_CXX_FLAGS} ")
+  endif()
 
   set(INDEX 1)
   if(ARGV${INDEX})
@@ -291,14 +304,17 @@ function(pi_add_target_f TARGET_NAME TARGET_TYPE)
 
   set(TARGET_SRCS )
   set(CUDA_SRCS )
+  set(QRC_FILES )
   foreach(PI_TARGET_SRC ${PI_TARGET_UNPARSED_ARGUMENTS})
       get_filename_component(ABSOLUTE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/${PI_TARGET_SRC}" ABSOLUTE)
       get_filename_component(EXT_PATH "${CMAKE_CURRENT_SOURCE_DIR}/${PI_TARGET_SRC}" EXT)
       if(IS_DIRECTORY ${ABSOLUTE_PATH})
         file(GLOB_RECURSE PATH_SOURCE_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} ${PI_TARGET_SRC}/*.cpp ${PI_TARGET_SRC}/*.c ${PI_TARGET_SRC}/*.cc)
         file(GLOB_RECURSE PATH_CUDA_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} ${PI_TARGET_SRC}/*.cu)
+        file(GLOB_RECURSE PATH_QRC_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} ${PI_TARGET_SRC}/*.qrc)
         list(APPEND TARGET_SRCS ${PATH_SOURCE_FILES})
         list(APPEND CUDA_SRCS ${PATH_CUDA_FILES})
+        list(APPEND QRC_FILES ${PATH_QRC_FILES})
       elseif("${ABSOLUTE_PATH}" MATCHES ".cu")
         list(APPEND CUDA_SRCS ${PI_TARGET_SRC})
       else()
@@ -353,6 +369,10 @@ function(pi_add_target_f TARGET_NAME TARGET_TYPE)
 
     endif()
   endforeach()
+  
+  if(QT_FOUND)
+    list(APPEND TARGET_SRCS ${QRC_FILES})
+  endif()
 
   include_directories(${TARGET_COMPILEFLAGS})
 # add_definitions(${TARGET_DEFINITIONS})
@@ -405,9 +425,9 @@ function(pi_add_target_f TARGET_NAME TARGET_TYPE)
   target_compile_definitions(${TARGET_NAME} PRIVATE ${TARGET_DEFINITIONS})
   target_link_libraries(${TARGET_NAME} ${TARGET_LINKFLAGS} ${TARGET_DEPENDENCY})
   list(APPEND TARGET_MODULES ${TARGET_REQUIRED})
-  if("${TARGET_MODULES}" MATCHES "Qt|QT|qt")
+  if("${TARGET_MODULES} ${TARGET_REQUIRED}" MATCHES "Qt|QT|qt")
       #message("Compile ${TARGET_NAME} with AUTOMOC (${TARGET_MODULES})")
-      set_target_properties(${TARGET_NAME} PROPERTIES AUTOMOC TRUE)
+      set_target_properties(${TARGET_NAME} PROPERTIES AUTOMOC TRUE AUTORCC TRUE AUTOUIC TRUE)
   endif()
   set_property( GLOBAL APPEND PROPERTY TARGETS2COMPILE  ${TARGET_NAME})
 

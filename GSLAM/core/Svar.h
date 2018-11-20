@@ -71,6 +71,14 @@ class SvarLanguage;
  files and stream.
  */
 
+/// 
+/**@ingroup gInterface
+ @brief The class Svar will be shared in the same process, it help users to
+ transform paraments use a name id,
+ all paraments with a same name will got the same data. One can change it in all
+ threads from assigned var,
+ files and stream.
+ */
 template <typename VarType = void*, typename KeyType = std::string>
 class SvarWithType {
   friend class Svar;
@@ -1074,9 +1082,6 @@ inline std::vector<std::string> Svar::ParseMain(int argc, char** argv,
   // cout << "Parsing file: " << cfg_File << " ...." << endl;
   bool ret = ParseFile(cfg_File);
 
-  // parse input argument again,FIXME:WHY
-  //  for (int i = 1; i < argc; i++) setvar(argv[i]);
-  if (exist("help")) std::cerr << help() << std::endl;
   return unParsed;
 }
 
@@ -1100,52 +1105,52 @@ inline std::string Svar::typeName(std::string name) {
 }
 
 inline std::string Svar::help() {
-  if (Get<int>("help") == 0) return GetString("help");
-  std::stringstream sst;
-  sst << "Usage:\n"
-      << GetString("ProgramName", "exe") << " [--help] [-conf configure_file]"
-                                            " [-arg_name arg_value]...\n\n";
+    std::stringstream sst;
+    sst << GetString("Usage","Usage:\n"
+                     + GetString("ProgramName", "exe")
+                     + " [--help] [-conf configure_file]"
+                       " [-arg_name arg_value]...\n\n");
 
-  if (!GetString("Version").empty())
-    sst << "Version: " << GetString("Version") << ", ";
-  sst << "Using Svar supported argument parsing. The following table listed "
-         "several \nargument introductions.\n\n";
+    if (!GetString("Version").empty())
+        sst << "Version: " << GetString("Version") << ", ";
+    sst << "Using Svar supported argument parsing. The following table listed "
+           "several \nargument introductions.\n\n";
 
-  Arg<std::string>("conf", "Default.cfg",
-                   "The default configure file going to parse.");
-  Arg<bool>("help", false, "Show the help information.");
-  int namePartWidth = GetInt("NamePartWidth", 16);
-  int statusPartWidth = GetInt("StatusPartWidth", 30);
-  int introPartWidth = GetInt("IntroPartWidth", 40);
-  auto& inst = *(a->args);
-  sst << std::setw(namePartWidth + 1) << std::setiosflags(std::ios::left)
-      << "argument" << std::setw(statusPartWidth + 1) << "type(default->setted)"
-      << std::setiosflags(std::ios::left) << "introduction" << std::endl;
-  sst << "-------------------------------------------------------------------"
-         "-----------\n";
-  for (const auto& it : inst.get_data()) {
-    ArgumentInfo info = it.second;
-    std::string setted = getvar(it.first);
-    if (setted != info.def)
-      setted = "->" + setted;
-    else
-      setted.clear();
-    std::string name = "-" + it.first;
-    std::string status = typeName(info.type) + "(" + info.def + setted + ")";
-    std::string intro = info.introduction;
+    Arg<std::string>("conf", "Default.cfg",
+                     "The default configure file going to parse.");
+    Arg<bool>("help", false, "Show the help information.");
+    int namePartWidth = GetInt("NamePartWidth", 16);
+    int statusPartWidth = GetInt("StatusPartWidth", 30);
+    int introPartWidth = GetInt("IntroPartWidth", 40);
+    auto& inst = *(a->args);
+    sst << std::setw(namePartWidth + 1) << std::setiosflags(std::ios::left)
+        << "argument" << std::setw(statusPartWidth + 1) << "type(default->setted)"
+        << std::setiosflags(std::ios::left) << "introduction" << std::endl;
+    sst << "-------------------------------------------------------------------"
+           "-----------\n";
+    for (const auto& it : inst.get_data()) {
+        ArgumentInfo info = it.second;
+        std::string setted = getvar(it.first);
+        if (setted != info.def)
+            setted = "->" + setted;
+        else
+            setted.clear();
+        std::string name = "-" + it.first;
+        std::string status = typeName(info.type) + "(" + info.def + setted + ")";
+        std::string intro = info.introduction;
 
-    for (; name.size() || status.size() || intro.size();) {
-      sst << std::setw(namePartWidth) << name.substr(0, namePartWidth) << " "
-          << std::setw(statusPartWidth) << status.substr(0, statusPartWidth)
-          << " " << std::setw(introPartWidth) << intro.substr(0, introPartWidth)
-          << std::endl;
-      name = namePartWidth < name.size() ? name.substr(namePartWidth) : "";
-      status =
-          statusPartWidth < status.size() ? status.substr(statusPartWidth) : "";
-      intro = introPartWidth < intro.size() ? intro.substr(introPartWidth) : "";
+        for (; name.size() || status.size() || intro.size();) {
+            sst << std::setw(namePartWidth) << name.substr(0, namePartWidth) << " "
+                << std::setw(statusPartWidth) << status.substr(0, statusPartWidth)
+                << " " << std::setw(introPartWidth) << intro.substr(0, introPartWidth)
+                << std::endl;
+            name = namePartWidth < name.size() ? name.substr(namePartWidth) : "";
+            status =
+                    statusPartWidth < status.size() ? status.substr(statusPartWidth) : "";
+            intro = introPartWidth < intro.size() ? intro.substr(introPartWidth) : "";
+        }
     }
-  }
-  return sst.str();
+    return sst.str();
 }
 
 inline int& Svar::GetInt(const std::string& name, int def, SVARMODE mode) {

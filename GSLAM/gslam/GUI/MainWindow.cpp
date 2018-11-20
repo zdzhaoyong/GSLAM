@@ -8,6 +8,9 @@
 #include <QFileDialog>
 #include <QFileInfo>
 
+#include <GSLAM/core/Messenger.h>
+#include <Evaluation.h>
+
 #include "MainWindow.h"
 
 using namespace std;
@@ -161,7 +164,6 @@ MainWindow::MainWindow(QWidget *parent)
     scommand.RegisterCommand("MainWindow.Show",GuiHandle,this);
     scommand.RegisterCommand("MainWindow.Update",GuiHandle,this);
     scommand.RegisterCommand("MainWindow.SetRadius",GuiHandle,this);
-
     // setup layout
     setupLayout();
     connect(this, SIGNAL(call_signal(QString) ), this, SLOT(call_slot(QString)) );
@@ -480,11 +482,16 @@ void MainWindow::slotSetViewPoint(qreal x,qreal y,qreal z,
 
 void MainWindow::runSLAMMain()
 {
+    Evaluation evaluation;
+    auto msg=GSLAM::Messenger::instance();
+    auto pub_curframe=msg.advertise<GSLAM::MapFrame>("curframe");
+    auto pub_processed_frame=msg.advertise<GSLAM::MapFrame>("processed_frame");
     double speed=svar.GetDouble("PlaySpeed",1.);
     double startTime=-1;
     double& playSpeedWarningTime=svar.GetDouble("PlaySpeedWarning",5);
     GSLAM::TicToc tictoc,tictocWarning;
     GSLAM::FramePtr frame;
+
     while(status!=STOP)
     {
         if(status==PAUSE)
@@ -522,7 +529,9 @@ void MainWindow::runSLAMMain()
         {
             string str=vis->slam()->type()+"::Track";
             GSLAM::ScopedTimer mt(str.c_str());
+            pub_curframe.publish(frame);
             vis->slam()->track(frame);
+            pub_processed_frame.publish(frame);
         }
 
         frameVis->showFrame(frame);
