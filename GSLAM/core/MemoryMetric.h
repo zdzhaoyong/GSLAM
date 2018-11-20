@@ -74,11 +74,10 @@ public:
         char name[64];
         int vmrss;
         const int VMRSS_LINE=17;
-        for (int i=0; i<VMRSS_LINE-1;i++){
-            fgets(line_buff,sizeof(line_buff),fd);
+        for (int i=0; i<VMRSS_LINE;i++){
+            if(!fgets(line_buff,sizeof(line_buff),fd)) return 0;
         }
 
-        fgets(line_buff,sizeof(line_buff),fd);
         sscanf(line_buff,"%s %d",name,&vmrss);
         fclose(fd);
         return vmrss;

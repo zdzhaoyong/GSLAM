@@ -91,7 +91,7 @@ static unsigned long get_cpu_total_occupy(){
 		return 0;
 	}
 		
-	fgets(buff,sizeof(buff),fd);
+	if(!fgets(buff,sizeof(buff),fd)) return 0;
 	char name[64]={0};
 	sscanf(buff,"%s %ld %ld %ld %ld",name,&t.user,&t.nice,&t.system,&t.idle);
 	fclose(fd);
@@ -114,7 +114,7 @@ static unsigned long get_cpu_proc_occupy(unsigned int pid){
 		return 0;
 	}
 	
-	fgets(line_buff,sizeof(line_buff),fd);
+	if(!fgets(line_buff,sizeof(line_buff),fd)) return 0;
 	
 	sscanf(line_buff,"%u",&t.pid);
 	const char *q =get_items(line_buff,PROCESS_ITEM);
@@ -131,6 +131,23 @@ float         last_usage=0;
 };
 
 }
+#else
+namespace GSLAM{
 
+class CPUMetric{
+public:
+    CPUMetric(){}
+
+    float usage(){
+        return -1;
+    }
+
+size_t        id;
+unsigned long last_total=0,last_proc=0;
+float         last_usage=0;
+
+};
+
+}
 #endif
 #endif
