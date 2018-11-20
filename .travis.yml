@@ -88,8 +88,8 @@ script:
   - pwd
   - cmake .. -DCMAKE_BUILD_TYPE=Release -DTESTS_ENABLED=ON ${CMAKE_OPTIONS}
   - make -j2
-  - ./gslam Act=Tests
+  - ./bin/gslam Act=Tests
   - |
     if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
-       bash ./doc/update_github_doc.sh
+       bash ../doc/update_github_doc.sh
     fi
