@@ -165,6 +165,11 @@ class Subscriber {
     return "";
   }
 
+  std::string getTypeName() const {
+    if (impl_) return impl_->type_;
+    return "";
+  }
+
   /**
    * \brief Returns the number of publishers this subscriber is connected to
    */
@@ -260,6 +265,14 @@ class Publisher {
    */
   std::string getTopic() const {
     if (impl_) return impl_->topic_;
+    return "";
+  }
+
+  /**
+   * \brief Returns the topic that this Publisher will publish on.
+   */
+  std::string getTypeName() const {
+    if (impl_) return impl_->type_;
     return "";
   }
 
@@ -412,6 +425,29 @@ class Messenger {
         pub.impl_->subscribers.push_back(sub);
       }
     }
+  }
+
+  const std::map<std::string, std::vector<Publisher> >& getPublishers()const{
+      return d->publishers_;
+  }
+
+  const std::map<std::string, std::vector<Subscriber> >& getSubscribers()const{
+      return d->subscribers_;
+  }
+
+  std::string introduction()const{
+      std::stringstream sst;
+      sst<<"The following publishers are advertised:\n";
+      for(auto it:getPublishers())
+          for(const Publisher& pub:it.second){
+              sst<<pub.getTopic()<<" : "<<pub.getTypeName()<<std::endl;
+          }
+      sst<<"The following subscribers are subscribed:\n";
+      for(auto it:getSubscribers())
+          for(const Subscriber& pub:it.second){
+              sst<<pub.getTopic()<<" : "<<pub.getTypeName()<<std::endl;
+          }
+      return sst.str();
   }
 
  private:
