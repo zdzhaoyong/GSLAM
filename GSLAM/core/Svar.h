@@ -265,7 +265,7 @@ class GSLAM_API Svar {
   bool ParseFile(std::string sFileName);
 
   template <typename T>
-  void Arg(const std::string& name, T def, const std::string& info);
+  T& Arg(const std::string& name, T def, const std::string& info);
   std::vector<std::string> ParseMain(int argc, char** argv,
                                      PARSEMODE mode = DEFAULT_CMD1);
   std::string help();
@@ -1010,7 +1010,7 @@ inline bool Svar::ParseFile(std::string sFileName) {
 }
 
 template <typename T>
-void Svar::Arg(const std::string& name, T def, const std::string& help) {
+T& Svar::Arg(const std::string& name, T def, const std::string& help) {
   std::stringstream sst;
   sst << def;
   if (!sst.str().empty()) insert(name, sst.str(), false);
@@ -1021,6 +1021,7 @@ void Svar::Arg(const std::string& name, T def, const std::string& help) {
   argInfo.introduction = help;
   argInfo.type = typeid(T).name();
   argInfo.def = sst.str();
+  return Get<T>(name,def);
 }
 
 inline std::vector<std::string> Svar::ParseMain(int argc, char** argv,
