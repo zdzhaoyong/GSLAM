@@ -1,13 +1,21 @@
 #include "../core/Svar.h"
 #include "../core/Timer.h"
 #include "Tests/gtest.h"
-//#include <GSLAM/core/MemoryMetric.inc>
+#include <GSLAM/core/MemoryMetric.inc>
 #if defined(HAS_QT)
 #include "GUI/MainWindow.h"
 #include <QApplication>
 #endif
+#include <GSLAM/core/Messenger.h>
 
 using namespace std;
+
+void GUIThread(int argc,char** argv){
+    QApplication app(svar.GetInt("argc"),(char**)svar.GetPointer("argv"));
+    GSLAM::MainWindow mainwindow;
+    mainwindow.show();
+    int ret=app.exec();
+}
 
 int main(int argc,char** argv)
 {
@@ -16,6 +24,9 @@ int main(int argc,char** argv)
     svar.Arg<std::string>("Dataset","","The Dataset location with extesion.");
     svar.Arg<double>("PlaySpeed",1.,"The Dataset play speed factor, 1 means the original speed.");
     timer.enter("Main");
+
+    std::thread guithread(GUIThread,argc,argv);
+    guithread.join();
     auto unParsed=svar.ParseMain(argc,argv);
     int    ret=0;
 
