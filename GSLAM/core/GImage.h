@@ -241,17 +241,26 @@ public:
     {
         if(!data) return cv::Mat();
         cv::Mat result(rows,cols,type(),data);
-        if(((uchar*)refCount)==data+total()*elemSize())// OpenCV2 style => OpenCV3 style
+        int byteNum=total()*elemSize();
+        int alignBytes=alignSize(byteNum, (int)sizeof(*refCount));
+        if(((uchar*)refCount)==data+alignBytes)// OpenCV2 style => OpenCV3 style
         {
             // WARNING: MAKE SURE THERE ARE NO OTHER HOLDERS
             // construct a UMat that ref to data
-            cv::UMatData* u=new cv::UMatData(nullptr);
-            u->origdata=u->data=data;
+            cv::UMatData* u=new cv::UMatData(cv::Mat::getStdAllocator());
+            u->data=data;
+#if CV_VERSION_MINOR==3
+            u->origdata=((uchar**)data)[-1];
+#else
+            u->origdata=data;
+#endif
             u->userdata=refCount;
-            CV_XADD(refCount,1);
+            CV_XADD(refCount,1); // Now we have both refcount and both added 1
             u->refcount=2;
+//            u->flags|=cv::UMatData::USER_ALLOCATED;
             refCount=&u->refcount;
             result.u=u;
+//            result.allocator=nullptr;
             return result;
         }
         else // OpenCV3 style => OpenCV3 style
@@ -268,7 +277,7 @@ public:
         : cols(mat.cols),rows(mat.rows),flags(mat.type()),
           data(mat.data),refCount(NULL)
     {
-        if(mat.u&&!mat.allocator)
+        if(mat.u&&mat.u->currAllocator==cv::Mat::getStdAllocator())
             // try to maintain the refcount things, but this need the mat is allocated by default StdAllocator
         {
             refCount=(&mat.u->refcount);
@@ -305,22 +314,22 @@ public:
         }
         else// OpenCV3 style
         {
-#if false// use opencv's default deallocate
-            cv::UMatData* u=(cv::UMatData*)(((uchar*)refCount)-sizeof(int)-sizeof(void*)*2);
-            u->refcount--;
-            if(u)
-                (u->currAllocator ? u->currAllocator : cv::Mat::getDefaultAllocator())->unmap(u);
-#else // use buildin deallocate
             GSLAM::UMatData* u=(GSLAM::UMatData*)(((uchar*)refCount)-sizeof(int)-sizeof(void*)*2);
-            if((*refCount)==1&&u->userdata==data+totalBytes)// this is allocated by GImage
+            if(u->userdata==data+alignBytes)
             {
-                (*((int*)u->userdata))--;
+                // this is allocated by GImage, we need minus both refcount
+                refCount=(int*)u->userdata;
+                if(CV_XADD(refCount,-1)==1)
+                {
+                    return release();
+                }
             }
-            assert(u->size==totalBytes);
-            assert(u->currAllocator==NULL);
-            u->refcount--;
-            deallocate(u);
-#endif
+            else{
+                // allocated by OpenCV
+                assert(u->size==totalBytes);
+                //assert(u->currAllocator==NULL);// should be the default allocator
+                deallocate(u);
+            }
             cols=rows=0;
             refCount=NULL;
             data=NULL;
@@ -377,7 +386,11 @@ private:
         assert(u->refcount == 0);
         if( !(u->flags & GSLAM::UMatData::USER_ALLOCATED) )
         {
+#if CV_VERSION_MINOR==3&&CV_VERSION_MAJOR==3
+            free(u->origdata);
+#else
             fastFree(u->origdata);
+#endif
             u->origdata = 0;
         }
         delete u;

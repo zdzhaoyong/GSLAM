@@ -23,7 +23,7 @@ message("-- Build type: " ${CMAKE_BUILD_TYPE})
 
 include_directories(. GSLAM/core)
 
-pi_add_target(gslam BIN GSLAM/gslam ${QRC_FILES} REQUIRED System MODULES Qt OpenGL)
+pi_add_target(gslam BIN GSLAM/gslam ${QRC_FILES} REQUIRED System MODULES Qt OpenGL OpenCV)
 
 pi_add_target(gslam_optimizer SHARED GSLAM/plugins/optimizer_ceres REQUIRED System Eigen3 Ceres GLOG)
 pi_add_target(gslam_estimator SHARED GSLAM/plugins/estimator_opencv REQUIRED OpenCV)
