@@ -10,13 +10,13 @@ using namespace std;
 
 int main(int argc,char** argv)
 {
+    auto unParsed=svar.ParseMain(argc,argv);
     svar.Arg<std::string>("Act","Tests","The default action going to excute. use \"Act=Tests\" to excute module testing.");
     svar.Arg<std::string>("SLAM","","The SLAM plugin path,eg. libgslam.so");
     svar.Arg<std::string>("Dataset","","The Dataset location with extesion.");
     svar.Arg<double>("PlaySpeed",1.,"The Dataset play speed factor, 1 means the original speed.");
     timer.enter("Main");
 
-    auto unParsed=svar.ParseMain(argc,argv);
     int    ret=0;
 
     string& act=svar.GetString("Act","Tests");
