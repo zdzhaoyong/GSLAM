@@ -37,58 +37,23 @@
 
 \section sIntro Introduction
 
-The %GSLAM library is a set of C++ header files which provide basic numerics facilities:
-	- @link TooN::Vector Vectors@endlink, @link TooN::Matrix matrices@endlink and @link gLinAlg etc @endlink
-	- @link gDecomps Matrix decompositions@endlink
-	- @link gOptimize Function optimization@endlink
-	- @link gTransforms Parameterized matrices (eg transformations)@endlink 
-	- @link gEquations linear equations@endlink
-	- @link gFunctions Functions (eg automatic differentiation and numerical derivatives) @endlink
+The %GSLAM library is a set of C++11 header files which provide basic facilities:
+	- @link Estimator
+	- @link Optimizer
+	- @link Vocabular
 
-It provides classes for statically- (known at compile time) and dynamically-
-(unknown at compile time) sized vectors and matrices and it can delegate
-advanced functions (like large SVD or multiplication of large matrices) to
-LAPACK and BLAS (this means you will need libblas and liblapack).
+Estimator aims to provide a collection of close-form solvers cover all interesting cases with robust sample consensus (RANSAC); Optimizer aims to provide an unified interface for popular nonlinear SLAM problems; Vocabulary aims to provide an efficient and portable bag of words implementation for place recolonization with multi-thread and SIMD optimization.
 
 
-\section sUsage How to use TooN 
+\section sUsage How to use GSLAM 
 \ingroup gInterface
 This section is arranged as a FAQ. Most answers include code fragments. Assume
-<code>using namespace TooN;</code>.
+<code>using namespace GSLAM;</code>.
 
- - \ref sDownload
- - \ref sStart
+ - \ref sDevelopment
 
- 	\subsection sDownload Getting the code and installing
+ 	\subsection sDevelopment API Documentation is under under developing
 	
-	To get the code from cvs use:
-
-	cvs -z3 -d:pserver:anoncvs@cvs.savannah.nongnu.org:/cvsroot/toon co TooN
-
-	The home page for the library with a version of this documentation is at:
-
-	http://mi.eng.cam.ac.uk/~er258/cvd/toon.html
-
-	The code will work as-is, and comes with a default configuration, which
-	should work on any system.
-
-	On a unix system, <code>./configure && make install </code> will  install
-	TooN to the correct place.  Note there is no code to be compiled, but the
-	configure script performs some basic checks.
-
-	On non-unix systems, e.g. Windows and embedded systems, you may wish to 
-	configure the library manually. See \ref sManualConfiguration.
-
-\subsection sStart Getting started
-
-To begin, just in include the right file:
-
-@code
-#include <TooN/TooN.h>
-@endcode
-
-Everything lives in the <code>TooN</code> namespace.
-
 */
 
 
@@ -104,9 +69,5 @@ Everything lives in the <code>TooN</code> namespace.
 /// GSLAM provides some helpful applications for users based on the framework.
 
 /// @ingroup gInterface
-class Zhaoyong{
-int name;
-};
-
 
 
