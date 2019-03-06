@@ -52,7 +52,7 @@ This section is arranged as a FAQ. Most answers include code fragments. Assume
 
  - \ref sDevelopment
 
- 	\subsection sDevelopment API Documentation is under under developing
+ 	\subsection sDevelopment API Documentation is under developing
 	
 */
 
