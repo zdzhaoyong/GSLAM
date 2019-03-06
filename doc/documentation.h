@@ -38,11 +38,14 @@
 \section sIntro Introduction
 
 The %GSLAM library is a set of C++11 header files which provide basic facilities:
-	- @link Estimator
-	- @link Optimizer
-	- @link Vocabular
+	- @link GSLAM::Estimator Estimator@endlink
+	- @link GSLAM::Optimizer Optimizer@endlink
+	- @link GSLAM::Vocabular Vocabular@endlink
 
-Estimator aims to provide a collection of close-form solvers cover all interesting cases with robust sample consensus (RANSAC); Optimizer aims to provide an unified interface for popular nonlinear SLAM problems; Vocabulary aims to provide an efficient and portable bag of words implementation for place recolonization with multi-thread and SIMD optimization.
+Estimator aims to provide a collection of close-form solvers cover all interesting cases with robust
+sample consensus (RANSAC); Optimizer aims to provide an unified interface for popular nonlinear SLAM
+problems; Vocabulary aims to provide an efficient and portable bag of words implementation for place
+recolonization with multi-thread and SIMD optimization.
 
 
 \section sUsage How to use GSLAM 
