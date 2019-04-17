@@ -25,7 +25,7 @@ include_directories(. GSLAM/core)
 
 pi_add_target(gslam BIN GSLAM/gslam ${QRC_FILES} REQUIRED System MODULES Qt OpenGL OpenCV)
 
-pi_add_target(gslam_optimizer SHARED GSLAM/plugins/optimizer_ceres REQUIRED System Eigen3 Ceres GLOG)
+pi_add_target(gslam_optimizer SHARED GSLAM/plugins/optimizer_ceres REQUIRED System Eigen3 Ceres GLOG Cholmod)
 pi_add_target(gslam_estimator SHARED GSLAM/plugins/estimator_opencv REQUIRED OpenCV)
 
 pi_add_target(gslamDB_euroc SHARED GSLAM/gslam/IO/DatasetEuroc.cpp REQUIRED OpenCV)
