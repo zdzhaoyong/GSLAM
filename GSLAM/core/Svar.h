@@ -1466,7 +1466,7 @@ inline bool Scommand::Call(const std::string& sCommand) {
 }
 
 inline Scommand& Scommand::instance() {
-  static thread_local std::shared_ptr<Scommand> g_Scommand(new Scommand());
+  static std::shared_ptr<Scommand> g_Scommand(new Scommand());
   return *g_Scommand;
 }
 }
