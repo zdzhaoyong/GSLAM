@@ -13,8 +13,18 @@ API Documentation: https://zdzhaoyong.github.io/GSLAM/html
 If you use this code for your research, please cite our paper <a href="https://arxiv.org/abs/1902.07995">GSLAM: A General SLAM Framework and Benchmark</a>:
 
 ```
+@inproceedings{gslamICCV2019,
+	title={GSLAM: A General SLAM Framework and Benchmark},
+	author={Yong Zhao, Shibiao Xu, Shuhui Bu, Hongkai Jiang, Pengcheng Han},
+	booktitle={Proceedings of the IEEE International Conference on Computer Vision},
+	year={2019},
+	organization={IEEE}
+}
+```
+
+```
 @article{gslam2019,
-  title={{GSLAM:} {A} General {SLAM} Framework and Benchmark},
+  title={GSLAM: A General SLAM Framework and Benchmark},
   author={Yong Zhao and Shibiao Xu and Shuhui Bu and Hongkai Jiang and Pengcheng Han},
   journal={arXiv:1902.07995 },
   year={2019}
