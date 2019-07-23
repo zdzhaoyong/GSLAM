@@ -24,10 +24,10 @@ If you use this code for your research, please cite our paper <a href="https://a
 
 ```
 @article{gslam2019,
-  title={GSLAM: A General SLAM Framework and Benchmark},
-  author={Yong Zhao, Shibiao Xu, Shuhui Bu, Hongkai Jiang, Pengcheng Han},
-  journal={arXiv:1902.07995 },
-  year={2019}
+	title={GSLAM: A General SLAM Framework and Benchmark},
+	author={Yong Zhao, Shibiao Xu, Shuhui Bu, Hongkai Jiang, Pengcheng Han},
+	journal={arXiv:1902.07995 },
+	year={2019}
 }
 ```
 
