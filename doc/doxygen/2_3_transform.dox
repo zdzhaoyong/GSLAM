@@ -1,0 +1,200 @@
+/**
+ @page transform 3D Transformations: SO3, SE3, SIM3
+ GSLAM implemented some high performance transformation classes in headers without other dependencies.
+
+ The below table is a comparison with other three popular c++ transform implementations.
+ The table statistics time usages for looping 1M times of transform multiply,
+ point transform, exponential and logarithm in milli-seconds on an i7-6700 CPU running 64bit Ubuntu.
+
+ | Function | GSLAM | Sophus | TooN | Ceres|
+ | -- | -- |-- |-- |-- |
+ | SO3::mult  | <b> 14.9 </b> | 34.3 | 17.8 | 159.1 |
+ | SO3::trans | 15.4    		  | 17.2 | <b> 14.5 </b>| 	90.4|
+ | SO3::exp   | <b> 80.7 </b> | 98.4 | 106.8 	|-|
+ | SO3::log   | <b> 55.7 </b> | 72.5 | 63.8 	|-|
+ | SE3::mult   | <b> 28.6 </b> | 55.2 | 29.3 	|-|
+ | SE3::trans   |  19.3  | 19.8 | <b>12.1 </b>	|-|
+ | SE3::exp   |  152.4  |19. 8 | <b>99.2 </b>	|-|
+ | SE3::log   | <b> 152.7 </b> | 194.0 | 205.8 	|-|
+ | SIM3::mult   | <b> 33.2 </b> | 58.5 | 34.5 	|-|
+ | SIM3::trans   |  16.9  |17.2 | <b>13.7 </b>	|-|
+ | SIM3::exp   | <b> 180.2 </b> | 286.8 | 229.0 	|-|
+ | SIM3::log   | <b> 202.5 </b> | 341.6 | 303.6 	|-|
+
+ \section sSO3 SO3: 3D rotation represented by the quaternion.
+ \subsection sSO3_intro Introduction
+
+ For the rotational component, there are several choices for representation, including the matrix, Euler angle, unit quaternion and Lie algebra \f$so(3)\f$.
+ For a given transformation, we can use any of these for representation and can convert one to another.:
+ - An unit orthogonal 3x3 matrix \f$ \mathbf{R} \f$.
+ - The Euler angle representation uses 3 variables such as yaw, roll, pitch.
+ - Quaternion \f$q(x,y,z,w)\f$: the most efficient way to perform multiple.
+ - Lie algebra \f$[a,b,c]\f$: the common representation to perform manifold optimization.
+
+ This implementation use Quaternion for computation.
+ Class SO3 use 4 paraments to present a 3 dimesion rotation matrix,
+ since 3D rotation matrices are members of the Special Orthogonal Lie group SO3.
+
+ Every rotation in the 3D euclidean space can be represented by a rotation with one direction.
+ Consider a rotation with direction \f$(a,b,c)^T\f$ and angle theta in radians.
+ - w -- \f$cos(theta/2)\f$
+ - x -- \f$a*sin(theta/2)\f$
+ - y -- \f$b*sin(theta/2)\f$
+ - z -- \f$c*sin(theta/2)\f$
+
+ this ensures that \f$x^2+y^2+z^2+w^2=1\f$.
+ A quaternion \f$q(x,y,z,w)\f$ is used to present a 3d rotation.
+
+ \subsection Constructors
+
+ Users can construct a SO3 from different data structure:
+ @code
+ SO3 I;// default, idendity
+ SO3 R1(x,y,z,w);// from quaternion
+ SO3 R2(Poin3d(rx,ry,rz),angle)// from axis and angle
+ SO3 R3=SO3::exp(Point3d(rx,ry,rz));// from lie algebra
+ SO3 R4=SO3(Matrix3d(m));// from matrix
+ SO3 R4=SO3(m);// from pointer
+ SO3 R5=SO3::fromPitchYawRoll(pitch,yaw,roll); // from Euler
+ @endcode
+
+ \subsection sSO3_usage Usages
+
+ The following testing codes demonstrated the basic usages of SO3:
+
+ @code
+    std::default_random_engine e;
+
+    double pitch=std::uniform_real_distribution<double>(-M_PI/2,M_PI/2)(e);
+    double yaw  =std::uniform_real_distribution<double>(-M_PI,M_PI)(e);
+    double roll =std::uniform_real_distribution<double>(-M_PI/2,M_PI/2)(e);
+
+    SO3 q=SO3::fromPitchYawRoll(pitch,yaw,roll);
+
+    EXPECT_NEAR(pitch,q.getPitch(),1e-5);
+    EXPECT_NEAR(yaw,q.getYaw(),1e-5);
+    EXPECT_NEAR(roll,q.getRoll(),1e-5);
+
+    // X: forward Y: right Z: down
+    SO3 qRoll =SO3::exp(Point3d(roll,0,0));
+    SO3 qPitch=SO3::exp(Point3d(0,pitch,0));
+    SO3 qYaw  =SO3::exp(Point3d(0,0,yaw));
+
+    SO3 q1=qYaw*qPitch*qRoll;
+    EXPECT_EQ(q,q1);
+
+    Matrix3d m=q.getMatrix();
+    q1=SO3(m);
+    EXPECT_EQ(q,q1);
+
+    Point3d abc=q.log();
+    q1=SO3::exp(abc);
+    EXPECT_EQ(q,q1);
+    EXPECT_EQ(SO3(),q.inv()*q);
+
+    std::uniform_real_distribution<double> pt_gen(-1000,1000);
+    Point3d xyz(pt_gen(e),pt_gen(e),pt_gen(e));
+    Point3d p1=q.inv()*q*xyz;
+    EXPECT_NEAR((xyz-p1).norm(),0,1e-6);
+ @endcode
+
+ \section sSE3 SE3: 3D Rigid Transformation.
+
+A 3D rigid transformation can be presented with an special 3D Homography matrix \f$\mathbf{T}\f$ constructed with translation \f$t\f$ and rotation \f$R\f$.
+
+\f$
+\mathbf{T} =
+\left[\begin{array}{cc}\mathbf{R}& \mathbf{t} \\
+\mathbf{0}^T& 1 \end{array} \right]=
+\left[\begin{array}{cccc}rx_x & ry_x & rz_x & x \\
+rx_y & ry_y & rz_y & y\\
+rx_z & ry_z & rz_z & z\\
+0&0&0& 1\end{array} \right].
+\f$
+
+Here \f$\mathbf{R}=(\mathbf{rx},\mathbf{ry},\mathbf{rz})\f$ is the rotation , \f$\mathbf{t}=(x,y,z)^T\f$ is the translation.
+
+When matrix \f$T\f$ means a camera to world transform:
+- \f$\mathbf{rx}\f$ means the direction of X axis;
+- \f$\mathbf{ry}\f$ means the direction of Y axis;
+- \f$\mathbf{rz}\f$ means the direction of Z axis;
+- \f$\mathbf{t}\f$  means the translation of this coordinate.
+
+
+Here below is little test example with some usages demo:
+@code
+TEST(Transform,SE3){
+    std::default_random_engine e;
+
+    double pitch=std::uniform_real_distribution<double>(-M_PI/2,M_PI/2)(e);
+    double yaw  =std::uniform_real_distribution<double>(-M_PI,M_PI)(e);
+    double roll =std::uniform_real_distribution<double>(-M_PI/2,M_PI/2)(e);
+    std::uniform_real_distribution<double> pt_gen(-1000,1000);
+
+    SE3 T(SO3::fromPitchYawRoll(pitch,yaw,roll),
+          Point3d(pt_gen(e),pt_gen(e),pt_gen(e)));
+
+    Point3d pt(pt_gen(e),pt_gen(e),pt_gen(e));
+
+    Point3d error=T*pt-T.get_translation()-T.get_rotation()*pt;
+    EXPECT_NEAR(error.norm(),0,1e-8);
+
+    SE3 T1=T.inverse()*T;
+    EXPECT_NEAR(T1.get_translation().norm(),0,1e-8);
+    EXPECT_EQ(T1.get_rotation(),SO3());
+
+    Vector6d se3=T.log();
+    SE3 T2=T.inverse()*SE3::exp(se3);
+    EXPECT_NEAR(T2.get_translation().norm(),0,1e-8);
+    EXPECT_EQ(T2.get_rotation(),SO3());
+}
+@endcode
+
+\warning It should be noticed that when a SE3 is representing the world-to-camera transform,
+the function <code>get_translation()</code> does not acqually return the translation.
+
+\section sSIM3 SIM3: 3D similarity transformation
+
+A SIM3 is the equivalent of a 4*4 Matrix \f$S\f$:
+
+\f$
+\mathbf{S} =
+\left[\begin{array}{cc}s\mathbf{R}& \mathbf{t} \\
+\mathbf{0}^T& 1 \end{array} \right].
+\f$
+
+- \f$\mathbf{R}\f$: Rotation -- 3dof
+- \f$\mathbf{t}\f$: Translation -- 3dof
+- s: scale --1dof
+
+The following testing example demostrated some basic usages of SIM3.
+@code
+TEST(Transform,SIM3){
+    std::default_random_engine e;
+
+    double pitch=std::uniform_real_distribution<double>(-M_PI/2,M_PI/2)(e);
+    double yaw  =std::uniform_real_distribution<double>(-M_PI,M_PI)(e);
+    double roll =std::uniform_real_distribution<double>(-M_PI/2,M_PI/2)(e);
+    std::uniform_real_distribution<double> pt_gen(-1000,1000);
+
+    SIM3 S(SO3::fromPitchYawRoll(pitch,yaw,roll),
+          Point3d(pt_gen(e),pt_gen(e),pt_gen(e)),
+          100);
+    SIM3 S1=SIM3::exp(S.log());
+    EXPECT_EQ(S.get_rotation(),S1.get_rotation());
+    EXPECT_NEAR((S.get_translation()-S1.get_translation()).norm(),0,1e-6);
+    EXPECT_NEAR(S.get_scale(),S1.get_scale(),1e-6);
+
+    SIM3 SS=S*S1;
+    Point3d pt(pt_gen(e),pt_gen(e),pt_gen(e));
+
+    Point3d diff=S*S1*pt-SS*pt;
+    EXPECT_NEAR(diff.norm(),0,1e-10);
+
+    SIM3 ST=S*S1.get_se3();
+    EXPECT_EQ(S.get_scale(),ST.get_scale());
+
+}
+@endcode
+
+ */

@@ -1,0 +1,65 @@
+/**
+@page compile Compile and Install
+
+\section sCompileLinux Compile in Linux
+
+Install dependency:
+
+- Qt: Required to compile application qviz @code sudo apt-get install libqt4-dev // Qt5 should also works @endcode 
+- OpenCV: Optional, used by some dataset plugins. @code sudo apt-get install libopencv-dev @endcode
+- Ceres: Optional, used by plugin Optimizer. @code sudo apt-get intall libceres-dev @endcode
+
+Compile and install with cmake:
+
+```
+mkdir build;cd build;
+cmake ..;make;sudo make install
+```
+
+\section sComplete Bash Tab completion
+To activate tab completion support for  <code>gslam </code>, please add the following contents to your <code> ~/.bashrc </code>:
+
+```
+function_gslam_complete()
+{
+    COMPREPLY=()
+    local cur=${COMP_WORDS[COMP_CWORD]};
+    local com=${COMP_WORDS[COMP_CWORD-1]};
+    local can=$(${COMP_WORDS[*]:0:COMP_CWORD} -help -complete_function_request)
+    local reg='-.+'
+    if [[ $com =~ $reg ]];then
+      COMPREPLY=($(compgen -df -W "$can" -- $cur))
+    else
+      COMPREPLY=($(compgen -W "$can" -- $cur))
+    fi
+}
+
+complete -F function_gslam_complete "gslam"
+```
+
+\section sCompileWindows Compile in Windows
+
+After install Qt5 and VS(tested vs2017):
+
+```
+cmake -G "NMake Makefiles" .. -DQt5_DIR=C:\Qt\Qt5.9.4\5.9.4\msvc2017_64\lib\cmake\Qt5 -DCMAKE_BUILD_TYPE=Release
+nmake
+```
+
+\section sCompileMac Compile in Mac
+
+
+Install dependencies with brew:
+```
+brew install qt5 eigen ceres-solver
+```
+
+Compile with cmake:
+```
+mkdir build;cd build;
+cmake .. -DQt5_DIR=/usr/local/opt/qt5/lib/cmake/Qt5
+make
+```
+*/
+
+

@@ -1,0 +1,36 @@
+/**
+@page resource Binary Built-in File Resource
+
+Sometimes we want to use a file resource inside the binary just like the "*.qrc" in Qt.
+GSLAM provides a tiny and efficient way to access such functional.
+
+- Firstly, generate the resource *.cpp file with command "gslam resource":
+
+@code
+gslam resource -map {\"inside_name.png\":\"folder/name.png\",\"hello.txt\":\"hello.txt\"} -cpp resource.cpp
+@endcode
+
+\warning '\' is essential to prevent '"' gone.
+
+This command will package file "folder/name.png" and "hello.txt" to the resource cpp file "resource.cpp".
+
+- Secondly, now please compile the resource cpp along with the binary using the resource.
+The resouce can be accessed with the following code:
+
+@code
+#include <GSLAM/core/FileResource.h>
+
+int main(int argc,char** argv)
+{
+    std::istream& ist=GSLAM::FileResource::getIStream("hello.txt");
+    // now please use ist just like ifstream
+
+    // also can access the file with buffer
+    SvarBuffer buffer=GSLAM::FileResource::getBuffer("hello.txt");
+    std::cerr<<"size is:"<<buffer.length()
+    <<"context is:"<<buffer.hex();
+
+    return 0;
+}
+@endcode
+*/

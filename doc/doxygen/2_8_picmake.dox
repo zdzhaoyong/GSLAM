@@ -1,0 +1,78 @@
+/**
+@page picmake PICMake: A CMake Tool to Write More Elegent CMakeList.txt
+
+GSLAM use PICMake for cmake compiling, which is also a seperate open-source project of Yong: https://github.com/zdzhaoyong/PICMake.
+PICMake let CMakeList.txt much more easier to write and problem traceable.
+
+Here is a tiny example to compile an excutable binary in one line with dependencies:
+
+```
+cmake_minimum_required(VERSION 2.8)
+
+include(PICMake)
+
+pi_add_target(demo BIN src REQUIRED OpenGL OpenCV Qt Eigen3)
+
+pi_report_target()
+```
+PICMake will auto report the informations of dependencies and targets.
+Here below is the output of cmake command:
+
+```
+build> cmake .. -DCMAKE_BUILD_TYPE=Release
+-- The C compiler identification is GNU 5.4.0
+-- The CXX compiler identification is GNU 5.4.0
+-- Check for working C compiler: /usr/bin/cc
+-- Check for working C compiler: /usr/bin/cc -- works
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Check for working CXX compiler: /usr/bin/c++
+-- Check for working CXX compiler: /usr/bin/c++ -- works
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Found OpenGL: /usr/lib/x86_64-linux-gnu/libGL.so
+-- Looking for Q_WS_X11
+-- Looking for Q_WS_X11 - found
+-- Looking for Q_WS_WIN
+-- Looking for Q_WS_WIN - not found
+-- Looking for Q_WS_QWS
+-- Looking for Q_WS_QWS - not found
+-- Looking for Q_WS_MAC
+-- Looking for Q_WS_MAC - not found
+-- Found Qt4: /usr/bin/qmake (found version "4.8.7")
+-- Found Eigen3: /usr/include/eigen3 (Required is at least version "2.91.0")
+------------------------------------------
+--OpenGL:
+  OPENGL_INCLUDES: /usr/include
+  OPENGL_LIBRARIES: /usr/lib/x86_64-linux-gnu/libGLU.so;/usr/lib/x86_64-linux-gnu/libGL.so
+  OPENGL_DEFINITIONS: -DHAS_OPENGL
+------------------------------------------
+--OpenCV: VERSION 2.4.9.1
+  OPENCV_INCLUDES: /usr/include/opencv;/usr/include
+  OPENCV_LIBRARIES: opencv_videostab;opencv_video;opencv_ts;opencv_superres;opencv_stitching;opencv_photo;opencv_ocl;opencv_objdetect;opencv_ml;opencv_legacy;opencv_imgproc;opencv_highgui;opencv_gpu;opencv_flann;opencv_features2d;opencv_core;opencv_contrib;opencv_calib3d
+  OPENCV_DEFINITIONS: -DHAS_OPENCV
+------------------------------------------
+--Qt: VERSION 4
+  QT_INCLUDES: /usr/include/qt4
+  QT_LIBRARIES: Qt4::QtCore;Qt4::QtGui;Qt4::QtNetwork;Qt4::QtOpenGL;Qt4::QtSvg;Qt4::QtSql;Qt4::QtXml
+  QT_DEFINITIONS: -DHAS_QT
+------------------------------------------
+--Eigen3: VERSION 3.2.92
+  EIGEN3_INCLUDES: /usr/include/eigen3
+  EIGEN3_DEFINITIONS: -DHAS_EIGEN3
+-- The following targets will to be build:
+-- LIBS():
+-- APPS():  demo
+-- C++ flags (Release):  -O3 -DNDEBUG
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /data/zhaoyong/Desktop/mk/build
+```
+
+More details please see the CMakeLists.txt of GSLAM project or go to [the PICMake project](https://github.com/zdzhaoyong/PICMake).
+
+*/

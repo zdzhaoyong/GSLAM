@@ -1,0 +1,35 @@
+/**
+ @page messenger Messenger: A Tiny Class Implemented ROS Like Pub/Sub Messaging.
+
+Messenger: A light-weight, efficient, thread-safe message publish and
+ subscribe tool similar with ROS, a popular robot operating system.
+
+The tool has the following features:
+- Header only based on c++11, no extra dependency, makes it portable.
+- Thread safe and support multi-thread condition notify mode by setting the queue size.
+- Able to transfer any classes efficiently, including ROS defined messages, which means it can replace ROS messagging or work with it.
+
+@code
+// example.cpp
+#include <GSLAM/core/Messenger.h>
+
+using namespace GSLAM;
+
+int main(int argc,char** argv)
+{
+    Subscriber sub=messenger.subscribe("topic_name",[](std::string msg){
+        std::cerr<<"Received string msg "<<msg<<std::endl;
+    });
+
+    // publish message without creating a Publisher
+    messenger.publish("topic_name","hello world!");
+
+    Publisher pub=messenger.advertise<std::string>("topic_name");
+    pub.publish("hello Messenger!");
+
+    return 0;
+}
+@endcode
+
+@warning The Subscriber will auto shutdown, please hold the Subscriber instance until you want to unsubscribe.
+ */

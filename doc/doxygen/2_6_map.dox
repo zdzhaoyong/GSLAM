@@ -1,0 +1,21 @@
+/**
+@page map SLAM Map Data Structure
+
+The "Map.h" header provides an optional slam map data interface considering most visual SLAM systems are using such structure,
+where a Map is constructed by MapPoints and MapFrames, relationship between point and frame calls observation, relationship between frames calls connection.
+This may not suit every SLAM system but make sense to unify the map access interface.
+
+The interface is consisted with four class APIs:
+
+- MapFrame: A frame is one sensor status captured from any time or any sensors. Every frame has an unique id with timestamp and pose status information.
+- MapPoint: A map point is one landmark to describe the world structure, it should be observed by some map frames.
+- Connection: It describes the relationship between two map frames, such as pose constrains, keypoint matches.
+- Map: It is used to manage the mapframe and mappoints.
+- LoopDetector: Used to index mapframes and detect loop candidates.
+
+Since the header only provides interface but no implementation.
+Users should inherit the class, provides real data and implement the virtual functions.
+
+
+
+*/

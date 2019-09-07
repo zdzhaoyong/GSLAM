@@ -1,0 +1,17 @@
+<RCC>
+    <qresource prefix="/">
+        <file>icon/export.png</file>
+        <file>icon/finished.png</file>
+        <file>icon/image.png</file>
+        <file>icon/new.png</file>
+        <file>icon/open.png</file>
+        <file>icon/pause.png</file>
+        <file>icon/ready.png</file>
+        <file>icon/rtmapper.png</file>
+        <file>icon/save.png</file>
+        <file>icon/start.png</file>
+        <file>icon/startPause.png</file>
+        <file>icon/stop.png</file>
+        <file>icon/video.png</file>
+    </qresource>
+</RCC>

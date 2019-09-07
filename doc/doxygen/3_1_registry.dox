@@ -1,0 +1,72 @@
+/**
+@page registry The Plugin Structure of GSLAM
+
+The GSLAM core is designed to be very light weighted and only provides the core functionals.
+To extend the functional, GSLAM provides a very general way to package or access other modules by the plugin system.
+GSLAM packages all plugins using the interface of @link GSLAM::Svar Svar @endlink, including dataset plugins, tool plugins or application plugins.
+Generally speaking, users are able to access any Svar modules in GSLAM system.
+
+\section sDoc API Documentation of GSLAM Plugin
+
+Since all APIs are provided as Svar module, we can check the documentation with command 'gslam doc':
+
+Here is the contents of tests application plugin:
+
+```
+build> ./gslam doc -plugin tests
+{
+  "__builtin__" : {
+    "Json" : <class at 0x7f21ac00c080>,
+    "version" : 256
+  },
+  "gslam" : {
+    "apps" : {
+      "tests" : <function at 0x7f21ac00d728>
+    },
+    "setGlobalLogSinks" : <function at 0x7f21ac00cbf0>,
+    "setGlobalMessenger" : <function at 0x7f21ac00d200>
+  }
+}
+```
+
+All GSLAM objects are putted to the gslam object, now we can see three function object:
+- gslam.apps.tests: this is the main function of application tests
+- gslam.setGlobalLogSinks: this is a function to set the log sinks of the plugin
+- gslam.setGlobalMessenger: this is a function to set the messenger instance inside the plugin so that all plugins share one Messenger
+
+And we can also see the function signature with option '-key':
+```
+build> ./gslam doc -plugin tests -key gslam.apps.tests
+function(...)
+    function(svar)->int
+```
+The output means this application function accepts one argument with Svar type and returns a int.
+
+For the class object '\_\_builtin\_\_.Json', we can also obtain the detail APIs:
+```
+build> ./gslam doc -plugin tests -key __builtin__.Json
+class GSLAM::Json():
+|  Methods defined here:
+|  GSLAM::Json.dump(...)
+|      GSLAM::Json.dump(svar)->str
+|
+|
+|  GSLAM::Json.load(...)
+|      GSLAM::Json.load(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >)->svar
+|
+|
+```
+
+\section sPlugins GSLAM Plugin Rules
+
+Based on Svar, GSLAM defined serveral plugin types:
+
+- Application: a gslam application just like the original excutable implemented "main",
+but the gslam application supports intra-process messaging.
+The SLAM plugins are all GSLAM applications.
+- Dataset: a dataset plugin is designed to provide the raw data needed by SLAM plugins.
+A correct plugin is loaded by distinguish the dataset extension.
+- Tools: Some tools like estimator and optimizer are implemented in plugins.
+- qviz Plugins: Just like rviz, qviz support to extend the visualizer with plugins
+
+*/

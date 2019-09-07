@@ -1,0 +1,178 @@
+# This module supports requiring a minimum version, e.g. you can do
+#   find_package(GSLAM 1.1.1)
+# to require version 1.1.1 or newer of GSLAM, support after 1.1.1.
+#
+# Once done this will define
+#
+#  GSLAM_FOUND - system has GSLAM lib with correct version
+#  GSLAM_INCLUDES  - the GSLAM include directory
+#  GSLAM_LIBRARIES - the GSLAM libraries
+#  GSLAM_VERSION - GSLAM version
+
+
+# Copyright (c) 2016 Yong Zhao, <zd5945@126.com>
+# Copyright (c) 2016 Shuhui Bu, <bushuhui@gmail.com>
+
+# Find at least 1.1.0
+if(NOT GSLAM_FIND_VERSION)
+  if(NOT GSLAM_FIND_VERSION_MAJOR)
+    set(GSLAM_FIND_VERSION_MAJOR 1)
+  endif(NOT GSLAM_FIND_VERSION_MAJOR)
+  if(NOT GSLAM_FIND_VERSION_MINOR)
+    set(GSLAM_FIND_VERSION_MINOR 1)
+  endif(NOT GSLAM_FIND_VERSION_MINOR)
+  if(NOT GSLAM_FIND_VERSION_PATCH)
+    set(GSLAM_FIND_VERSION_PATCH 1)
+  endif(NOT GSLAM_FIND_VERSION_PATCH)
+
+  set(GSLAM_FIND_VERSION "${GSLAM_FIND_VERSION_MAJOR}.${GSLAM_FIND_VERSION_MINOR}.${GSLAM_FIND_VERSION_PATCH}")
+endif(NOT GSLAM_FIND_VERSION)
+
+macro(gslam_check_version)
+  file(READ "${GSLAM_INCLUDE_DIR}/GSLAM/core/GSLAM.h" _gslam_version_header)
+
+  string(REGEX MATCH "define[ \t]+GSLAM_VERSION_MAJOR[ \t]+([0-9]+)" _gslam_major_version_match "${_gslam_version_header}")
+  set(GSLAM_VERSION_MAJOR "${CMAKE_MATCH_1}")
+  string(REGEX MATCH "define[ \t]+GSLAM_VERSION_MINOR[ \t]+([0-9]+)" _gslam_minor_version_match "${_gslam_version_header}")
+  set(GSLAM_VERSION_MINOR "${CMAKE_MATCH_1}")
+  string(REGEX MATCH "define[ \t]+GSLAM_VERSION_PATCH[ \t]+([0-9]+)" _gslam_patch_version_match "${_gslam_version_header}")
+  set(GSLAM_VERSION_PATCH "${CMAKE_MATCH_1}")
+
+  set(GSLAM_VERSION ${GSLAM_VERSION_MAJOR}.${GSLAM_VERSION_MINOR}.${GSLAM_VERSION_PATCH})
+
+
+  if(${GSLAM_VERSION} VERSION_LESS ${GSLAM_FIND_VERSION})
+    set(GSLAM_VERSION_OK FALSE)
+  else(${GSLAM_VERSION} VERSION_LESS ${GSLAM_FIND_VERSION})
+    set(GSLAM_VERSION_OK TRUE)
+  endif(${GSLAM_VERSION} VERSION_LESS ${GSLAM_FIND_VERSION})
+
+	get_filename_component(GSLAM_PATH "${GSLAM_INCLUDE_DIR}/.." ABSOLUTE)
+  
+  if(NOT GSLAM_VERSION_OK)
+
+    message(STATUS "GSLAM version ${GSLAM_VERSION} found in ${GSLAM_PATH}, "
+                   "but at least version ${GSLAM_FIND_VERSION} is required")
+  endif(NOT GSLAM_VERSION_OK)
+endmacro(gslam_check_version)
+
+
+FIND_PATH( GSLAM_INCLUDE_DIR GSLAM/core/GSLAM.h
+	# installation selected by user
+	$ENV{GSLAM_PATH}
+	$ENV{GSLAM_HOME}
+	# system placed in /usr/local/include
+	@CMAKE_INSTALL_PREFIX@/include
+)
+
+if(GSLAM_INCLUDE_DIR)
+	gslam_check_version()
+	set(GSLAM_INCLUDES ${GSLAM_INCLUDE_DIR})
+endif(GSLAM_INCLUDE_DIR)
+
+
+if(GSLAM_FIND_COMPONENTS)
+	set(GSLAM_FIND_COMPONENTS_COPY ${GSLAM_FIND_COMPONENTS})
+else(GSLAM_FIND_COMPONENTS)
+	set(GSLAM_FIND_COMPONENTS_COPY )
+endif(GSLAM_FIND_COMPONENTS)
+
+if(WIN32)
+	if( GSLAM_VERSION_OK )
+
+		# test for 64 or 32 bit
+		if( CMAKE_SIZEOF_VOID_P EQUAL 8 )
+			SET( BUILD_DIR ${GSLAM_PATH}/build/x64 )
+		else( CMAKE_SIZEOF_VOID_P EQUAL 8 )
+			SET( BUILD_DIR ${GSLAM_PATH}/build/x86 )
+		endif( CMAKE_SIZEOF_VOID_P EQUAL 8 )
+		
+		# MINGW
+		if(MINGW)
+			SET(GSLAM_LIBRARY_DIR ${BUILD_DIR}/mingw/lib/)
+			file(GLOB GSLAM_LIBRARIES "${GSLAM_LIBRARY_DIR}*[0-9][0-9][0-9].dll.a")
+		endif(MINGW)
+		
+		# Visual Studio 9
+		if(MSVC90)
+			SET(GSLAM_LIBRARY_DIR ${BUILD_DIR}/vc9/lib/)
+			file(GLOB GSLAM_RELEASE_LIBS "${GSLAM_LIBRARY_DIR}*[0-9][0-9][0-9].lib")
+			file(GLOB GSLAM_DEBUG_LIBS "${GSLAM_LIBRARY_DIR}*[0-9][0-9][0-9]d.lib")
+		endif(MSVC90)
+		
+		# Visual Studio 10
+		if(MSVC10)
+			SET(GSLAM_LIBRARY_DIR ${BUILD_DIR}/vc10/lib/)
+			file(GLOB GSLAM_RELEASE_LIBS "${GSLAM_LIBRARY_DIR}*[0-9][0-9][0-9].lib")
+			file(GLOB GSLAM_DEBUG_LIBS "${GSLAM_LIBRARY_DIR}*[0-9][0-9][0-9]d.lib")
+		endif(MSVC10)
+
+		if(GSLAM_LIBRARIES)
+			SET ( GSLAM_FOUND 1 )
+			foreach(GSLAM_MODULE_NAME ${GSLAM_FIND_COMPONENTS_COPY})
+				string(TOUPPER ${GSLAM_MODULE_NAME} GSLAM_MODULE_NAME_UPPER)
+				set(PI_${GSLAM_MODULE_NAME_UPPER}_INCLUDES ${GSLAM_INCLUDES})
+				set(PI_${GSLAM_MODULE_NAME_UPPER}_LIBRARIES ${GSLAM_LIBRARIES})
+				set(PI_${GSLAM_MODULE_NAME_UPPER}_FOUND 1)
+			endforeach()
+		else(GSLAM_LIBRARIES)
+			message( STATUS "Looking for GSLAM-${GSLAM_FIND_VERSION} or greater  - found ${GSLAM_VERSION} but no library available." )
+			SET ( GSLAM_FOUND 0 )
+		endif(GSLAM_LIBRARIES)
+
+	else( GSLAM_VERSION_OK )
+#		message( STATUS "Looking for GSLAM-${GSLAM_FIND_VERSION} or greater  - not found" )
+		SET ( GSLAM_FOUND 0 )
+	endif( GSLAM_VERSION_OK )
+        SET ( GSLAM_FOUND 1 )
+
+ELSE(WIN32) # Linux
+
+
+	if(GSLAM_VERSION_OK)
+
+		foreach(GSLAM_MODULE_NAME ${GSLAM_FIND_COMPONENTS_COPY})
+			string(TOUPPER ${GSLAM_MODULE_NAME} GSLAM_MODULE_NAME_UPPER)
+			FIND_LIBRARY(PI_${GSLAM_MODULE_NAME_UPPER}_LIBRARIES NAMES gslam_${GSLAM_MODULE_NAME}
+				PATHS
+				${GSLAM_PATH}/libs
+				${GSLAM_PATH}/lib
+				)
+
+			#MESSAGE( STATUS "Looking for GSLAM module '${GSLAM_MODULE_NAME}'" )
+			#MESSAGE( STATUS "Found GSLAM module '${GSLAM_MODULE_NAME}' at ${PI_${GSLAM_MODULE_NAME}_LIBRARIES}" )
+
+			if(PI_${GSLAM_MODULE_NAME_UPPER}_LIBRARIES)
+				set(PI_${GSLAM_MODULE_NAME_UPPER}_INCLUDES ${GSLAM_INCLUDES})
+				set(PI_${GSLAM_MODULE_NAME_UPPER}_FOUND 1)
+				list(APPEND GSLAM_LIBRARIES ${PI_${GSLAM_MODULE_NAME_UPPER}_LIBRARIES})
+			else(PI_${GSLAM_MODULE_NAME_UPPER}_LIBRARIES)
+				if(GSLAM_FIND_COMPONENTS)
+					list(APPEND GSLAM_NOTFOUND_COMPONENTS ${GSLAM_MODULE_NAME})
+				else(GSLAM_FIND_COMPONENTS)
+					message(STATUS "Can't found GSLAM module " ${GSLAM_MODULE_NAME})
+				endif(GSLAM_FIND_COMPONENTS)
+			endif(PI_${GSLAM_MODULE_NAME_UPPER}_LIBRARIES)
+
+		endforeach()
+	
+#		if(GSLAM_LIBRARIES)
+			message( STATUS "Looking for GSLAM-${GSLAM_FIND_VERSION} or greater  - found ${GSLAM_VERSION}" )
+#			if(GSLAM_NOTFOUND_COMPONENTS)
+#				SET(GSLAM_FOUND 0)
+#				message(FATAL_ERROR "The following GSLAM modules are required but not found: ${GSLAM_NOTFOUND_COMPONENTS}")
+#			else(GSLAM_NOTFOUND_COMPONENTS)
+				#SET ( GSLAM_DEFINITIONS -std=c++11)
+				SET ( GSLAM_FOUND 1 )
+#			endif(GSLAM_NOTFOUND_COMPONENTS)
+#		else(GSLAM_LIBRARIES)
+#			message( STATUS "Looking for GSLAM-${GSLAM_FIND_VERSION} or greater  - found ${GSLAM_VERSION} but no library available." )
+#			SET ( GSLAM_FOUND 0 )
+#		endif()
+
+	else(GSLAM_VERSION_OK)
+			message( STATUS "Looking for GSLAM-${GSLAM_FIND_VERSION} or greater  - not found" )
+			SET ( GSLAM_FOUND 0 )
+	endif(GSLAM_VERSION_OK)
+	
+ENDIF(WIN32)

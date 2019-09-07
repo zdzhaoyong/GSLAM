@@ -1,0 +1,68 @@
+/**
+@page camera Camera Models in GSLAM
+
+A Camera describes the corrospondence of image coordinates and 3D directions.
+
+\section sCamera_models Camera models and distorters
+
+\subsection sPinhole PinHole
+
+For direction \f$(x,y,1)\f$:
+\f$
+\left[\begin{array}{c}u \\ v\end{array} \right]=
+\left[\begin{array}{c}cx \\ cy\end{array} \right]+
+\left[\begin{array}{cc}fx&\\ &fy\end{array} \right]*
+\left[\begin{array}{c}x \\ y\end{array} \right]
+\f$
+
+\subsection sATAN ATAN
+\subsection sATAN_prj Projection
+For direction \f$(x,y,1)\f$:
+
+\f$ r =sqrt(x^2+y^2) \f$
+
+\f$ r'=atan(r * tan2w) / w \f$
+
+\f$ tan2w=2.0 * tan(w / 2.0) \f$
+
+\f$
+\left[\begin{array}{c}u \\ v\end{array} \right]=
+\left[\begin{array}{c}cx \\ cy\end{array} \right]+
+\left[\begin{array}{cc}fx&\\ &fy\end{array} \right]*
+\left[\begin{array}{c}x \\ y\end{array} \right]*r'/r
+\f$
+
+\subsection sATAN_prj UnProjection
+The UnProject:
+
+\f$
+\left[\begin{array}{c}x' \\ y'\end{array} \right]=
+\left(
+\left[\begin{array}{c}u \\ v\end{array} \right]-
+\left[\begin{array}{c}cx \\ cy\end{array} \right]
+\right)*
+\left[\begin{array}{cc}fx^{-1}&\\ &fy^{-1}\end{array} \right]*r/r'
+\f$
+
+\f$ r' =sqrt(x'^2+y'^2) \f$
+
+\f$ r  =(tan(r' * w) / tan2w)\f$
+
+\subsection sOpenCV OpenCV
+
+For direction \f$(x,y,1)\f$:
+
+\f$ r^2= x^2+y^2 \f$
+
+\f$ x_1= x*(1+k1*r^2 + k2*r^4+k3*r^6) + 2*p1*xy + p2*(r^2 + 2*x^2) \f$
+
+\f$ y_1= y*(1+k1*r^2 + k2*r^4+k3*r^6) + 2*p2*xy + p1*(r^2 + 2*y^2) \f$
+
+\f$
+\left[\begin{array}{c}u \\ v\end{array} \right]=
+\left[\begin{array}{c}cx \\ cy\end{array} \right]+
+\left[\begin{array}{cc}fx&\\ &fy\end{array} \right]*
+\left[\begin{array}{c}x_1 \\ y_1\end{array} \right]
+\f$
+
+*/

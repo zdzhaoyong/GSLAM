@@ -1,0 +1,29 @@
+/**
+@page gimage GImage: Replace cv::Mat with A Tiny Header
+
+GImage is a header only implementation of "cv::Mat", and the main implementation is inspired by opencv 2.4.9.
+But there are some modification:
+
+- Added support of different alignment such as 256bit for SIMD acceleration (Used by GSLAM Vocabulary)
+- Supported no copy convertion from other Mat versions including opencv 3.1, 3.2
+
+Example Usages:
+
+@code
+cv::Mat mat(rows,cols,type);
+GSLAM::GImage  img=mat;// obtain GImage without memory copy and it will release the buffer correctly
+
+// most functions provided by GImage are the same with cv::Mat
+EXPECT_TRUE(img.cols==mat.cols);
+EXPECT_TRUE(img.rows==mat.rows);
+EXPECT_TRUE(img.empty()==mat.empty());
+EXPECT_TRUE(img.type()==mat.type());
+EXPECT_TRUE(img.channels()==mat.channels());
+
+EXPECT_TRUE(img.elemSize()==mat.elemSize());
+EXPECT_TRUE(img.elemSize1()==mat.elemSize1());
+EXPECT_TRUE(img.total()==mat.total());
+
+@endcode
+
+*/
