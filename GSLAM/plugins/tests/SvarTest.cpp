@@ -58,6 +58,9 @@ TEST(Svar,Variable)
     auto mtx=svarMtx.castAs<std::shared_ptr<std::mutex>>();
     mtx->lock();
     mtx->unlock();
+
+    Svar js=Svar::json("");
+    EXPECT_TRUE(js.isUndefined());
 }
 
 std::string svar_test_add(std::string left,const std::string& r){

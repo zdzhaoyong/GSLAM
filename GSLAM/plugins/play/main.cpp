@@ -12,7 +12,7 @@ int run(Svar config){
     double playspeed_warning=config.arg<double>("playspeed_warning",5,"Seconds to check if the playspeed is slower then setted.");
     std::string datasetFile=config.arg<std::string>("dataset","","The dataset want to play.");
 
-    auto _pub_dataset_status=messenger.advertise<int>("dataset/status",100);
+    auto _pub_dataset_status=messenger.advertise<int>("dataset/status",0);
     auto _pub_frame=messenger.advertise<MapFrame>("dataset/frame",0);
 
     int     _status=READY;
@@ -56,14 +56,18 @@ int run(Svar config){
             }
         }
         else if(cmd.substr(0,5)=="Open "){
-            _dataset.open(cmd.substr(6));
+            datasetFile=cmd.substr(5);
+            _dataset.open(datasetFile);
             if(!_dataset.isOpened())
             {
                 LOG(ERROR)<<"Failed to open dataset "<<datasetFile;
                 return;
             }
+            else LOG(INFO)<<"Success opened dataset "<<datasetFile;
             _status=READY;
         }
+            else { LOG(INFO)<<"Unable to handle cmd "<<cmd;return;}
+
         _pub_dataset_status.publish(_status);
     });
 
@@ -79,7 +83,6 @@ int run(Svar config){
 
     GSLAM::TicToc tictoc,tictocWarning;
     GSLAM::FramePtr frame;
-    _pub_dataset_status.publish(_status);
     if(auto_start)
         messenger.publish("dataset/control",std::string("Start"));
 

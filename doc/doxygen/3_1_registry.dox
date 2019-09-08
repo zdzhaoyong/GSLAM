@@ -61,12 +61,15 @@ class GSLAM::Json():
 
 Based on Svar, GSLAM defined serveral plugin types:
 
-- Application: a gslam application just like the original excutable implemented "main",
+- Application: a gslam application is just like the original excutable implemented "main",
 but the gslam application supports intra-process messaging.
 The SLAM plugins are all GSLAM applications.
+A dynamic library with name "gslam_appname" is recommended.
 - Dataset: a dataset plugin is designed to provide the raw data needed by SLAM plugins.
 A correct plugin is loaded by distinguish the dataset extension.
+A dynamic library with name "gslamDB_extension" is recommended.
 - Tools: Some tools like estimator and optimizer are implemented in plugins.
-- qviz Plugins: Just like rviz, qviz support to extend the visualizer with plugins
+- qviz Plugins: Just like rviz, qviz support to extend the visualizer with panel and display plugins.
+A dynamic library with name "qviz_name" is recommended.
 
 */

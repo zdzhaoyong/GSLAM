@@ -13,7 +13,7 @@
 
 #define GSLAM_REGISTER_GLOG_SINKS \
     svar["gslam"]["setGlobalLogSinks"]=GSLAM::Svar::lambda(\
-    [](std::shared_ptr<std::set<LogSink *> > sinks){\
+    [](std::shared_ptr<std::set<GSLAM::LogSink *> > sinks){\
         GSLAM::getLogSinksGlobal()=sinks;\
     });
 
@@ -33,8 +33,20 @@
 }
 
 #define GSLAM_REGISTER_DATASET(D,E) \
+    EXPORT_SVAR_INSTANCE \
     REGISTER_SVAR_MODULE(E){\
+    GSLAM_REGISTER_GLOG_SINKS \
+    GSLAM_REGISTER_MESSENGER \
     svar["gslam"]["datasets"][#E]=GSLAM::Svar::lambda([](){return (GSLAM::Dataset*)new D();});\
+}
+
+#define GSLAM_REGISTER_PANEL(NAME,CLS) \
+    EXPORT_SVAR_INSTANCE \
+REGISTER_SVAR_MODULE(NAME){\
+GSLAM_REGISTER_GLOG_SINKS \
+GSLAM_REGISTER_MESSENGER \
+    svar["gslam"]["panels"][#NAME]=GSLAM::Svar::lambda([](QWidget* parent,GSLAM::Svar config){\
+    return (QWidget*)new CLS(parent,config);});\
 }
 
 // System Basic

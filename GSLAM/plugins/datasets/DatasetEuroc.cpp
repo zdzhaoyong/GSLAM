@@ -112,7 +112,6 @@ public:
 
     virtual bool        open(const std::string& dataset)
     {
-        svar.ParseFile(dataset);
         dirtop=getFolderPath(dataset);
         std::string basename=getBaseName(dataset);
         // load camera data
@@ -124,7 +123,7 @@ public:
 
         if(!cam0Sensor.isOpened()&&!cam1Sensor.isOpened())
         {
-            LOG(ERROR)<<"Can't load camera sensor data.";
+            LOG(ERROR)<<"Can't load camera sensor data in folder"<<dirtop<<".";
             return false;
         }
 
@@ -279,6 +278,5 @@ public:
 };
 
 GSLAM_REGISTER_DATASET(DatasetEuroc,euroc);
-EXPORT_SVAR_INSTANCE
 }
 #endif

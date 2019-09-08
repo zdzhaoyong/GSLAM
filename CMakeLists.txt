@@ -29,9 +29,12 @@ pi_add_target(gslam_resource SHARED GSLAM/plugins/resource REQUIRED System LTO)
 pi_add_target(gslam_doc SHARED GSLAM/plugins/doc REQUIRED System LTO)
 pi_add_target(gslam_play SHARED GSLAM/plugins/play REQUIRED System LTO)
 #pi_add_target(gslam_bridge SHARED GSLAM/plugins/bridge REQUIRED System)
-#pi_add_target(gslam_qviz SHARED GSLAM/plugins/qviz REQUIRED System Qt OpenGL)
 #pi_add_target(gslam_rviz SHARED GSLAM/plugins/rviz REQUIRED System ROS)
 #pi_add_target(gslam_evaluate SHARED GSLAM/plugins/evaluate REQUIRED System)
+
+
+pi_add_target(gslam_qviz SHARED GSLAM/plugins/qviz/mainwindow REQUIRED System Qt OpenGL)
+pi_add_target(qviz_panel_displays SHARED GSLAM/plugins/qviz/panels/displays REQUIRED System Qt)
 
 #pi_add_target(gslam_optimizer SHARED GSLAM/plugins/optimizer_ceres REQUIRED System Eigen3 Ceres GLOG)
 #pi_add_target(gslam_estimator SHARED GSLAM/plugins/estimator REQUIRED Eigen3)
@@ -46,10 +49,17 @@ pi_add_target(gslamDB_kitti SHARED GSLAM/plugins/datasets/DatasetKITTI.cpp REQUI
 #pi_add_target(gslamDB_tumrgbd SHARED GSLAM/plugins/Datasets/DatasetTUMRGBD.cpp REQUIRED OpenCV)
 
 pi_report_target()
-
 #####################################################################
 # Now do make install
 get_property(TARGETS2COMPILE GLOBAL PROPERTY TARGETS2COMPILE)
 pi_install(HEADERS GSLAM/core HEADER_DESTINATION include/GSLAM
-           TARGETS ${TARGETS2COMPILE} CMAKE "${PROJECT_SOURCE_DIR}/cmake/FindGSLAM.cmake.in")
+    TARGETS ${TARGETS2COMPILE} CMAKE "${PROJECT_SOURCE_DIR}/cmake/FindGSLAM.cmake.in")
+
+#####################################################################
+# Add Tab Completion Support
+if(UNIX)
+    install(SCRIPT ${CMAKE_CURRENT_LIST_DIR}/cmake/tab_completion.cmake)
+endif()
+
+
 

@@ -1,10 +1,13 @@
 #include <GSLAM/core/GSLAM.h>
 #include <list>
 #include <sstream>
+#include <regex>
 #include <signal.h>
+#include "filesystem.hpp"
 
 using namespace std;
 using namespace GSLAM;
+using namespace ghc::filesystem;
 
 int main(int argc,char** argv)
 {
@@ -32,6 +35,7 @@ int main(int argc,char** argv)
             if(funcSetMessenger.isFunction()){
                 funcSetMessenger(messenger);
             }
+            svar["gslam"]["apps"][appname]=run;
         }
 
         threads.push_back(std::thread([run](){run(svar);}));
@@ -40,7 +44,19 @@ int main(int argc,char** argv)
     if(threads.empty())
     {
         if(svar.get("complete_function_request",false)){
-            std::cout<<svar.helpInfo()+" doc qviz resource tests";
+            std::cout<<svar.helpInfo();
+            regex is_gslam_app("^(?:|lib)?gslam_([a-zA-Z\\d_]+).(?:|so|dll|dylib)$");
+            auto folder=absolute(path(argv[0]).root_directory());
+            for(auto fileit:directory_iterator(folder))
+            {
+                smatch result;
+                std::string filename = fileit.path().filename();
+                if(std::regex_match(filename,result,is_gslam_app))
+                {
+                    if(result.size()<2) continue;
+                    std::cout<<" "<<result.str(1);
+                }
+            }
             return 0;
         }
         std::cerr<<"Usage:\n  gslam [app1] -arg1 value1 [app2] -arg2 value2";
