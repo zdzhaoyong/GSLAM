@@ -103,7 +103,7 @@ void MainWindow::preparePanels()
 {
     Svar config=data["config"];
     regex is_rviz_plugin("^(?:|lib)?qviz_([a-zA-Z\\d_]+).(?:|so|dll|dylib)$");
-    auto folder=absolute(path(config.get<char**>("argv",nullptr)[0]).root_directory());
+    auto folder=absolute(path(config.get<char**>("argv",nullptr)[0]).parent_path());
     for(auto fileit:directory_iterator(folder))
     {
         smatch result;
@@ -119,6 +119,7 @@ void MainWindow::preparePanels()
                 config["gslam"]["panels"]=qviz;
         }
     }
+    if(!config["gslam"]["panels"].isObject()) return;
     std::map<std::string,Svar> panels=config["gslam"]["panels"].castAs<std::map<std::string,Svar>>();
     QMenu* menuPanels=menuBar()->addMenu(tr("&Panels"));
     for(std::pair<std::string,Svar> p:panels){

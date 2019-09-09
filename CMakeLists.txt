@@ -28,6 +28,7 @@ pi_add_target(gslam_tests SHARED GSLAM/plugins/tests REQUIRED System LTO MODULES
 pi_add_target(gslam_resource SHARED GSLAM/plugins/resource REQUIRED System LTO)
 pi_add_target(gslam_doc SHARED GSLAM/plugins/doc REQUIRED System LTO)
 pi_add_target(gslam_play SHARED GSLAM/plugins/play REQUIRED System LTO)
+pi_add_target(gslam_gmap SHARED GSLAM/plugins/gmap REQUIRED System LTO)
 #pi_add_target(gslam_bridge SHARED GSLAM/plugins/bridge REQUIRED System)
 #pi_add_target(gslam_rviz SHARED GSLAM/plugins/rviz REQUIRED System ROS)
 #pi_add_target(gslam_evaluate SHARED GSLAM/plugins/evaluate REQUIRED System)
@@ -35,6 +36,9 @@ pi_add_target(gslam_play SHARED GSLAM/plugins/play REQUIRED System LTO)
 
 pi_add_target(gslam_qviz SHARED GSLAM/plugins/qviz/mainwindow REQUIRED System Qt OpenGL)
 pi_add_target(qviz_panel_displays SHARED GSLAM/plugins/qviz/panels/displays REQUIRED System Qt)
+pi_add_target(qviz_panel_frameinfo SHARED GSLAM/plugins/qviz/panels/frameinfo REQUIRED System Qt)
+
+pi_add_target(qviz_display_map SHARED GSLAM/plugins/qviz/displays/mapviz REQUIRED System Qt OpenGL GLEW)
 
 #pi_add_target(gslam_optimizer SHARED GSLAM/plugins/optimizer_ceres REQUIRED System Eigen3 Ceres GLOG)
 #pi_add_target(gslam_estimator SHARED GSLAM/plugins/estimator REQUIRED Eigen3)

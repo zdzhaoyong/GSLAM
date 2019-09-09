@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/">
+        <file>icon/mapviz.png</file>
+    </qresource>
+</RCC>

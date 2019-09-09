@@ -46,7 +46,7 @@ int main(int argc,char** argv)
         if(svar.get("complete_function_request",false)){
             std::cout<<svar.helpInfo();
             regex is_gslam_app("^(?:|lib)?gslam_([a-zA-Z\\d_]+).(?:|so|dll|dylib)$");
-            auto folder=absolute(path(argv[0]).root_directory());
+            auto folder=absolute(path(argv[0]).parent_path());
             for(auto fileit:directory_iterator(folder))
             {
                 smatch result;

@@ -583,15 +583,16 @@ public:
     }
 
     /// Notify and wait Subscribers to shutdown
-    int exec(){
+    static int exec(){
         std::promise<bool> stopSig;
-        Subscriber subStop=subscribe("gslam.stop",0,[&stopSig](bool b){
+        Subscriber subStop=instance().subscribe("gslam.stop",0,[&stopSig](bool b){
             stopSig.set_value(true);
         });
         signal(SIGINT, [](int sig){
             instance().publish("gslam.stop",true);
         });
         stopSig.get_future().wait();
+        return 0;
     }
 
 private:

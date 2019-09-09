@@ -32,6 +32,7 @@ public:
     virtual void fastDraw()
     {
         _status["fastDraw"]=true;
+        _pub_draw.publish(_status);
     }
 
     Publisher   _pub_draw;

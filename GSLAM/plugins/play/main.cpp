@@ -13,7 +13,7 @@ int run(Svar config){
     std::string datasetFile=config.arg<std::string>("dataset","","The dataset want to play.");
 
     auto _pub_dataset_status=messenger.advertise<int>("dataset/status",0);
-    auto _pub_frame=messenger.advertise<MapFrame>("dataset/frame",0);
+    auto _pub_frame=messenger.advertise<FramePtr>("dataset/frame",0);
 
     int     _status=READY;
     Dataset _dataset;

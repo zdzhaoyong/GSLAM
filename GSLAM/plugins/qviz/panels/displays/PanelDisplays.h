@@ -3,251 +3,180 @@
 #include <QWidget>
 #include <QDockWidget>
 #include <QComboBox>
+#include <QCheckBox>
 #include <QVBoxLayout>
 #include <QPainter>
+#include <QLineEdit>
 #include <QKeyEvent>
+#include <QTreeWidget>
+#include <QHeaderView>
+#include <QPushButton>
 #include <GSLAM/core/GSLAM.h>
 
 namespace GSLAM{
 
-class QImageWidget : public QWidget
-{
-public:
-    QImageWidget(QWidget* parent)
-        :imageUpdated(false), QWidget(parent){
-        setBaseSize(QSize(100,100));
-        setMinimumHeight(128);
-
-        mStartedMove=false;
-    }
-
-    void paintEvent(QPaintEvent* e)
-    {
-        if(imageUpdated)
-        {
-            if(!curImage.isNull())
-            {
-                curPixmap=QPixmap::fromImage(curImage);
-                mouseDoubleClickEvent(NULL);
-                curImage=QImage();
-            }
-            else
-            {
-                setQImage(QImage(imageFile),true);
-            }
-            imageUpdated=false;
-        }
-        if(curPixmap.isNull()) return;
-        QPainter painter(this);
-        QRectF srcRect(0, 0, curPixmap.width(), curPixmap.height());
-        painter.drawPixmap(tgtRect,curPixmap,srcRect);
-    }
-
-    virtual void resizeEvent(QResizeEvent* e)
-    {
-        mouseDoubleClickEvent(NULL);
-    }
-
-    bool setQImage(const QImage& qimage,bool flush=false)
-    {
-        if(qimage.isNull()) return false;
-
-        if(flush)
-        {
-            curPixmap=QPixmap::fromImage(qimage);
-            mouseDoubleClickEvent(NULL);
-        }
-        else
-        {
-            curImage=qimage;
-        }
-        imageUpdated=true;
-        update();
-        return true;
-    }
-
-    bool setImage(const QString& imgFile)
-    {
-        imageFile=imgFile;
-        imageUpdated=true;
-        update();
-        return true;
-    }
-
-    virtual void wheelEvent(QWheelEvent *e)
-    {
-        float scale=std::max(tgtRect.width()/(float)width(),tgtRect.height()/(float)height());
-        float scaleDelta=exp(e->delta()*0.001);
-        scale=scaleDelta*scale;
-
-        QPointF newDxy=QPointF(e->x(),e->y())-QPointF(e->x()-tgtRect.x(),e->y()-tgtRect.y())*scaleDelta;
-        tgtRect=QRectF(newDxy.x(),newDxy.y(),tgtRect.width()*scaleDelta,tgtRect.height()*scaleDelta);
-
-        if(scale<1) mouseDoubleClickEvent(NULL);
-        update();
-    }
-
-    virtual void mousePressEvent(QMouseEvent* e)
-    {
-        mStartedMove=true;
-        mStartPosition=e->pos();
-    }
-
-    virtual void mouseMoveEvent(QMouseEvent* e)
-    {
-        if(mStartedMove)
-        {
-            QPoint mousePoint = e->pos();
-
-            int y_offset = mousePoint.y() - mStartPosition.y();
-            int x_offset = mousePoint.x() - mStartPosition.x();
-            tgtRect=QRectF(tgtRect.x()+x_offset,tgtRect.y()+y_offset,tgtRect.width(),tgtRect.height());
-            update();
-            mStartPosition=mousePoint;
-        }
-    }
-
-    virtual void mouseReleaseEvent(QMouseEvent* e)
-    {
-        mStartedMove=false;
-    }
-
-    virtual void mouseDoubleClickEvent(QMouseEvent *e)
-    {
-        float ww = this->width(), wh = this->height();
-        float iw = curPixmap.width(), ih = curPixmap.height();
-        float dx=0,dy=0;
-
-        if(ww/wh > iw/ih)
-        {
-            ww = iw*wh/ih;
-            dx= (this->width()-ww)/2;
-        }
-        else
-        {
-            wh = ih*ww/iw;
-            dy = (this->height()-wh)/2;
-        }
-
-        tgtRect=QRectF(dx, dy, ww, wh);
-        update();
-    }
-
-    virtual void keyPressEvent(QKeyEvent* e)
-    {
-        switch (e->key()) {
-        case Qt::Key_Escape:
-            setWindowFlags(Qt::SubWindow);
-            showNormal();
-            parentWidget()->show();
-            parentWidget()->move(0,0);
-            break;
-        default:
-            break;
-        }
-    }
-
-    bool    mStartedMove;
-    QPoint  mStartPosition;
-
-    QRectF  tgtRect;
-    QString imageFile;
-    bool    imageUpdated;
-    QImage  curImage;
-    QPixmap curPixmap;
-};
-
-class GImageWidget : public QImageWidget
-{
-public:
-    GImageWidget(QWidget *parent):QImageWidget(parent){}
-    bool setImage(const GImage& ImageInput,bool flush=false)// flush can only called by GUI thread
-    {
-        GImage gimage=ImageInput;
-        if(gimage.empty()) return false;
-        if(gimage.cols%4!=0)
-        {
-            GImage& img(gimage);
-            GImage dst(img.rows,img.cols-(img.cols%4),img.type());
-            int srcLineStep=img.elemSize()*img.cols;
-            int dstLineStep=dst.elemSize()*dst.cols;
-            for(int i=0;i<img.rows;i++)
-                memcpy(dst.data+dstLineStep*i,img.data+srcLineStep*i,dstLineStep);
-            gimage=dst;
-        }
-
-        _curGImage=gimage;
-        if(gimage.type()==GSLAM::GImageType<uchar,3>::Type)
-        {
-            QImage qimage(gimage.data,gimage.cols,gimage.rows,QImage::Format_RGB888);
-            return QImageWidget::setQImage(qimage,flush);
-        }
-        else if(gimage.type()==GSLAM::GImageType<uchar,4>::Type)
-        {
-            QImage qimage(gimage.data,gimage.cols,gimage.rows,QImage::Format_RGB32);
-            return QImageWidget::setQImage(qimage,flush);
-        }
-        else if(gimage.type()==GSLAM::GImageType<uchar,1>::Type)
-        {
-            QImage qimage(gimage.data,gimage.cols,gimage.rows,QImage::Format_Indexed8);
-            return QImageWidget::setQImage(qimage,flush);
-        }
-        // don't support other format yet
-        return false;
-    }
-
-    GImage _curGImage;
-};
-
-class PanelDisplays: public QWidget
+class PushButton : public QPushButton
 {
     Q_OBJECT
 public:
-    PanelDisplays(QWidget* parent,Svar config):
-        QWidget(parent), _comb(NULL), _showMat(NULL)
+    PushButton(const QString& name,const std::string& topic,QWidget* parent=NULL)
+        :QPushButton(name,parent)
     {
-        _comb=new QComboBox(this);
-        _showMat=new GImageWidget(this);
-        QVBoxLayout *verticalLayout = new QVBoxLayout(this);
-
-        verticalLayout->addWidget(_comb);
-        verticalLayout->addWidget(_showMat);//,0,Qt::AlignCenter
-        setLayout(verticalLayout);
-
-        connect(_comb,SIGNAL(activated(QString)),
-                this,SLOT(combActivated(QString)));
+        connect(this, SIGNAL(clicked(bool)), this, SLOT(triggerdSlot()));
+        _pub=messenger.advertise<bool>(topic);
     }
 
-    bool imshow(const std::string& name,const GSLAM::GImage& img)
-    {
-        if(!_var.exist(name))
-        {
-            _comb->addItem(QString::fromLocal8Bit(name.c_str()));
-            _comb->setEditText(QString::fromLocal8Bit(name.c_str()));
-
-            _var.set<GImage>(name,img);
-            return _showMat->setImage(img);
-        }
-        _var.set<GImage>(name,img);
-
-        QByteArray baCurrentText = _comb->currentText().toLocal8Bit();
-        if(name == baCurrentText.data() && img.data)
-        {
-            return _showMat->setImage(img);
-        }
-        return true;
-    }
-protected slots:
-    void combActivated(const QString& name)
-    {
-        _comb->setEditText(name);
-        _showMat->setImage(_var.Get<GSLAM::GImage>(name.toStdString()));
+    PushButton(const QString& name,QWidget* parent,SvarFunction func)
+        :QPushButton(name,parent){
+        _func=func;
+        connect(this, SIGNAL(triggered()), this, SLOT(triggerdSlot()));
     }
 
+public slots:
+    void triggerdSlot(bool){
+        if(_func.isFunction()) _func();
+        else _pub.publish(true);
+    }
 private:
-    QComboBox*      _comb;
-    GImageWidget*   _showMat;
-    Svar            _var;
+    Publisher _pub;
+    Svar      _func;
+};
+
+class PropertyItem : public QObject,public QTreeWidgetItem
+{
+    Q_OBJECT
+public:
+    PropertyItem(QTreeWidgetItem* parent,QString name,Svar value,Svar updateFunc=Svar())
+        :QObject(),QTreeWidgetItem(parent,QStringList() << name),_value(value),_updateFunc(updateFunc){
+        if(parent)
+            parent->addChild(item());
+    }
+
+    virtual QWidget* widget(){return nullptr;}
+    virtual QTreeWidgetItem* item(){return dynamic_cast<QTreeWidgetItem*>(this);}
+
+    Svar _value;
+    Svar _updateFunc;
+};
+
+class BoolPropertyItem : public PropertyItem
+{
+    Q_OBJECT
+public:
+    BoolPropertyItem(QTreeWidgetItem* parent,QString name,Svar value,Svar updateFunc=Svar())
+        :PropertyItem(parent,name,value,updateFunc){
+        _widget=new QCheckBox();
+        _widget->setChecked(value.as<bool>());
+        connect(_widget,SIGNAL(toggled(bool)),this,SLOT(slotUpdated(bool)));
+    }
+public slots:
+    void slotUpdated(bool value){
+        _value=value;
+        if(_updateFunc.isFunction())
+            _updateFunc(value);
+    }
+public:
+    virtual QWidget* widget(){return _widget;}
+    QCheckBox* _widget;
+};
+
+class JsonPropertyItem: public PropertyItem{
+    Q_OBJECT
+public:
+    JsonPropertyItem(QTreeWidgetItem* parent,QString name,Svar value,Svar updateFunc=Svar())
+        :PropertyItem(parent,name,value,updateFunc){
+        _widget=new QLineEdit();
+        _widget->setText(value.castAs<std::string>().c_str());
+        connect(_widget,SIGNAL(editingFinished()),this,SLOT(slotUpdated()));
+    }
+public slots:
+    void slotUpdated(){
+        bool ok;
+        if(_value.is<int>()){
+            int value=_widget->text().toInt(&ok);
+            if(ok) _value=value;
+        }
+        else if(_value.is<double>()){
+            double value=_widget->text().toDouble(&ok);
+            if(ok) _value=value;
+        }
+        else if(_value.is<std::string>()){
+            _value=_widget->text().toStdString();
+        }
+
+        if(_updateFunc.isFunction())
+            _updateFunc(_value);
+    }
+public:
+    virtual QWidget* widget(){return _widget;}
+    QLineEdit* _widget;
+};
+
+class DisplayTree:public QTreeWidget{
+public:
+    DisplayTree(QWidget* parent):
+        QTreeWidget(parent){
+        this->header()->setVisible(false);
+        this->setColumnCount(2);
+//        QHeaderView *head = this->header();
+//        head->setStretchLastSection(false);
+//        setRootIsDecorated(false);
+        setColumnWidth(0,150);
+    }
+
+    void addDisplay(std::string name,Svar plugin){
+        Svar create=plugin["create"];
+        if(!create.isFunction()) return;
+
+        std::string image=plugin.get("icon",std::string(""));
+        Svar   display=create();
+        displays[name]=display;
+        QTreeWidgetItem* display_item=new QTreeWidgetItem(this, QStringList() << name.c_str(),1);
+        if(!image.empty())
+            display_item->setIcon(0,QIcon(image.c_str()));
+
+        Svar args=display["config"]["__builtin__"]["args"];
+        for(int i=0;i<args.size();i++){
+            Svar arg=args[i];
+            std::string name=arg[0].castAs<std::string>();
+            Svar value =display["config"][name];
+            std::string des=arg[2].castAs<std::string>();
+            PropertyItem* item=nullptr;
+            if(value.is<bool>())
+                item=new BoolPropertyItem(display_item,name.c_str(),value,display["config"]["updated_callback"][name]);
+            else if(value.is<int>()||value.is<double>()||value.is<std::string>())
+                item=new JsonPropertyItem(display_item,name.c_str(),value,display["config"]["updated_callback"][name]);
+            if(item){
+                item->setToolTip(0,des.c_str());
+                setItemWidget(item,1,item->widget());
+            }
+        }
+        addTopLevelItem(display_item);
+    }
+
+    Svar displays;
+};
+
+class PanelDisplays : public QWidget
+{
+public:
+    PanelDisplays(QWidget* parent,Svar config)
+        :QWidget(parent),_config(config){
+        tree=new DisplayTree(nullptr);
+        QVBoxLayout* layout(new QVBoxLayout(this));
+        layout->addWidget(tree);
+        QHBoxLayout* layoutBottom(new QHBoxLayout());
+        layoutBottom->addWidget(new QPushButton("Add",this));
+        layoutBottom->addWidget(new QPushButton("Delete",this));
+        layout->addLayout(layoutBottom);
+        collectPlugins();
+    }
+
+    void collectPlugins();
+
+    std::map<std::string,Svar> display_plugins;
+    Svar _config;
+    DisplayTree* tree;
 };
 
 }
