@@ -112,28 +112,48 @@ public:
     QLineEdit* _widget;
 };
 
+class TopicPropertyItem: public PropertyItem{
+    Q_OBJECT
+public:
+    TopicPropertyItem(QTreeWidgetItem* parent,QString name,Svar value,Svar updateFunc=Svar())
+        :PropertyItem(parent,name,value,updateFunc){
+        _widget=new QComboBox();
+        _widget->setIconSize(QSize(1, 26));
+        for(Publisher pub:messenger.getPublishers())
+            if(pub.getTypeName()==value.as<SvarClass>().name())
+                _widget->addItem(pub.getTopic().c_str());
+        connect(_widget,SIGNAL(currentIndexChanged(QString)),this,SLOT(slotUpdated(QString)));
+    }
+public slots:
+    void slotUpdated(QString topic){
+        if(_updateFunc.isFunction())
+            _updateFunc(topic.toStdString());
+    }
+public:
+    virtual QWidget* widget(){return _widget;}
+    QLineEdit* _line;
+    QComboBox* _widget;
+};
+
 class DisplayTree:public QTreeWidget{
 public:
     DisplayTree(QWidget* parent):
         QTreeWidget(parent){
         this->header()->setVisible(false);
         this->setColumnCount(2);
-//        QHeaderView *head = this->header();
-//        head->setStretchLastSection(false);
-//        setRootIsDecorated(false);
         setColumnWidth(0,150);
+        subDisplay=messenger.subscribe("qviz/display",[this](Svar display){
+            this->addDisplay(display);
+        });
     }
 
-    void addDisplay(std::string name,Svar plugin){
-        Svar create=plugin["create"];
-        if(!create.isFunction()) return;
-
-        std::string image=plugin.get("icon",std::string(""));
-        Svar   display=create();
+    void addDisplay(Svar display){
+        std::string name=display.get<std::string>("name","Display");
         displays[name]=display;
         QTreeWidgetItem* display_item=new QTreeWidgetItem(this, QStringList() << name.c_str(),1);
-        if(!image.empty())
-            display_item->setIcon(0,QIcon(image.c_str()));
+        std::string icon=display.get<std::string>("icon","");
+        if(!icon.empty())
+            display_item->setIcon(0,QIcon(icon.c_str()));
 
         Svar args=display["config"]["__builtin__"]["args"];
         for(int i=0;i<args.size();i++){
@@ -142,10 +162,13 @@ public:
             Svar value =display["config"][name];
             std::string des=arg[2].castAs<std::string>();
             PropertyItem* item=nullptr;
+            Svar callback=display["config"]["updated_callback"][name];
             if(value.is<bool>())
-                item=new BoolPropertyItem(display_item,name.c_str(),value,display["config"]["updated_callback"][name]);
+                item=new BoolPropertyItem(display_item,name.c_str(),value,callback);
             else if(value.is<int>()||value.is<double>()||value.is<std::string>())
-                item=new JsonPropertyItem(display_item,name.c_str(),value,display["config"]["updated_callback"][name]);
+                item=new JsonPropertyItem(display_item,name.c_str(),value,callback);
+            else if(value.isClass())
+                item=new TopicPropertyItem(display_item,name.c_str(),value,callback);
             if(item){
                 item->setToolTip(0,des.c_str());
                 setItemWidget(item,1,item->widget());
@@ -155,6 +178,7 @@ public:
     }
 
     Svar displays;
+    Subscriber subDisplay;
 };
 
 class PanelDisplays : public QWidget

@@ -30,8 +30,10 @@ void PanelDisplays::collectPlugins(){
     Svar displays=config["gslam"]["displays"];
     if(!displays.isObject()) return;
     display_plugins=config["gslam"]["displays"].castAs<std::map<std::string,Svar>>();
-    for(std::pair<std::string,Svar> p:display_plugins){
-        tree->addDisplay(p.first,p.second);
+    for(std::pair<std::string,Svar> plugin:display_plugins){
+        Svar create=plugin.second["create"];
+        if(!create.isFunction()) return;
+        tree->addDisplay(create());
     }
 }
 

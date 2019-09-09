@@ -26,11 +26,13 @@ public:
             Svar display;
             display["holder"]=vis;
             display["config"]=vis->_config;
+            display["icon"]=":/icon/mapviz.png";
+            display["name"]="Map Visualizer";
             return display;
         };
         Svar plugin;
         plugin["icon"]=":/icon/mapviz.png";
-        plugin["type"]=SvarClass::instance<MapPtr>();
+        plugin["type"]=SvarClass::instance<Map>();
         plugin["create"]=create;
         return plugin;
     }
@@ -44,7 +46,7 @@ public:
 
         _pubUpdateGL=messenger.advertise<bool>("qviz/update");
 
-        _config.arg("topic",Publisher(),"The map to subscribe");
+        _config.arg("topic",SvarClass::instance<Map>(),"The map to subscribe");
         _config.arg("enable",true,"draw this map or not");
         _config.arg("trajectory",true,"draw the trajectory");
         _config.arg("trajectory_width",2.5,"the trajectory width");
