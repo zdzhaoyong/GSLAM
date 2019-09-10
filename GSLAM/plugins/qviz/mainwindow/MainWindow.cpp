@@ -103,9 +103,41 @@ void MainWindow::addTab(QWidget* widget)
     _tab->addTab(widget,widget->objectName());
 }
 
-void MainWindow::addMenu(Svar menu)
+void MainWindow::addMenu(Svar menuVar,QMenu* parent)
 {
+    if(!menuVar.exist("name")) return ;
+    std::string name=menuVar.get<std::string>("name","NoName");
+    std::string icon=menuVar.get<std::string>("icon","");
+    std::vector<Svar> children=menuVar.get<std::vector<Svar>>("children",{});
+    std::vector<Svar> actions =menuVar.get<std::vector<Svar>>("actions",{});
+    QMenu* menu=nullptr;
+    if(!parent)
+        menu=menuBar()->addMenu(name.c_str());
+    else{
+        menu=new QMenu(name.c_str(),parent);
+        parent->addMenu(menu);
+    }
 
+    if(icon.size()) menu->setIcon(QIcon(icon.c_str()));
+
+    for(Svar child:children) addMenu(child,menu);
+
+    for(Svar tool:actions){
+        std::string name =tool.get<std::string>("name","NoName");
+        std::string icon =tool.get<std::string>("icon","");
+        std::string topic=tool.get<std::string>("topic","");
+        Svar        func =tool["callback"];
+        QAction* action=nullptr;
+        if(func.isFunction())
+            action=new MessengerAction(name.c_str(),nullptr,func);
+        else if(!topic.empty())
+            action=new MessengerAction(name.c_str(),topic,nullptr);
+        else return;
+
+        if(!icon.empty())
+            action->setIcon(QIcon(icon.c_str()));
+        menu->addAction(action);
+    }
 }
 
 void MainWindow::uiRun(Svar func)
@@ -128,6 +160,8 @@ void MainWindow::addTool(Svar tool)
 
     if(!icon.empty())
         action->setIcon(QIcon(icon.c_str()));
+
+    _toolBar->addAction(action);
 }
 
 void MainWindow::preparePanels()

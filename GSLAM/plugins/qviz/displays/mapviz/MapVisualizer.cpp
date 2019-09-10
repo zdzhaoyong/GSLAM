@@ -39,7 +39,7 @@ public:
 
     MapVisualizer():_vetexTrajBuffer(0),_mapUpdated(false),_curFrameUpdated(false){
         _curFrame.get_scale()=-1;
-        _pubScenceOrigin=messenger.advertise<GSLAM::Point3d>("ui.gl_origin");
+        _pubScenceOrigin=messenger.advertise<GSLAM::Point3d>("mapviz/gl_origin");
         _config["subDraw"]=messenger.subscribe("qviz/gl_draw",[this](Svar status){
               this->draw();
         });
@@ -51,8 +51,13 @@ public:
         _config.arg("trajectory",true,"draw the trajectory");
         _config.arg("trajectory_width",2.5,"the trajectory width");
         _config.arg("pointcloud_size",2.5,"the pointcloud size");
+        _config.arg("gps_trajectory",true,"draw gps trajectory or not");
+        _config.arg("connections",true,"draw connections or not");
+        _config.arg("frames",true,"draw frames or not");
+        _config.arg("current_frame",true,"draw current frame or not");
 
-        _config["updated_callback"]["topic"]=SvarFunction([this](std::string topic){
+        Svar& callbacks=_config["updated_callback"];
+        callbacks["topic"]=SvarFunction([this](std::string topic){
                 LOG(INFO)<<"Using topic "<<topic;
             this->_config["subMap"]=messenger.subscribe(topic,0,&MapVisualizer::update,this);
         });
@@ -61,10 +66,9 @@ public:
             this->_pubUpdateGL.publish(true);
         };
 
-        _config["updated_callback"]["enable"]=update;
-        _config["updated_callback"]["trajectory"]=update;
-        _config["updated_callback"]["trajectory_width"]=update;
-        _config["updated_callback"]["pointcloud_size"]=update;
+        callbacks["enable"]=callbacks["trajectory"]=callbacks["trajectory_width"]
+        =callbacks["pointcloud_size"]=callbacks["gps_trajectory"]=callbacks["connections"]
+        =callbacks["frames"]=callbacks["current_frame"]=update;
     }
 
     virtual void draw()
@@ -213,6 +217,7 @@ public:
     void glVertex(const GSLAM::Point3d& p){glVertex3d(p.x,p.y,p.z);}
     void drawRect(GSLAM::SIM3 pose,GSLAM::ColorType color)
     {
+        if(pose.get_scale()<=0) return;
         if(!_camera.isValid()) _camera=GSLAM::Camera({640.,480.,500.,500.,320.,240.});
         {
             Point3d t=pose.get_translation();
