@@ -119,15 +119,29 @@ public:
         :PropertyItem(parent,name,value,updateFunc){
         _widget=new QComboBox();
         _widget->setIconSize(QSize(1, 26));
-        for(Publisher pub:messenger.getPublishers())
-            if(pub.getTypeName()==value.as<SvarClass>().name())
-                _widget->addItem(pub.getTopic().c_str());
-        connect(_widget,SIGNAL(currentIndexChanged(QString)),this,SLOT(slotUpdated(QString)));
+        updateTable();
+//        connect(_widget,SIGNAL(currentIndexChanged(QString)),this,SLOT(slotUpdated(QString)));
+        connect(_widget,SIGNAL(activated(QString)),this,SLOT(updateTable(QString)));
     }
 public slots:
     void slotUpdated(QString topic){
-        if(_updateFunc.isFunction())
+        if(_updateFunc.isFunction()){
+            LOG(INFO)<<"Changing topic to "<<topic.toStdString();
             _updateFunc(topic.toStdString());
+        }
+    }
+    void updateTable(QString topic=0){
+        for(Publisher pub:messenger.getPublishers())
+            if(pub.getTypeName()==_value.as<SvarClass>().name())
+            {
+                if(_widget->findText(pub.getTopic().c_str())<0)
+                    _widget->addItem(pub.getTopic().c_str());
+            }
+
+        if(_updateFunc.isFunction()){
+            LOG(INFO)<<"Changing topic to "<<topic.toStdString();
+            _updateFunc(topic.toStdString());
+        }
     }
 public:
     virtual QWidget* widget(){return _widget;}
@@ -194,6 +208,8 @@ public:
         layoutBottom->addWidget(new QPushButton("Delete",this));
         layout->addLayout(layoutBottom);
         collectPlugins();
+        setObjectName("Display Panel");
+        setProperty("icon","");
     }
 
     void collectPlugins();

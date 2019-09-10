@@ -10,7 +10,7 @@ int run(Svar config){
 
     std::string dataset=config.arg<std::string>("dataset","","The dataset going to play.");
 
-    Subscriber subStop=messenger.subscribe("gslam.stop",0,[&mainWindow](bool stop){
+    Subscriber subStop=messenger.subscribe("messenger/stop",0,[&mainWindow](bool stop){
         if(mainWindow) mainWindow->close();
     });
 
@@ -19,15 +19,35 @@ int run(Svar config){
         if(mainWindow) mainWindow->datasetStatusUpdated(status);
     });
 
-    Subscriber sub_panel=messenger.subscribe("qviz/panels",[&mainWindow](QWidget* panel)
+    Subscriber sub_panel=messenger.subscribe("qviz/add_panel",[&mainWindow](QWidget* panel)
     {
         if(!mainWindow) return;
         mainWindow->addPanel(panel);
     });
 
+    Subscriber sub_tab=messenger.subscribe("qviz/add_tab",[&mainWindow](QWidget* tab){
+            if(!mainWindow) return;
+            mainWindow->addTab(tab);
+    });
+
+    Subscriber sub_menu=messenger.subscribe("qviz/add_menu",[&mainWindow](Svar menu){
+        if(!mainWindow) return;
+        mainWindow->addMenu(menu);
+    });
+
+    Subscriber sub_tool=messenger.subscribe("qviz/add_tool",[&mainWindow](Svar tool){
+        if(!mainWindow) return;
+        mainWindow->addTool(tool);
+    });
+
+    Subscriber sub_run=messenger.subscribe("qviz/ui_thread_run",[&mainWindow](Svar func){
+        if(mainWindow) return;
+        mainWindow->uiRun(func);
+    });
+
     if(config.get("help",false)){
         Publisher  pub_gui=messenger.advertise<std::string>("dataset/control",0);
-        Publisher  pub_draw=messenger.advertise<Svar>("qviz/draw");
+        Publisher  pub_draw=messenger.advertise<Svar>("qviz/gl_draw");
 
         config["__usage__"]=messenger.introduction();
         return config.help();

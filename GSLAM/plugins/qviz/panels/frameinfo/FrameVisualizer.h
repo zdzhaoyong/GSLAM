@@ -40,7 +40,9 @@ public:
                 setFrame(frame);
         });
     }
-    virtual ~FrameVisualizer(){}
+    virtual ~FrameVisualizer(){
+        LOG(INFO)<<"Frame Visualizer released.";
+    }
 
     void setFrame(FramePtr frame){
         {

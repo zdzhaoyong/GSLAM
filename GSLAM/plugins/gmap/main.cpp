@@ -13,11 +13,11 @@ int run(Svar config){
             if(out.size()) mp->save(out);
     });
 
-    Subscriber  subOpen=messenger.subscribe("qviz/open",[&](std::string file){
+    Subscriber  subOpen=messenger.subscribe("qviz/open",1,[&](std::string file){
         if(file.find(".gmap")==std::string::npos) return;
         MapPtr mapHash(new MapHash());
         mapHash->load(file);
-        pub.publish(mapHash);
+        pub.publish(Svar::create(mapHash));
     });
 
     if(config.get("help",false)){
@@ -33,3 +33,5 @@ int run(Svar config){
 
     return Messenger::exec();
 }
+
+GSLAM_REGISTER_APPLICATION(gmap,run);

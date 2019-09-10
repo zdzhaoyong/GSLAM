@@ -409,10 +409,7 @@ bool MapHash::load(std::string path)
 #endif
 
         std::shared_ptr<MapFrame> fr(new MapFrame(id,timestamp,img,imgFile,GSLAM::Camera(camParas),gpsData,imageChannel));
-        GSLAM::Point3d ecef;
-        if(fr->getGPSECEF(ecef)){
-            LOG(INFO)<<gpsData.size()<<":"<<ecef;
-        }
+
         fr->setKeyPoints(keypoints,des);
         fr->setPose(pose);
         assert(colors.size()==keypoints.size());

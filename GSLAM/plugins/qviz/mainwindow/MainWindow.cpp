@@ -27,28 +27,21 @@ MainWindow::MainWindow(QWidget *parent,Svar config)
     // window title
     setWindowTitle("GSLAM");
 
-    auto toolBar=addToolBar(tr("&ToolBar"));
+    _toolBar=addToolBar(tr("&ToolBar"));
+    _tab=new QTabWidget(this);
 
     auto fileMenu    =menuBar()->addMenu(tr("&File"));
     auto runMenu     =menuBar()->addMenu(tr("&Run"));
 
     auto exportMenu  =new QMenu(tr("&Export"),fileMenu);
     auto historyMenu =new QMenu(tr("&History"),fileMenu);
-    auto openAction  =new MessengerAction(tr("&Open"),fileMenu,[this](){
+    auto openAction  =new MessengerAction(tr("&Open"),fileMenu,Svar::lambda([this](){
         this->slotOpen("");
-    });
-    startAction =new MessengerAction(tr("&Start"),runMenu,[](){
-        messenger.publish<std::string>("dataset/control","Start");
-    });
-    pauseAction =new MessengerAction(tr("&Pause"),runMenu,[](){
-        messenger.publish<std::string>("dataset/control","Pause");
-    });
-    stopAction  =new MessengerAction(tr("S&top"),runMenu,[](){
-        messenger.publish<std::string>("dataset/control","Stop");
-    });
-    oneStepAction=new MessengerAction(tr("&Step"),runMenu,[](){
-        messenger.publish<std::string>("dataset/control","Step");
-    });
+    }));
+    startAction  =new MessengerAction(tr("&Start"),"qviz/start",runMenu);
+    pauseAction  =new MessengerAction(tr("&Pause"),"qviz/pause",runMenu);
+    stopAction   =new MessengerAction(tr("S&top"),"qviz/stop",runMenu);
+    oneStepAction=new MessengerAction(tr("&Step"),"qviz/step",runMenu);
 
     fileMenu->addAction(openAction);
     fileMenu->addMenu(exportMenu);
@@ -58,13 +51,14 @@ MainWindow::MainWindow(QWidget *parent,Svar config)
     runMenu->addAction(stopAction);
     runMenu->addAction(oneStepAction);
 
-    toolBar->setMovable(true);
-    toolBar->addAction(openAction);
-    toolBar->addSeparator();
-    toolBar->addAction(startAction);
-    toolBar->addAction(pauseAction);
-    toolBar->addAction(oneStepAction);
-    toolBar->addAction(stopAction);
+    _toolBar->setMovable(true);
+    _toolBar->addAction(openAction);
+    _toolBar->addSeparator();
+    _toolBar->addAction(startAction);
+    _toolBar->addAction(pauseAction);
+    _toolBar->addAction(oneStepAction);
+    _toolBar->addAction(stopAction);
+    _toolBar->addSeparator();
     pauseAction->setDisabled(true);
     stopAction->setDisabled(true);
     startAction->setDisabled(true);
@@ -78,10 +72,15 @@ MainWindow::MainWindow(QWidget *parent,Svar config)
     stopAction->setIcon(QIcon(iconFolder+"/stop.png"));
     oneStepAction->setIcon(QIcon(iconFolder+"/startPause.png"));
 
-    setCentralWidget(new Win3D(this));
+    setCentralWidget(_tab);
+    auto win3d=new Win3D(this);
+    win3d->setObjectName("3D");
+    addTab(win3d);
 
     connect(this,SIGNAL(signalDatasetStatusUpdated(int)),
             this,SLOT(slotDatasetStatusUpdated(int)));
+    connect(this,SIGNAL(signalUiRun(Svar*)),
+            this,SLOT(slotUiRun(Svar*)));
 
     data["config"]=config;
     preparePanels();
@@ -93,10 +92,42 @@ void MainWindow::addPanel(QWidget* widget)
 {
     QDockWidget* dock=dynamic_cast<QDockWidget*>(widget);
     if(!dock){
-        dock=new QDockWidget(this);
+        dock=new QDockWidget(widget->objectName(),this);
         dock->setWidget(widget);
     }
     addDockWidget(Qt::LeftDockWidgetArea,dock);
+}
+
+void MainWindow::addTab(QWidget* widget)
+{
+    _tab->addTab(widget,widget->objectName());
+}
+
+void MainWindow::addMenu(Svar menu)
+{
+
+}
+
+void MainWindow::uiRun(Svar func)
+{
+    emit signalUiRun(new Svar(func));
+}
+
+void MainWindow::addTool(Svar tool)
+{
+    std::string name =tool.get<std::string>("name","NoName");
+    std::string icon =tool.get<std::string>("icon","");
+    std::string topic=tool.get<std::string>("topic","");
+    Svar        func =tool["callback"];
+    QAction* action=nullptr;
+    if(func.isFunction())
+        action=new MessengerAction(name.c_str(),nullptr,func);
+    else if(!topic.empty())
+        action=new MessengerAction(name.c_str(),topic,nullptr);
+    else return;
+
+    if(!icon.empty())
+        action->setIcon(QIcon(icon.c_str()));
 }
 
 void MainWindow::preparePanels()
@@ -123,9 +154,9 @@ void MainWindow::preparePanels()
     std::map<std::string,Svar> panels=config["gslam"]["panels"].castAs<std::map<std::string,Svar>>();
     QMenu* menuPanels=menuBar()->addMenu(tr("&Panels"));
     for(std::pair<std::string,Svar> p:panels){
-        QAction* action=new MessengerAction(p.first.c_str(),menuPanels,[this,p](){
+        QAction* action=new MessengerAction(p.first.c_str(),menuPanels,Svar::lambda([this,p](){
             showPanel(p.first);
-        });
+        }));
         menuPanels->addAction(action);
     }
 }
@@ -136,6 +167,8 @@ void MainWindow::showPanel(std::string panelName)
     {
         if(data["panels"][panelName].as<QWidget*>()->isVisible())
             return;
+        else
+            data["panels"][panelName].as<QWidget*>()->setVisible(true);
     }
     Svar config=data["config"];
     Svar func=config["gslam"]["panels"][panelName];
@@ -153,7 +186,9 @@ void MainWindow::slotOpen(QString filePath)
                                                        "",
                                                       "Allfile(*.*);;");
     }
-    messenger.publish<std::string>("dataset/control","Open "+filePath.toStdString());
+    if(filePath.isEmpty()) return;
+
+    messenger.publish<std::string>("qviz/open",filePath.toStdString());
 }
 
 void MainWindow::slotDatasetStatusUpdated(int status)

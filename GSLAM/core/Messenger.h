@@ -411,8 +411,8 @@ class Messenger {
 public:
 
     Messenger():d(new Data()){
-        d->pubNewSub=advertise<Publisher>("messenger.newsub");
-        d->pubNewPub=advertise<Subscriber>("messenger.newpub");
+        d->pubNewSub=advertise<Publisher>("messenger/newsub");
+        d->pubNewPub=advertise<Subscriber>("messenger/newpub");
     }
     virtual ~Messenger() {}
 
@@ -585,11 +585,11 @@ public:
     /// Notify and wait Subscribers to shutdown
     static int exec(){
         std::promise<bool> stopSig;
-        Subscriber subStop=instance().subscribe("gslam.stop",0,[&stopSig](bool b){
+        Subscriber subStop=instance().subscribe("messenger/stop",0,[&stopSig](bool b){
             stopSig.set_value(true);
         });
         signal(SIGINT, [](int sig){
-            instance().publish("gslam.stop",true);
+            instance().publish("messenger/stop",true);
         });
         stopSig.get_future().wait();
         return 0;
@@ -623,7 +623,7 @@ private:
     struct Data{
         std::mutex mutex_;
         std::unordered_map<std::string,std::shared_ptr<PubSubSpace>> spaces_;
-        Publisher                                          pubNewPub,pubNewSub;
+        Publisher  pubNewPub,pubNewSub;
     };
     std::shared_ptr<Data> d;
 };

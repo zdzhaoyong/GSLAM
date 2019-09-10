@@ -17,61 +17,57 @@ int run(Svar config){
 
     int     _status=READY;
     Dataset _dataset;
-    auto _sub_control=messenger.subscribe("dataset/control",[&](std::string cmd){
-        if(cmd=="Start")
-        {
-            if(!_dataset.isOpened())
-                _dataset.open(datasetFile);
+    auto _sub_start=messenger.subscribe("qviz/start",[&](bool cmd){
+        if(!_dataset.isOpened())
+            _dataset.open(datasetFile);
 
-            if(!_dataset.isOpened())
-            {
-                LOG(ERROR)<<"Failed to open dataset "<<datasetFile;
+        if(!_dataset.isOpened())
+        {
+            LOG(ERROR)<<"Failed to open dataset "<<datasetFile;
+            return;
+        }
+
+        if(_dataset.isLive()) return ;
+        if(_status==READY||_status==PAUSED)
+            _status=PLAYING;
+        _pub_dataset_status.publish(_status);
+    });
+    auto sub_pause=messenger.subscribe("qviz/pause",[&](bool msg){
+        _status=PAUSING;
+    });
+    auto sub_stop=messenger.subscribe("qviz/stop",[&](bool msg){
+        _status=FINISHING;
+    });
+    auto sub_step=messenger.subscribe("qviz/step",[&](bool ){
+        if(!_dataset.isOpened())
+            _dataset.open(datasetFile);
+        if(!_dataset.isOpened()) return;
+        if(_dataset.isLive()) return ;
+        if(_status==READY||_status==PAUSED)
+            _status=PAUSED;
+        {
+            auto frame=_dataset.grabFrame();
+            if(!frame){
+                _status=FINISHING;
+                _pub_dataset_status.publish(_status);
                 return;
             }
-
-            if(_dataset.isLive()) return ;
-            if(_status==READY||_status==PAUSED)
-                _status=PLAYING;
+            _pub_frame.publish(frame);
         }
-        else if(cmd=="Pause")
-            _status=PAUSING;
-        else if(cmd=="Stop")
-            _status=FINISHING;
-        else if(cmd=="Step")
-        {
-            if(!_dataset.isOpened())
-                _dataset.open(datasetFile);
-            if(!_dataset.isOpened()) return;
-            if(_dataset.isLive()) return ;
-            if(_status==READY||_status==PAUSED)
-                _status=PAUSED;
-            {
-                auto frame=_dataset.grabFrame();
-                if(!frame){
-                    _status=FINISHING;
-                    _pub_dataset_status.publish(_status);
-                    return;
-                }
-                _pub_frame.publish(frame);
-            }
-        }
-        else if(cmd.substr(0,5)=="Open "){
-            datasetFile=cmd.substr(5);
+        _pub_dataset_status.publish(_status);
+    });
+    auto sub_open=messenger.subscribe("qviz/open",[&](std::string datasetFile){
             _dataset.open(datasetFile);
             if(!_dataset.isOpened())
             {
-                LOG(ERROR)<<"Failed to open dataset "<<datasetFile;
                 return;
             }
-            else LOG(INFO)<<"Success opened dataset "<<datasetFile;
+            LOG(INFO)<<"Success opened dataset "<<datasetFile;
             _status=READY;
-        }
-            else { LOG(INFO)<<"Unable to handle cmd "<<cmd;return;}
-
-        _pub_dataset_status.publish(_status);
+            _pub_dataset_status.publish(_status);
     });
 
-    auto _sub_stop=messenger.subscribe("gslam.stop",[&](bool stop){_status=FINISHING;});
+    auto _sub_stop=messenger.subscribe("messenger/stop",[&](bool stop){_status=FINISHING;});
 
     if(config.get("help",false)){
         config["__usage__"]="play -playspeed 1.0 -autostart true\n"+

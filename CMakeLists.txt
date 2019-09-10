@@ -37,6 +37,7 @@ pi_add_target(gslam_gmap SHARED GSLAM/plugins/gmap REQUIRED System LTO)
 pi_add_target(gslam_qviz SHARED GSLAM/plugins/qviz/mainwindow REQUIRED System Qt OpenGL)
 pi_add_target(qviz_panel_displays SHARED GSLAM/plugins/qviz/panels/displays REQUIRED System Qt)
 pi_add_target(qviz_panel_frameinfo SHARED GSLAM/plugins/qviz/panels/frameinfo REQUIRED System Qt)
+pi_add_target(qviz_panel_pubsubs SHARED GSLAM/plugins/qviz/panels/pubsubs REQUIRED System Qt)
 
 pi_add_target(qviz_display_map SHARED GSLAM/plugins/qviz/displays/mapviz REQUIRED System Qt OpenGL GLEW)
 

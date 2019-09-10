@@ -64,11 +64,11 @@ int main(int argc,char** argv)
     }
 
     std::promise<bool> stopSig;
-    Subscriber subStop=messenger.subscribe("gslam.stop",0,[&stopSig](bool b){
+    Subscriber subStop=messenger.subscribe("messenger/stop",0,[&stopSig](bool b){
         stopSig.set_value(true);
     });
     signal(SIGINT, [](int sig){
-        messenger.publish("gslam.stop",true);
+        messenger.publish("messenger/stop",true);
     });
 //    stopSig.get_future().wait();
     for(std::thread& th:threads) th.join();

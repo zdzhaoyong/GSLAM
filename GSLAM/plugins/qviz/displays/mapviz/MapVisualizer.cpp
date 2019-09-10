@@ -32,7 +32,7 @@ public:
         };
         Svar plugin;
         plugin["icon"]=":/icon/mapviz.png";
-        plugin["type"]=SvarClass::instance<Map>();
+        plugin["type"]=SvarClass::instance<MapPtr>();
         plugin["create"]=create;
         return plugin;
     }
@@ -40,19 +40,20 @@ public:
     MapVisualizer():_vetexTrajBuffer(0),_mapUpdated(false),_curFrameUpdated(false){
         _curFrame.get_scale()=-1;
         _pubScenceOrigin=messenger.advertise<GSLAM::Point3d>("ui.gl_origin");
-        _config["subDraw"]=messenger.subscribe("qviz/draw",[this](Svar status){
+        _config["subDraw"]=messenger.subscribe("qviz/gl_draw",[this](Svar status){
               this->draw();
         });
 
-        _pubUpdateGL=messenger.advertise<bool>("qviz/update");
+        _pubUpdateGL=messenger.advertise<bool>("qviz/gl_update");
 
-        _config.arg("topic",SvarClass::instance<Map>(),"The map to subscribe");
+        _config.arg("topic",SvarClass::instance<MapPtr>(),"The map to subscribe");
         _config.arg("enable",true,"draw this map or not");
         _config.arg("trajectory",true,"draw the trajectory");
         _config.arg("trajectory_width",2.5,"the trajectory width");
         _config.arg("pointcloud_size",2.5,"the pointcloud size");
 
         _config["updated_callback"]["topic"]=SvarFunction([this](std::string topic){
+                LOG(INFO)<<"Using topic "<<topic;
             this->_config["subMap"]=messenger.subscribe(topic,0,&MapVisualizer::update,this);
         });
 
@@ -375,6 +376,8 @@ public:
             _viewPoint.get_translation()=_scenceCenter-_scenceRadius*GSLAM::Point3d(r[2],r[5],r[8]);
             _scenceOrigin=center;
             _pubScenceOrigin.publish(_scenceOrigin);
+            messenger.publish("qviz/gl_radius",_scenceRadius);
+            messenger.publish("qviz/gl_center",_scenceCenter);
         }
         //        LOG(INFO)<<"updated map."<<_keyframes.size()<<",points:"<<_pointCloudVertex.size()<<",radius:"<<_scenceRadius;
     }
