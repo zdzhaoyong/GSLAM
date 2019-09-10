@@ -26,11 +26,12 @@ public:
     #endif
 
         data["newSub"]=messenger.subscribe("messenger/newsub",[this](Subscriber sub){
-            this->update();
+            this->updateTable();
         });
         data["newPub"]=messenger.subscribe("messenger/newpub",[this](Publisher pub){
-            this->update();
+            this->updateTable();
         });
+        updateTable();
     }
 
     QTableWidgetItem* setValue(int row,int col,QString val)
@@ -49,7 +50,7 @@ public:
         }
     }
 
-    void   update()
+    void   updateTable()
     {
         std::vector<std::array<std::string,3>> pubsubs;
 
@@ -79,6 +80,7 @@ public:
                     table->item(i,j)->setText(pubsubs[i][j].c_str());
             }
         }
+        update();
     }
 
     QTableWidget* table;

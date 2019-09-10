@@ -83,6 +83,9 @@ MainWindow::MainWindow(QWidget *parent,Svar config)
             this,SLOT(slotUiRun(Svar*)));
 
     data["config"]=config;
+    data["close"]=messenger.subscribe("messenger/stop",[this](bool){
+        this->close();
+    });
     preparePanels();
     showPanel("displays");
 }
@@ -199,10 +202,11 @@ void MainWindow::showPanel(std::string panelName)
 {
     if(data["panels"][panelName].is<QWidget*>())
     {
-        if(data["panels"][panelName].as<QWidget*>()->isVisible())
+        QWidget* widget=data["panels"][panelName].as<QWidget*>();
+        widget->setVisible(true);
+        if(widget->isVisible())
             return;
-        else
-            data["panels"][panelName].as<QWidget*>()->setVisible(true);
+        delete data["panels"][panelName].as<QWidget*>();
     }
     Svar config=data["config"];
     Svar func=config["gslam"]["panels"][panelName];

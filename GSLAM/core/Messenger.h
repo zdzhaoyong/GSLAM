@@ -428,6 +428,7 @@ public:
     /// @return the Publisher created
     template <class M>
     Publisher advertise(const std::string& topic, uint32_t queue_size = 0) {
+        if(topic.empty()) return Publisher();
         Publisher pub(topic, SvarClass::instance<M>(),queue_size);
         join(pub);
         d->pubNewPub.publish(pub);
@@ -455,6 +456,7 @@ public:
     Subscriber subscribe(
             const std::string& topic, uint32_t queue_size,
             SvarFunction callback) {
+        if(topic.empty()) return Subscriber();
         Subscriber sub(topic, callback,queue_size);
         join(sub);
         d->pubNewSub.publish(sub);

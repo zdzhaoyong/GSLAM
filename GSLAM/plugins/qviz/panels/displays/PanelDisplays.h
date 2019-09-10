@@ -119,6 +119,7 @@ public:
         :PropertyItem(parent,name,value,updateFunc){
         _widget=new QComboBox();
         _widget->setIconSize(QSize(1, 26));
+        _widget->setEditable(true);
         updateTable();
 //        connect(_widget,SIGNAL(currentIndexChanged(QString)),this,SLOT(slotUpdated(QString)));
         connect(_widget,SIGNAL(activated(QString)),this,SLOT(updateTable(QString)));
