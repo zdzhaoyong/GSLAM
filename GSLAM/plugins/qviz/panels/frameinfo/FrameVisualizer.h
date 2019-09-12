@@ -39,6 +39,7 @@ public:
         _subFrameVis=GSLAM::Messenger::instance().subscribe("dataset/frame",[this](FramePtr frame){
                 setFrame(frame);
         });
+        setObjectName("Frame Visualizer");
     }
     virtual ~FrameVisualizer(){
         LOG(INFO)<<"Frame Visualizer released.";

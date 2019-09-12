@@ -193,9 +193,10 @@ public slots:
                 if(_widget->findText(pub.getTopic().c_str())<0)
                     _widget->addItem(pub.getTopic().c_str());
             }
-        if(topic.isEmpty()&&_widget->modelColumn()==1)
+        if(topic.isEmpty()&&_widget->count()>=1)
         {
             _widget->setCurrentIndex(0);
+//            LOG(INFO)<<_widget->currentIndex()<<_widget->currentText().toStdString();
             _topic._name=_widget->currentText().toStdString();
         }
         else

@@ -32,6 +32,7 @@ public:
             this->updateTable();
         });
         updateTable();
+        setObjectName("Messenger Topics");
     }
 
     QTableWidgetItem* setValue(int row,int col,QString val)
