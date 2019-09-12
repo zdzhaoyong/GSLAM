@@ -66,6 +66,7 @@ GSLAM_REGISTER_MESSENGER \
 #include "GImage.h"
 #include "Camera.h"
 #include "Map.h"
+//#include "Display.h"
 
 // Tools
 #include "Undistorter.h"

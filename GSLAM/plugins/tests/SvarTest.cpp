@@ -63,6 +63,13 @@ TEST(Svar,Variable)
     EXPECT_TRUE(js.isUndefined());
 }
 
+TEST(Svar,HoldEachOther){
+    Svar a={"a",1};
+    Svar b={"b",2};
+    a["bobj"]=b;
+    b["aobj"]=a;
+}
+
 std::string svar_test_add(std::string left,const std::string& r){
     return left+r;
 }

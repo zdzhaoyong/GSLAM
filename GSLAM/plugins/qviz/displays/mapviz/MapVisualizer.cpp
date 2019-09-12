@@ -9,6 +9,7 @@
 #include <QGridLayout>
 
 #include <GSLAM/core/GSLAM.h>
+#include <GSLAM/core/Display.h>
 
 using namespace GSLAM;
 using namespace std;
@@ -23,52 +24,57 @@ public:
     static Svar displayPlugin(){
         SvarFunction create=[]()->Svar{
             std::shared_ptr<MapVisualizer> vis(new MapVisualizer());
-            Svar display;
-            display["holder"]=vis;
-            display["config"]=vis->_config;
-            display["icon"]=":/icon/mapviz.png";
-            display["name"]="Map Visualizer";
+            Svar display=vis->_config;
+            display["__holder__"]=vis;
+            display["__icon__"]=":/icon/mapviz.png";
+            display["__name__"]="Map Visualizer";
             return display;
         };
         Svar plugin;
-        plugin["icon"]=":/icon/mapviz.png";
-        plugin["type"]=SvarClass::instance<MapPtr>();
-        plugin["create"]=create;
+        plugin["__icon__"]=":/icon/mapviz.png";
+        plugin["__name__"]="Map Visualizer";
+        plugin["__type__"]=SvarClass::instance<MapPtr>();
+        plugin["__init__"]=create;
         return plugin;
     }
 
     MapVisualizer():_vetexTrajBuffer(0),_mapUpdated(false),_curFrameUpdated(false){
         _curFrame.get_scale()=-1;
         _pubScenceOrigin=messenger.advertise<GSLAM::Point3d>("mapviz/gl_origin");
+        _pubScenceRadius=messenger.advertise<double>("qviz/gl_radius");
+        _pubScenceCenter=messenger.advertise<Point3d>("qviz/gl_center");
+
         _config["subDraw"]=messenger.subscribe("qviz/gl_draw",[this](Svar status){
               this->draw();
         });
 
         _pubUpdateGL=messenger.advertise<bool>("qviz/gl_update");
 
-        _config.arg("topic",SvarClass::instance<MapPtr>(),"The map to subscribe");
+        _config.arg("map_topic",Topic(SvarClass::instance<MapPtr>()),"the map to subscribe");
+        _config.arg("curframe_topic",Topic(SvarClass::instance<FramePtr>()),"the current frame");
         _config.arg("enable",true,"draw this map or not");
         _config.arg("trajectory",true,"draw the trajectory");
         _config.arg("trajectory_width",2.5,"the trajectory width");
+        _config.arg("pointcloud",true,"draw the pointcloud or not");
         _config.arg("pointcloud_size",2.5,"the pointcloud size");
         _config.arg("gps_trajectory",true,"draw gps trajectory or not");
         _config.arg("connections",true,"draw connections or not");
         _config.arg("frames",true,"draw frames or not");
         _config.arg("current_frame",true,"draw current frame or not");
 
-        Svar& callbacks=_config["updated_callback"];
-        callbacks["topic"]=SvarFunction([this](std::string topic){
-                LOG(INFO)<<"Using topic "<<topic;
-            this->_config["subMap"]=messenger.subscribe(topic,0,&MapVisualizer::update,this);
+        _config["__cbk__map_topic"]=SvarFunction([this](){
+            Topic topic=_config.get("map_topic",Topic());
+            this->_config["subMap"]=messenger.subscribe(topic.name(),0,&MapVisualizer::update,this);
         });
-
-        SvarFunction update=[this](Svar msg){
+        _config["__cbk__curframe_topic"]=SvarFunction([this](){
+            Topic topic=_config.get("curframe_topic",Topic());
+            this->_config["_subCurFrame"]=messenger.subscribe(topic.name(),[this](FramePtr fr){
+                    this->updateCurrentFrame(fr);
+            });
+        });
+        _config["__cbk__"]=Svar::lambda([this](){
             this->_pubUpdateGL.publish(true);
-        };
-
-        callbacks["enable"]=callbacks["trajectory"]=callbacks["trajectory_width"]
-        =callbacks["pointcloud_size"]=callbacks["gps_trajectory"]=callbacks["connections"]
-        =callbacks["frames"]=callbacks["current_frame"]=update;
+        });
     }
 
     virtual void draw()
@@ -263,6 +269,7 @@ public:
 
             return;
         }
+        this->_map=_map;
 
         GSLAM::FrameArray mapFrames;
         GSLAM::PointArray mapPoints;
@@ -381,14 +388,16 @@ public:
             _viewPoint.get_translation()=_scenceCenter-_scenceRadius*GSLAM::Point3d(r[2],r[5],r[8]);
             _scenceOrigin=center;
             _pubScenceOrigin.publish(_scenceOrigin);
-            messenger.publish("qviz/gl_radius",_scenceRadius);
-            messenger.publish("qviz/gl_center",_scenceCenter);
         }
+        _pubScenceRadius.publish(_scenceRadius);
+        _pubScenceCenter.publish(_scenceCenter);
+        _pubUpdateGL.publish(true);
         //        LOG(INFO)<<"updated map."<<_keyframes.size()<<",points:"<<_pointCloudVertex.size()<<",radius:"<<_scenceRadius;
     }
 
-    void updateCurrentFrame(GSLAM::MapPtr map,const GSLAM::FramePtr& curFrame)
+    void updateCurrentFrame(const GSLAM::FramePtr& curFrame,GSLAM::MapPtr map=MapPtr())
     {
+        if(!map) map=_map;
         std::map<GSLAM::FrameID,FrameConnectionPtr > parents;
         if(!curFrame->getParents(parents)) return;
         _curFrame=GSLAM::SIM3(curFrame->getPose(),curFrame->getMedianDepth()*0.1);
@@ -396,6 +405,7 @@ public:
         Point3d t=_curFrame.get_translation();
         std::vector<Point3d> curConnection;
         curConnection.reserve(parents.size()*2);
+        if(map)
         for(auto parent:parents)
         {
             GSLAM::FramePtr fr=map->getFrame(parent.first);
@@ -432,7 +442,8 @@ public:
     double                  _scenceRadius;
     GSLAM::SE3              _viewPoint;
 
-    GSLAM::Publisher        _pubScenceOrigin,_pubUpdateGL;
+    GSLAM::MapPtr           _map;
+    GSLAM::Publisher        _pubScenceOrigin,_pubUpdateGL,_pubScenceRadius,_pubScenceCenter;
 };
 
 REGISTER_SVAR_MODULE(){

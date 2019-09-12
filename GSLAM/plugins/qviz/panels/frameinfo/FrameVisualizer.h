@@ -45,6 +45,8 @@ public:
     }
 
     void setFrame(FramePtr frame){
+        if(!frame) return;
+        if(frame->cameraNum()<1) return;
         {
             GSLAM::WriteMutex lock(_mutex);
             if(_curFrame)

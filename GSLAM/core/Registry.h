@@ -141,6 +141,8 @@ public:
         inst._registedLibs.set(pluginName,Svar());
         return true;
     }
+
+    std::set<std::string>& paths(){return _libraryFilePath;}
 protected:
     static bool fileExists(const std::string& filename)
     {

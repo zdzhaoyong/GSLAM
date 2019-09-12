@@ -23,13 +23,13 @@ public:
         _pub_draw=messenger.advertise<Svar>("qviz/gl_draw");
         _pub_selected=messenger.advertise<int>("qviz/gl_selected");
         _sub_update=messenger.subscribe("qviz/gl_update",[this](bool update){
-            this->updateGL();
+            emit signalUpdateGL();
         });
         _sub_radius=messenger.subscribe("qviz/gl_radius",[this](double radius){
-            this->setSceneRadius(radius);
+            setSceneRadius(radius);
         });
         _sub_center=messenger.subscribe("qviz/gl_center",[this](Point3d c){
-            this->setSceneCenter(qglviewer::Vec(c.x,c.y,c.z));
+            setSceneCenter(qglviewer::Vec(c.x,c.y,c.z));
         });
         _sub_pose=messenger.subscribe("qviz/gl_camera_pose",[this](SE3 pose){
                 GSLAM::Point3d t=pose.get_translation();
@@ -37,7 +37,14 @@ public:
                 this->camera()->setPosition(qglviewer::Vec(t.x,t.y,t.z));
                 this->camera()->setOrientation(qglviewer::Quaternion(r.w,r.z,-r.y,-r.x));
         });
+        connect(this,SIGNAL(signalUpdateGL()),
+                this,SLOT(updateGL()));
     }
+signals:
+    void signalSetSceneRadius(qreal);
+    void signalUpdateGL();
+    void signalSetSceneCenter(qglviewer::Vec);
+public:
 
     virtual void draw()
     {
@@ -213,9 +220,13 @@ public:
     void addMenu(Svar menu,QMenu* parent=nullptr);
     void addTool(Svar tool);
     void uiRun(Svar run);
+    void shutdown(){
+        emit signalClose();
+    }
 signals:
     void signalDatasetStatusUpdated(int);
     void signalUiRun(Svar* run);
+    void signalClose();
 
 public slots:
     void slotDatasetStatusUpdated(int status);
@@ -227,11 +238,6 @@ public slots:
 protected:
     void preparePanels();
     void showPanel(std::string panelName);
-    void closeEvent(QCloseEvent* e)
-    {
-        messenger.publish("messenger/stop",true);
-        close();
-    }
     Svar  data;
     QTabWidget    *_tab;
     QToolBar      *_toolBar;

@@ -81,11 +81,10 @@ MainWindow::MainWindow(QWidget *parent,Svar config)
             this,SLOT(slotDatasetStatusUpdated(int)));
     connect(this,SIGNAL(signalUiRun(Svar*)),
             this,SLOT(slotUiRun(Svar*)));
+    connect(this,SIGNAL(signalClose()),
+            this,SLOT(close()));
 
     data["config"]=config;
-    data["close"]=messenger.subscribe("messenger/stop",[this](bool){
-        this->close();
-    });
     preparePanels();
     showPanel("displays");
 }
@@ -171,20 +170,23 @@ void MainWindow::preparePanels()
 {
     Svar config=data["config"];
     regex is_rviz_plugin("^(?:|lib)?qviz_([a-zA-Z\\d_]+).(?:|so|dll|dylib)$");
-    auto folder=absolute(path(config.get<char**>("argv",nullptr)[0]).parent_path());
-    for(auto fileit:directory_iterator(folder))
+    for(auto folder:Registry::instance().paths())
     {
-        smatch result;
-        std::string filename = fileit.path().filename();
-        if(std::regex_match(filename,result,is_rviz_plugin))
+        if(!exists(path(folder))) continue;
+        for(auto fileit:directory_iterator(folder))
         {
-            Svar var=Registry::load(filename);
-            Svar qviz=var["gslam"]["panels"];
-            if(!qviz.isObject()) continue;
-            if(config["gslam"]["panels"].isObject())
-                config["gslam"]["panels"].as<SvarObject>().update(qviz);
-            else
-                config["gslam"]["panels"]=qviz;
+            smatch result;
+            std::string filename = fileit.path().filename();
+            if(std::regex_match(filename,result,is_rviz_plugin))
+            {
+                Svar var=Registry::load(filename);
+                Svar qviz=var["gslam"]["panels"];
+                if(!qviz.isObject()) continue;
+                if(config["gslam"]["panels"].isObject())
+                    config["gslam"]["panels"].as<SvarObject>().update(qviz);
+                else
+                    config["gslam"]["panels"]=qviz;
+            }
         }
     }
     if(!config["gslam"]["panels"].isObject()) return;

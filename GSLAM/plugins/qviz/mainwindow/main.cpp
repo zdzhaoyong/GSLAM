@@ -10,15 +10,23 @@ int run(Svar config){
 
     std::string dataset=config.arg<std::string>("dataset","","The dataset going to play.");
 
-    Subscriber subStop=messenger.subscribe("messenger/stop",0,[&mainWindow](bool stop){
-        if(mainWindow) mainWindow->close();
+    bool byMessenger=false;
+    Subscriber subStop=messenger.subscribe("messenger/stop",0,[&](bool stop){
+        byMessenger=true;
+//        messenger.publish("qviz/ui_thread_run",SvarFunction([](){
+//            LOG(INFO)<<"Hello world.";
+//        }));
+//        mainWindow->uiRun(SvarFunction([](){
+//            LOG(INFO)<<"Hello world.";
+//        }));
+        if(mainWindow)
+            mainWindow->shutdown();
     });
 
     Subscriber sub_dataset_status=messenger.subscribe("dataset/status",[&mainWindow](int status){
         DLOG(INFO)<<"Dataset status updated to "<<status;
         if(mainWindow) mainWindow->datasetStatusUpdated(status);
     });
-
     Subscriber sub_panel=messenger.subscribe("qviz/add_panel",[&mainWindow](QWidget* panel)
     {
         if(!mainWindow) return;
@@ -41,7 +49,7 @@ int run(Svar config){
     });
 
     Subscriber sub_run=messenger.subscribe("qviz/ui_thread_run",[&mainWindow](Svar func){
-        if(mainWindow) return;
+        if(!mainWindow) return;
         mainWindow->uiRun(func);
     });
 
@@ -59,7 +67,10 @@ int run(Svar config){
     mainWindow=new GSLAM::MainWindow(nullptr,config);
     mainWindow->show();
 
-    return app.exec();
+    int ret= app.exec();
+    if(!byMessenger)
+        messenger.publish("messenger/stop",true);
+    return ret;
 }
 
 GSLAM_REGISTER_APPLICATION(qviz,run);
