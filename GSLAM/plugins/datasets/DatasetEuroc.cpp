@@ -5,7 +5,7 @@
 
 /**
  * 1. Download dataset from : https://projects.asl.ethz.ch/datasets/doku.php?id=kmavvisualinertialdatasets
- * 2. Play dataset with gslam Dataset=<dir>/MH_01_easy/mav0/mono.euroc
+ * 2. Play dataset with gslam qviz -dataset <dir>/MH_01_easy/mav0/mono.euroc
  */
 
 namespace GSLAM {

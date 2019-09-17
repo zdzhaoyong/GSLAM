@@ -440,12 +440,16 @@ public:
     /// @param message the message will be sent in this thread
     template <class M>
     void publish(const std::string& topic,const M& message){
-        std::unique_lock<std::mutex> lockSpaces(d->mutex_);
-        std::shared_ptr<PubSubSpace> space=d->spaces_[topic];
-        if(!space) return;
-        if(space->subs_.empty()) return;
-        std::unique_lock<std::mutex> lockSpace(space->mtx_);
-        for(Subscriber sub:space->subs_)
+        std::set<Subscriber> subs;
+        {
+            std::unique_lock<std::mutex> lockSpaces(d->mutex_);
+            std::shared_ptr<PubSubSpace> space=d->spaces_[topic];
+            if(!space) return;
+            if(space->subs_.empty()) return;
+            std::unique_lock<std::mutex> lockSpace(space->mtx_);
+            subs=space->subs_;
+        }
+        for(Subscriber sub:subs)
             sub.publish(message);
     }
 
@@ -466,6 +470,7 @@ public:
     /// @brief subscribe a topic with callback function
     Subscriber subscribe(const std::string& topic, SvarFunction callback,
                          uint32_t queue_size=0){
+        if(topic.empty()) return Subscriber();
         Subscriber sub(topic, callback,queue_size);
         join(sub);
         d->pubNewSub.publish(sub);
@@ -503,6 +508,7 @@ public:
         for(auto it1:d->spaces_)
         {
             std::shared_ptr<PubSubSpace> space=it1.second;
+            if(!space) continue;
             std::unique_lock<std::mutex> lock(space->mtx_);
             pubs.insert(pubs.end(),space->pubs_.begin(),space->pubs_.end());
         }
@@ -516,6 +522,7 @@ public:
         for(auto it1:d->spaces_)
         {
             std::shared_ptr<PubSubSpace> space=it1.second;
+            if(!space) continue;
             std::unique_lock<std::mutex> lock(space->mtx_);
             subs.insert(subs.end(),space->subs_.begin(),space->subs_.end());
         }
@@ -540,6 +547,7 @@ public:
         for(auto it1:d->spaces_)
         {
             std::shared_ptr<PubSubSpace> space=it1.second;
+            if(!space) continue;
             std::unique_lock<std::mutex> lock(space->mtx_);
             if(!space->pubs_.empty())
                 sst<<printTable({{width/5-1,"Publisher*"+std::to_string(space->pubs_.size())},

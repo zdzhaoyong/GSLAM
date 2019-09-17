@@ -66,6 +66,7 @@ int run(Svar config){
 
     mainWindow=new GSLAM::MainWindow(nullptr,config);
     mainWindow->show();
+    messenger.publish("dataset/status_request",true);
 
     int ret= app.exec();
     if(!byMessenger)

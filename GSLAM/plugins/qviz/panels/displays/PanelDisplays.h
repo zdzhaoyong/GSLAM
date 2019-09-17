@@ -317,13 +317,14 @@ public:
         tree=new DisplayTree(nullptr,"qviz/display");
         QVBoxLayout* layout(new QVBoxLayout(this));
         layout->addWidget(tree);
-        QHBoxLayout* layoutBottom(new QHBoxLayout());
-        layoutBottom->addWidget(new QPushButton("Add",this));
-        layoutBottom->addWidget(new QPushButton("Delete",this));
-        layout->addLayout(layoutBottom);
+//        QHBoxLayout* layoutBottom(new QHBoxLayout());
+//        layoutBottom->addWidget(new QPushButton("Add",this));
+//        layoutBottom->addWidget(new QPushButton("Delete",this));
+//        layout->addLayout(layoutBottom);
         collectPlugins();
         setObjectName("Display Panel");
-        setProperty("icon","");
+        setProperty("stay",true);
+        setProperty("area","left");
     }
 
     void collectPlugins();

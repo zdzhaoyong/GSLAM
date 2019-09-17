@@ -63,6 +63,7 @@ To learn about GSLAM, please follow the below tutorial:
   - \ref registry
   - \ref application
   - \ref dataset
+  - \ref qviz
 - <b> Develop SLAM with GSLAM </b>
   - \ref orbslam
   - \ref tools

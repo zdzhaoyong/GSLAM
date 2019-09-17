@@ -73,9 +73,6 @@ MainWindow::MainWindow(QWidget *parent,Svar config)
     oneStepAction->setIcon(QIcon(iconFolder+"/startPause.png"));
 
     setCentralWidget(_tab);
-    auto win3d=new Win3D(this);
-    win3d->setObjectName("3D");
-    addTab(win3d);
 
     connect(this,SIGNAL(signalDatasetStatusUpdated(int)),
             this,SLOT(slotDatasetStatusUpdated(int)));
@@ -86,18 +83,29 @@ MainWindow::MainWindow(QWidget *parent,Svar config)
 
     data["config"]=config;
     preparePanels();
-    showPanel("displays");
 }
 
 
 void MainWindow::addPanel(QWidget* widget)
 {
+    std::map<QString,Qt::DockWidgetArea> lut={
+        {"left",Qt::LeftDockWidgetArea},
+        {"right",Qt::RightDockWidgetArea},
+        {"bottom",Qt::BottomDockWidgetArea},
+        {"top",Qt::TopDockWidgetArea},
+        {"center",Qt::NoDockWidgetArea}
+    };
+    QString areaStr=widget->property("area").toString();
+    Qt::DockWidgetArea area=lut[areaStr];
+    if(area==Qt::NoDockWidgetArea)
+        return addTab(widget);
     QDockWidget* dock=dynamic_cast<QDockWidget*>(widget);
     if(!dock){
         dock=new QDockWidget(widget->objectName(),this);
         dock->setWidget(widget);
+        widget->setParent(dock);
     }
-    addDockWidget(Qt::LeftDockWidgetArea,dock);
+    addDockWidget(area,dock);
 }
 
 void MainWindow::addTab(QWidget* widget)
@@ -193,10 +201,24 @@ void MainWindow::preparePanels()
     std::map<std::string,Svar> panels=config["gslam"]["panels"].castAs<std::map<std::string,Svar>>();
     QMenu* menuPanels=menuBar()->addMenu(tr("&Panels"));
     for(std::pair<std::string,Svar> p:panels){
-        QAction* action=new MessengerAction(p.first.c_str(),menuPanels,Svar::lambda([this,p](){
+        Svar func=config["gslam"]["panels"][p.first];
+        if(!func.isFunction()) return;
+        QWidget* widget=func(nullptr,config).castAs<QWidget*>();
+        QString name=widget->objectName();
+        bool    stay=widget->property("stay").toBool();
+        QAction* action=new MessengerAction(name,menuPanels,Svar::lambda([this,p](){
             showPanel(p.first);
         }));
         menuPanels->addAction(action);
+        data["panel_actions"][p.first]=action;
+        QDockWidget* dock=dynamic_cast<QDockWidget*>(widget);
+        if(stay||dock){
+            data["panels"][p.first]=(QWidget*)widget;
+            addPanel(widget);
+            if(!stay) dock->setVisible(false);
+        }
+        else
+            delete widget;
     }
 }
 
@@ -205,15 +227,21 @@ void MainWindow::showPanel(std::string panelName)
     if(data["panels"][panelName].is<QWidget*>())
     {
         QWidget* widget=data["panels"][panelName].as<QWidget*>();
-        widget->setVisible(true);
-        if(widget->isVisible())
+        QDockWidget* dock=dynamic_cast<QDockWidget*>(widget);
+        if(!dock) {
+            dock=dynamic_cast<QDockWidget*>(widget->parent());
+        }
+        if(dock){
+            dock->setVisible(true);
             return;
+        }
+        else if(widget->isVisible()) return;
         delete data["panels"][panelName].as<QWidget*>();
     }
     Svar config=data["config"];
     Svar func=config["gslam"]["panels"][panelName];
     if(!func.isFunction()) return;
-    QWidget* widget=func((QWidget*)this,config).castAs<QWidget*>();
+    QWidget* widget=func(nullptr,config).castAs<QWidget*>();
     data["panels"][panelName]=widget;
     addPanel(widget);
 }

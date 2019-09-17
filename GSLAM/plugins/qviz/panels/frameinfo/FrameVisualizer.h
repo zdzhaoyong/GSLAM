@@ -40,6 +40,7 @@ public:
                 setFrame(frame);
         });
         setObjectName("Frame Visualizer");
+        setProperty("area","right");
     }
     virtual ~FrameVisualizer(){
         LOG(INFO)<<"Frame Visualizer released.";

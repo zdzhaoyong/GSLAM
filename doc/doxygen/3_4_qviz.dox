@@ -1,3 +1,30 @@
+/**
+@page qviz qviz Plugin for GSLAM
+
+\image html qviz_small.png "qviz visualizing a map context."
+
+qviz is a highly customizable visualizer based on Qt,
+it is similar to the ROS visualizer tool [rviz](http://wiki.ros.org/rviz/).
+However, benefit from Svar solving dynamic objects,
+the qviz of GSLAM is more easier to use, more light-weighted and ready for extend.
+
+Get started to customize qviz:
+- @link sPanel Implement a panel plugin @endlink
+- @link sTool Add an action in toolbar via Messenger @endlink
+- @link sMenu Add an menu via Messenger @endlink
+- @link sDisplay Add display via Messenger @endlink
+- @link sDisplayPlugin Implement a display plugin @endlink
+
+\section sQviz_panels Panels of qviz
+
+qviz allows users to extend their own panels.
+All you need to do is to implement a QWidget, regist it with macro 'GSLAM_REGISTER_PANEL',
+and compile it to a shared library with name qviz_<name>.
+
+
+Here below is a sample panel source code to show topic lists:
+
+```
 #include <QWidget>
 #include <QListWidget>
 #include <QDockWidget>
@@ -9,9 +36,11 @@ namespace GSLAM {
 
 class PanelPubsub : QDockWidget
 {
-    Q_OBJECT
 public:
     PanelPubsub(QWidget* parent,Svar config):QDockWidget(parent){
+        setObjectName("Messenger Topics");
+        setProperty("area","right");
+
         table=new QTableWidget(this);
         setWidget(table);
         table->setColumnCount(3);
@@ -32,8 +61,6 @@ public:
             this->updateTable();
         });
         updateTable();
-        setObjectName("Messenger Topics");
-        setProperty("area","left");
     }
 
     QTableWidgetItem* setValue(int row,int col,QString val)
@@ -89,4 +116,33 @@ public:
     Svar          data;
 };
 
+
+GSLAM_REGISTER_PANEL(pubsub,GSLAM::PanelPubsub);
+
 }
+```
+
+It should be noted that by define the property of QObject,
+the panel can be putted to "left","right","top","bottom" dock areas or "center" tab areas.
+```
+setObjectName("Messenger Topics"); // name
+setProperty("area","right"); // area
+```
+\image html dock_ares.png "Users are able to remote qviz in all areas including menu, toolbar, docks and displays"
+
+\section sTool Add an action in toolbar via Messenger
+
+
+
+
+
+\section sQviz_displays Displays of qviz
+
+
+
+
+\section sQviz_menu Add Menu with Messenger
+
+
+
+*/

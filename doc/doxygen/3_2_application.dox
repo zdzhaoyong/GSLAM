@@ -1,5 +1,145 @@
 /**
 @page application Application Plugin for GSLAM
 
+The GSLAM application is similar to the [Nodelet](http://wiki.ros.org/nodelet) in ROS.
+This allows zero copy passing of data between nodelets instead of messaging passing with buffer,
+which is recommended in ROS2.
+However, writing a GSLAM application is even more easier.
+
+\section sApp_Doc Tiny Demo Using Arguments with Tab Completation
+Some application is stand alone and so that does not need Messenger to contact with other applications.
+This makes the application just like traditional c++ excutables.
+Here is a tiny demo:
+
+```
+#include <GSLAM/core/GSLAM.h>
+
+using namespace GSLAM;
+
+int run(Svar config){
+
+    config.arg<std::string>("plugin","","The svar module plugin wanna to show.");
+    config.arg<std::string>("key","","The name in the module wanna to show");
+
+    if(config.get("help",false)) {return config.help();}
+
+    std::string pluginPath=config.get<std::string>("plugin","");
+    std::string key=config.get("key","");
+
+    Svar inst=Registry::load(pluginPath);
+    GSLAM::Svar var=key.empty()?(inst):inst.get(key,Svar(),true);
+
+    if(var.isFunction())
+        std::cout<<var.as<SvarFunction>()<<std::endl;
+    else if(var.isClass())
+        std::cout<<var.as<SvarClass>()<<std::endl;
+    else std::cout<<var;
+    return 0;
+}
+
+GSLAM_REGISTER_APPLICATION(doc,run);
+```
+
+When we typing 'gslam doc', we acqually use this tiny code.
+Writing a GSLAM application is just like to write a traditional 'main' function, which accept arguments and returns an int.
+By using Svar, we recommend developers to list all used parameters and provide a help firstly.
+GSLAM will provides the tab completation and help infomation below:
+
+```
+~> gslam doc -help
+Usage:
+exe [--help] [-conf configure_file] [-arg_name arg_value]...
+
+Using Svar supported argument parsing. The following table listed several argume
+nt introductions.
+
+Argument        Type(default->setted)           Introduction
+--------------------------------------------------------------------------------
+-plugin         str("")                         The svar module plugin wanna to
+                                                show.
+-key            str("")                         The name in the module wanna to
+                                                show
+-conf           str("Default.cfg")              The default configure file going
+                                                 to parse.
+-help           bool(false->true)               Show the help information.
+```
+
+\section sApp_Msg Application with Messenger Topics
+Since most application should communicate with other applications, Messenger is used to publish and subscribe messages.
+It is highly recommended to assign the Messenger topic usages with "__usage__", for the following code:
+
+```
+#include "MapHash.h"
+
+using namespace GSLAM;
+
+int run(Svar config){
+    std::string in =config.arg<std::string>("in","","the map to load");
+    std::string out=config.arg<std::string>("out","","the map file to save");
+    std::string map=config.arg<std::string>("map","map","the map topic to publish or subscribe");
+
+    Publisher   pub=messenger.advertise<MapPtr>(map);
+
+    Subscriber  sub=messenger.subscribe(map,[out](MapPtr mp){
+            if(out.size()) mp->save(out);
+    });
+
+    Subscriber  subOpen=messenger.subscribe("qviz/open",1,[&](std::string file){
+        if(file.find(".gmap")==std::string::npos) return;
+        MapPtr mapHash(new MapHash());
+        mapHash->load(file);
+        pub.publish(Svar::create(mapHash));
+    });
+
+    if(config.get("help",false)){
+        config["__usage__"]=messenger.introduction();
+        return config.help();
+    }
+
+    if(in.size()){
+        MapPtr mapHash(new MapHash());
+        mapHash->load(in);
+        pub.publish(mapHash);
+    }
+
+    return Messenger::exec();
+}
+
+GSLAM_REGISTER_APPLICATION(gmap,run);
+
+```
+
+Here is the usage help:
+
+```
+~> gslam gmap -help
+Publisher and Subscriber lists:
+Type            Topic                           Payload
+--------------------------------------------------------------------------------
+Subscriber*1    qviz/open                       str
+Publisher*1     messenger/newsub                GSLAM::Publisher
+Subscriber*1    messenger/stop                  bool
+Publisher*1     messenger/newpub                GSLAM::Subscriber
+Publisher*1     map                             std::shared_ptr<GSLAM::Map>
+Subscriber*1    map                             std::shared_ptr<GSLAM::Map>
+
+Using Svar supported argument parsing. The following table listed several argume
+nt introductions.
+
+Argument        Type(default->setted)           Introduction
+--------------------------------------------------------------------------------
+-in             str("")                         the map to load
+-out            str("")                         the map file to save
+-map            str("map")                      the map topic to publish or subs
+                                                cribe
+-conf           str("Default.cfg")              The default configure file going
+                                                 to parse.
+-help           bool(false->true)               Show the help information.
+```
+
+The usage of an application contains two parts: parameters and in/output.
+Svar handles all parameters and Messenger handles all data communication.
+
+\section sApp_1 Applications
 
 */
