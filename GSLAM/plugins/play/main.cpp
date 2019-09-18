@@ -18,7 +18,7 @@ int run(Svar config){
     int     _status=FINISHED;
     Dataset _dataset;
 
-    auto sub_request=messenger.subscribe("dataset/status_request",[&](bool){
+    auto sub_request=messenger.subscribe("qviz/ready",[&](bool){
         _pub_dataset_status.publish(_status);
     });
 

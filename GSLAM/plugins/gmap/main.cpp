@@ -25,11 +25,13 @@ int run(Svar config){
         return config.help();
     }
 
-    if(in.size()){
-        MapPtr mapHash(new MapHash());
-        mapHash->load(in);
-        pub.publish(mapHash);
-    }
+    auto sub_request=messenger.subscribe("qviz/ready",[&](bool){
+        if(in.size()){
+            MapPtr mapHash(new MapHash());
+            mapHash->load(in);
+            pub.publish(Svar::create(mapHash));
+        }
+    });
 
     return Messenger::exec();
 }

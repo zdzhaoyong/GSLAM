@@ -24,6 +24,7 @@ message("-- Build type: " ${CMAKE_BUILD_TYPE})
 include_directories(. GSLAM/core)
 
 pi_add_target(gslam BIN GSLAM/gslam REQUIRED System LTO)
+pi_add_target(gslam_qviz SHARED GSLAM/plugins/qviz/mainwindow REQUIRED System Qt)
 pi_add_target(gslam_tests SHARED GSLAM/plugins/tests REQUIRED System LTO MODULES OpenCV)
 pi_add_target(gslam_resource SHARED GSLAM/plugins/resource REQUIRED System LTO)
 pi_add_target(gslam_doc SHARED GSLAM/plugins/doc REQUIRED System LTO)
@@ -34,7 +35,7 @@ pi_add_target(gslam_gmap SHARED GSLAM/plugins/gmap REQUIRED System LTO)
 #pi_add_target(gslam_evaluate SHARED GSLAM/plugins/evaluate REQUIRED System)
 
 
-pi_add_target(gslam_qviz SHARED GSLAM/plugins/qviz/mainwindow REQUIRED System Qt)
+
 pi_add_target(qviz_panel_win3d SHARED GSLAM/plugins/qviz/panels/win3d REQUIRED System Qt OpenGL)
 pi_add_target(qviz_panel_displays SHARED GSLAM/plugins/qviz/panels/displays REQUIRED System Qt)
 pi_add_target(qviz_panel_frameinfo SHARED GSLAM/plugins/qviz/panels/frameinfo REQUIRED System Qt)

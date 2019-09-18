@@ -12,8 +12,7 @@ Get started to customize qviz:
 - @link sPanel Implement a panel plugin @endlink
 - @link sTool Add an action in toolbar via Messenger @endlink
 - @link sMenu Add an menu via Messenger @endlink
-- @link sDisplay Add display via Messenger @endlink
-- @link sDisplayPlugin Implement a display plugin @endlink
+- @link sDisplay Implement your own display @endlink
 
 \section sQviz_panels Panels of qviz
 
@@ -132,17 +131,71 @@ setProperty("area","right"); // area
 
 \section sTool Add an action in toolbar via Messenger
 
+Users are able to register a tool buttom dynamicly by using Messenger and Svar,
+here is a demo:
 
+```
+Svar sayHelloBotton={
+  {"name","Say Hello"}
+  {"icon","hello.png"},
+  {"callback",SvarFunction([](){
+              LOG(INFO)<<"Hello world.";
+  })}
+};
 
+messenger.publish("qviz/add_tool",sayHelloBotton);
+```
 
+Instead of using a callback, users can also regist a topic so that when the action is triggered,
+a bool message will be published throw that topic.
 
-\section sQviz_displays Displays of qviz
+```
+Svar sayHelloBotton={
+  {"name","Say Hello"}
+  {"icon","hello.png"},
+  {"topic","hello_clicked"}
+};
 
+messenger.publish("qviz/add_tool",sayHelloBotton);
+```
 
+\section sMenu Add Menu with Messenger
+When we have a group of actions to add, we can also add a menu:
 
+```
+Svar sayHelloBotton1={
+  {"name","Say Hello1"}
+  {"icon","hello.png"},
+  {"topic","hello1_clicked"}
+};
 
-\section sQviz_menu Add Menu with Messenger
+Svar sayHelloBotton2={
+  {"name","Say Hello2"}
+  {"icon","hello.png"},
+  {"topic","hello2_clicked"}
+};
 
+Svar sayHelloBotton3={
+  {"name","Say Hello3"}
+  {"icon","hello.png"},
+  {"topic","hello3_clicked"}
+};
 
+Svar menuHellos={{"name","Hellos"},{"icon","hellos.png"}};
+Svar childMenu={{"name","Child Menu"},{"icon","hellos.png"},
+{"actions",{sayHelloBotton1}}};
+
+menuHellos["children"]=Svar::array({childMenu});
+menuHellos["actions"]=Svar::array({sayHelloBotton2,sayHelloBotton3});
+messenger.publish("qviz/add_menu",menuHellos);
+```
+
+\section sDisplay Implement your own display
+
+Similar to rviz, qviz also provides an interface to support your own visualization,
+this functional is implemented in the default panel "panel_displays".
+The displays panel uses a tree widget to visualize and interact any Svar context.
+
+To learn the usage, please see the source code of display plugin mapviz.
 
 */
