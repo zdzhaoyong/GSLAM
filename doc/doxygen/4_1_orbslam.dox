@@ -1,5 +1,31 @@
 /**
 @page orbslam Porting ORBSLAM to GSLAM Application
 
+Porting ORBSLAM is quit easy,
+since we just need to subscribe the input frame and publish the tracked frame and map updated.
 
+The source code can be found at: https://github.com/zdzhaoyong/gslam_orbslam
+
+```
+int run(Svar config){
+    svar=config;
+    config.arg<std::string>("ORBVocabularyFile","./data/ORB_New.voc","The vocabulary file");
+    std::shared_ptr<ORBSLAM> orbslam;
+
+    Subscriber subFrame=messenger.subscribe("dataset/frame",30,[&](FramePtr fr){
+            if(orbslam) orbslam->track(fr);
+    });
+
+    if(config.get("help",false)){
+        auto pubMap=messenger.advertise<MapPtr>("orbslam/map",0);
+        auto pubCurFrame=messenger.advertise<FramePtr>("orbslam/curframe");
+        config["__usage__"]=messenger.introduction();
+        return config.help();
+    }
+
+    orbslam=make_shared<ORBSLAM>();
+
+    return Messenger::exec();
+}
+```
 */

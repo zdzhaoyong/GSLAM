@@ -1,5 +1,66 @@
 /**
 @page tools Tools for Developing a SLAM
 
+Serveral tools are provided to accelerate developing a SLAM system.
+
+
+\section sVocabulary Bag of Words Vocabulary
+
+GSLAM carries out a header only implementation of DBoW3 vocabulary with the following features:
+
+- Removed OpenCV dependency and the all functions are implemented within one single header file only depending on C++11.
+- Combined the advantages of both DBoW2/3 and FBoW which are extremely fast and easy to use. Interface similar to DBoW3 is provided and both binary and float descriptors are accelerated using SSE and AVX instructions.
+- We improved the memory usage and accelerated the speed of loading, saving or training a vocabulary and transformation from features of images to a BoW vector.
+
+
+A comparison of the four implementations is demonstrated in Table.
+In the experiment, each parent node has 10 children,
+and for ORB feature detection we use the ORB-SLAM,
+and SiftGPU is used for SIFT detection.
+Two ORB vocabularies with 4 and 6 levels and one SIFT vocabulary are used in the results.
+Both FBoW and GSLAM use multi-thread for vocabulary training.
+Our implementation outperforms in almost all items including loading and saving the vocabulary,
+training a new vocabulary, transforming a descriptor list to a BoW vector for
+place recognition and a feature vector for fast feature matching.
+Furthermore, the GSLAM implementation uses less memory and allocates less pieces of dynamic memories as we found that the fragmentation problem is the main reason that DBoW2 needs lots of memory.
+We published the comparison code as an open source project on github: https://github.com/zdzhaoyong/GSLAMVocabulary.
+
+Comparison of four BoW implementations in loading, saving and training a same vocabulary with memory usage statistics.
+The experiment is performed on a computer with i7-6700 CPU, 16GB RAM running 64bit Ubuntu.
+400 and 10k images from DroneMap dataset are used to train the models with 4 and 6 levels.
+
+|Implementation| GSLAM  | DBoW2 | DBoW3 | FBoW |
+|--|--|--|--|--|
+|Load ORB-4| 67.3us|47.2ms  |7.1ms|72.3us|
+|Load ORB-6| 7.2ms|6.8 s | 1.1 s |9.5ms|
+|Load SIFT-4| 1.0ms| 436.1ms  | 5.1ms 	|1.1ms|
+|Save ORB-4| 437.9us| 40.4ms   | 1.7ms 	|553.1us |
+|Save ORB-6| 34.4ms | 4.8 s    | 632.4ms |20.6ms|
+|Save SIFT-4| 4.4ms	| 437.6ms  | 6.7ms 	|2.7ms|
+|Train ORB-4| 7.6 s | 24.8 s   | 23.6 s |8.5 s |
+|Train ORB-6|230.5 s| 1.1Ks    | 911.4 s |270.4 s |
+|Train SIFT-4| 23.5 s | 327.7 s | 299.0 s 	|18.7 s|
+|Trans ORB-4 | 615.5us | 2.1ms  | 1.9ms 	|862.4us |
+|Trans ORB-6 | 723.7us | 6.0ms   | 4.9ms 	| 1.2ms |
+|Trans SIFT-4 | 1.1ms | 10.3ms   	| 9.2ms 	| 11.5ms |
+|Mem ORB-4 | 0.44MB | 2.5MB | 2.5MB | 0.45MB |
+|Mem ORB-6 | 44.4MB | 247.1MB | 246.5MB | 45.3MB |
+|Mem SIFT-4 | 5.8MB | 7.8MB | 7.8MB | 5.8MB |
+
+
+\section sEstimator Estimator
+
+The purely geometric computation remains a fundamental problem that requires robust and accurate real-time solutions.
+Both classical visual SLAM algorithms or modern visual-inertial solutions rely on geometric vision algorithms for initialization, relocalization and loop-closure.
+OpenCV provides several geometry algorithms and Kneip presents a toolbox for geometric vision OpenGV which is limited to camera pose computation.
+Estimator of GSLAM aims to provide a collection of close-form solvers covering all interesting cases with robust sample consensus (RANSAC) methods.
+
+Table lists the algorithms supported by the estimator.
+They are divided into three categories according to the given observations.
+2D-2D matches are used to estimate epipolar or homography constraints and relative pose could be decomposed from them.
+2D-3D correspondences are used to estimate both central or non-central absolute pose for monocular or multiple camera systems, which is the famous PnP problem.
+3D geometry functions such as plane fitting, and estimating the \f SIM3 \f transformation of two point clouds are also supported.
+
+\section sOptimizer Optimizer
 
 */
