@@ -67,7 +67,6 @@ To learn about GSLAM, please follow the below tutorial:
 - <b> Develop SLAM with GSLAM </b>
   - \ref orbslam
   - \ref tools
-- <b> Use SLAM Plugins </b>
   - \ref slams
 - \ref <b> Evaluate SLAM Plugins with GSLAM </b>
   - \ref evaluate

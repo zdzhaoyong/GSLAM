@@ -1,0 +1,30 @@
+/**
+@page slams SLAM Plugins Implemented
+
+
+\section sDSO DSO
+
+\image html gslam_dso.gif
+
+- origin source code: https://github.com/JakobEngel/dso
+- plugin source code: https://github.com/pi-gslam/GSLAM-DSO
+
+
+\section sORBSLAM ORBSLAM
+\image html gslam_orbslam.gif
+- origin source code: https://github.com/raulmur/ORB_SLAM
+- plugin source code: https://github.com/pi-gslam/GSLAM-ORBSLAM
+
+
+\section sSVO SVO
+\image html gslam_svo.gif
+- origin source code: https://github.com/uzh-rpg/rpg_svo
+- plugin source code: https://github.com/pi-gslam/GSLAM-SVO
+
+
+\section sTheiaSfM TheiaSfM
+\image html gslam_theiaSfM.png
+- origin source code: http://www.theia-sfm.org/
+- plugin source code: https://github.com/zdzhaoyong/GSLAM-TheiaSfM
+
+*/

@@ -62,5 +62,14 @@ They are divided into three categories according to the given observations.
 3D geometry functions such as plane fitting, and estimating the \f SIM3 \f transformation of two point clouds are also supported.
 
 \section sOptimizer Optimizer
-
+Nonlinear optimization is the core part of state-of-the-art geometric SLAM systems.
+Due to the high dimensionality and sparseness of Hessian matrix, graph structures are
+used to modeling complex estimation problems for SLAM.
+Several frameworks including Ceres, G2O and GTSAM are proposed to solve general graph optimization problems.
+These frameworks are popular used by different SLAM systems.
+ORB-SLAM, SVO use G2O for bundle adjustment and pose graph optimization.
+OKVIS , VINS use Ceres for graph optimization with IMU factors and sliding window is used to control the computation complex.
+Forster et al. present a visual-initial method based on SVO and implement the back-end with GTSAM.
+Optimizer of GSLAM aims to provide an unified interface for most of nonlinear SLAM problems such as PnP solver, bundle adjustment, pose graph optimization.
+A general implementation plugin for these problems is carried out based on the Ceres library.
 */
