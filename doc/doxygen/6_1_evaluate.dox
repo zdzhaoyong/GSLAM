@@ -1,6 +1,89 @@
 /**
 @page evaluate Evaluate a SLAM plugin
 
+As most benchmarks only provide datasets with or without ground-truth for
+users to perform evaluations by themselves.
+GSLAM provides a build-in plugin and script tools
+for both computation performance and accuracy evaluation.
+
+\image html efficiency_evaluation.png "Computation performance statistics of three monocular implementations integrated within the evaluation tool."
+
+Benefit from the united interface of GSLAM, the evaluation tool can not only evaluate the accuracy but efficiency.
+
+The recordings of memory usage and memory allocated numbers are started after the SLAM application loaded, and updated
+after every frame processed. CPU usage is updated when the process occupied CPU time increases a curtain value. Frame
+duration is measured by the time between current frame published and processed.
+
+\section sEvaluateTrajectory Evaluate trajectory precision
+
+For a slam plugin such as orbslam, we want to evaluate it's localization precision.
+GSLAM provided an application named metric_traj for evaluation when running a slam,
+such as running orbslam with metric_traj:
+
+```
+gslam play metric_traj orbslam -ORBVocabularyFile /data/zhaoyong/Program/Apps/SLAM/GSLAM-ORBSLAM/data/ORB_New.voc -dataset /data/zhaoyong/Dataset/mav0/mono.euroc -autostart -slam orbslam
+```
+
+This will save two file: 'orbslam_traj_vo.txt' and 'orbslam_traj_final.txt'.
+The vo trajectory subscribe topic "orbslam/curframe" and record the realtime tracking results.
+The final trajectory subscribes topic "orbslam/map" and outputs all keyframe poses.
+
+
+\section sEvaluateTime Evaluate tracking time usage
+
+Use metric_time to generate time logger file: slamname_metric_time.txt.
+```
+gslam play metric_traj metric_time orbslam -ORBVocabularyFile /data/zhaoyong/Program/Apps/SLAM/GSLAM-ORBSLAM/data/ORB_New.voc -dataset /data/zhaoyong/Dataset/mav0/mono.euroc -autostart -slam orbslam
+
+```
+
+\warning To evaluate the time usage, the slam system is better to process dataset/frame in another thread.
+
+
+\section sEvaluateCPU Evaluate processing cpu usage
+
+Use metric_cpu to generate cpu usage logger such as: orbslam_metric_cpu.txt.
+```
+gslam play metric_traj metric_time metric_cpu orbslam -ORBVocabularyFile /data/zhaoyong/Program/Apps/SLAM/GSLAM-ORBSLAM/data/ORB_New.voc -dataset /data/zhaoyong/Dataset/mav0/mono.euroc -autostart -slam orbslam
+
+```
+
+Those metrics can work at the same time.
+Here below is the content of 'orbslam_metric_cpu.txt':
+```
+1 77.7335
+1 77.7335
+2 77.7335
+3 77.7335
+4 77.7335
+5 166.784
+6 166.784
+7 166.784
+8 176.294
+9 176.294
+10 174.492
+```
+The first column is the frame id, the second colum is the corrosponding cpu usage.
+
+\section sEvaluateMemory Evaluate slam memory usage
+
+To moniter the memory usage, we had to use another excuable 'gslam_evaluate" instead of 'gslam':
+
+```
+gslam_evaluate play metric_traj metric_time metric_cpu orbslam -ORBVocabularyFile /data/zhaoyong/Program/Apps/SLAM/GSLAM-ORBSLAM/data/ORB_New.voc -dataset /data/zhaoyong/Dataset/mav0/mono.euroc -autostart -slam orbslam
+
+```
+
+All other things remains the same.
+Here is the txt content, every line contains 'id memory_in_bytes memory_slices":
+```
+1 22323535 17267
+1 23920484 18143
+2 24479344 24830
+3 25201728 27373
+4 24423588 25631
+5 26480428 25225
+```
 
 
 */

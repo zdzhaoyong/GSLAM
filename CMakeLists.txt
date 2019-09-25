@@ -32,9 +32,6 @@ pi_add_target(gslam_play SHARED GSLAM/plugins/play REQUIRED System LTO)
 pi_add_target(gslam_gmap SHARED GSLAM/plugins/gmap REQUIRED System LTO)
 #pi_add_target(gslam_bridge SHARED GSLAM/plugins/bridge REQUIRED System)
 #pi_add_target(gslam_rviz SHARED GSLAM/plugins/rviz REQUIRED System ROS)
-#pi_add_target(gslam_evaluate SHARED GSLAM/plugins/evaluate REQUIRED System)
-
-
 
 pi_add_target(qviz_panel_win3d SHARED GSLAM/plugins/qviz/panels/win3d REQUIRED System Qt OpenGL)
 pi_add_target(qviz_panel_displays SHARED GSLAM/plugins/qviz/panels/displays REQUIRED System Qt)
@@ -56,6 +53,10 @@ pi_add_target(gslamDB_kitti SHARED GSLAM/plugins/datasets/DatasetKITTI.cpp REQUI
 #pi_add_target(gslamDB_tummono SHARED GSLAM/plugins/Datasets/DatasetTUMMono.cpp REQUIRED OpenCV)
 #pi_add_target(gslamDB_tumrgbd SHARED GSLAM/plugins/Datasets/DatasetTUMRGBD.cpp REQUIRED OpenCV)
 
+pi_add_target(gslam_evaluate BIN GSLAM/evaluation/evaluate_memory REQUIRED System)
+pi_add_target(gslam_metric_cpu SHARED GSLAM/evaluation/metric_cpu REQUIRED System)
+pi_add_target(gslam_metric_time SHARED GSLAM/evaluation/metric_time REQUIRED System)
+pi_add_target(gslam_metric_traj SHARED GSLAM/evaluation/metric_trajectory REQUIRED System)
 pi_report_target()
 #####################################################################
 # Now do make install

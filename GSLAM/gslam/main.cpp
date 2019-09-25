@@ -46,15 +46,18 @@ int main(int argc,char** argv)
         if(svar.get("complete_function_request",false)){
             std::cout<<svar.helpInfo();
             regex is_gslam_app("^(?:|lib)?gslam_([a-zA-Z\\d_]+).(?:|so|dll|dylib)$");
-            auto folder=absolute(path(argv[0]).parent_path());
-            for(auto fileit:directory_iterator(folder))
+            for(auto folder:Registry::instance().paths())
             {
-                smatch result;
-                std::string filename = fileit.path().filename();
-                if(std::regex_match(filename,result,is_gslam_app))
+                if(!exists(path(folder))) continue;
+                for(auto fileit:directory_iterator(folder))
                 {
-                    if(result.size()<2) continue;
-                    std::cout<<" "<<result.str(1);
+                    smatch result;
+                    std::string filename = fileit.path().filename();
+                    if(std::regex_match(filename,result,is_gslam_app))
+                    {
+                        if(result.size()<2) continue;
+                        std::cout<<" "<<result.str(1);
+                    }
                 }
             }
             return 0;

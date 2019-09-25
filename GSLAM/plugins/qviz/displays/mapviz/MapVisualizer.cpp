@@ -69,7 +69,7 @@ public:
         _config["__cbk__curframe_topic"]=SvarFunction([this](){
             Topic topic=_config.get("curframe_topic",Topic());
             this->_config["_subCurFrame"]=messenger.subscribe(topic.name(),[this](FramePtr fr){
-                    this->updateCurrentFrame(fr);
+//                    this->updateCurrentFrame(fr);
             });
         });
         _config["__cbk__"]=Svar::lambda([this](){
