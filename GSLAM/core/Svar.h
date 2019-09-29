@@ -1221,6 +1221,7 @@ public:
     Class(const std::string& name)
         :_cls(SvarClass::Class<C>()){
         _cls.setName(name);
+        svar[name]=SvarClass::instance<C>();
     }
 
     Class& def(const std::string& name,const Svar& function,bool isMethod=true)
