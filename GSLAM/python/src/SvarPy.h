@@ -470,7 +470,15 @@ struct SvarPy: public PyObject{
             return dict;
         }
 
-
+        if(PyFunction_Check(obj)){
+          SvarFunction func;
+          Svar holder=PyObjectHolder(obj);
+          func._func=[holder](std::vector<Svar>& args)->Svar{
+            return SvarPy::fromPy(PyObject_Call(holder.as<PyObjectHolder>().obj, SvarPy::getPy(args),nullptr));
+          };
+          func.do_argcheck=false;
+          return func;
+        }
 
         return Svar(PyObjectHolder(obj));
     }

@@ -431,16 +431,10 @@ REGISTER_SVAR_MODULE(gslam_builtin) {
     .def("subscribe",[](Messenger msger, Svar py_class,
          const std::string& topic, int queue_size,
          Svar callback){
-      return msger.subscribe(topic,queue_size,[callback](Svar msg){
-//         gil_scoped_acquire lock;
-         if(callback.isFunction()) callback(msg);
-         else if(callback.is<PyObjectHolder>()){
-           PyObjectHolder holder=callback.as<PyObjectHolder>();
-           SvarPy::fromPy(PyObject_Call(holder.obj, SvarPy::getPy(msg),nullptr));
-         }
-      });
+      return msger.subscribe(topic,queue_size,[callback](Svar msg){callback(msg);});
     })
-    .def("publish",&Messenger::publish<Svar>);
+    .def("publish",[](Messenger* msger,std::string topic,Svar msg){return msger->publish(topic,msg);});
+    // FIXME: cast to 'const Svar&'
 
     Class<Publisher>("Publisher")
             .def("shutdown",&Publisher::shutdown)

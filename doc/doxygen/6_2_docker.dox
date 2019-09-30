@@ -1,6 +1,7 @@
 /**
 @page docker A Dockerized SLAM BenchMark
 
-
+We are planning to building a dockerized SLAM BenchMark,
+where developers are able to evaluate and compare their SLAM plugins.
 
 */

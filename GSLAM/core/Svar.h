@@ -889,6 +889,8 @@ public:
 
 class SvarFunction: public SvarValue{
 public:
+    SvarFunction(){}
+
     /// Construct a cpp_function from a vanilla function pointer
     template <typename Return, typename... Args, typename... Extra>
     SvarFunction(Return (*f)(Args...), const Extra&... extra) {
@@ -937,7 +939,7 @@ public:
         const SvarFunction* overload=this;
         std::vector<SvarExeption> catches;
         for(;true;overload=&overload->next.as<SvarFunction>()){
-            if(overload->arg_types.size()!=argv.size())
+            if(do_argcheck&&overload->arg_types.size()!=argv.size())
             {
                 if(!overload->next.isFunction()) {
                     overload=nullptr;break;
@@ -1019,7 +1021,7 @@ public:
     Svar          next;
 
     std::function<Svar(std::vector<Svar>&)> _func;
-    bool          is_method,is_constructor;
+    bool          is_method,is_constructor,do_argcheck=true;
 };
 
 class SvarProperty{

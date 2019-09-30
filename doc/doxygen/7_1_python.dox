@@ -1,5 +1,88 @@
 /**
 @page python Use GSLAM in Python
 
+One core target of Svar is to provide multiple language support,
+but for now, only python is supported partly.
+Most interfaces are exposed using Svar.
+
+\warning This module is still experimental.
+
+\section sInstall Compile and Install
+
+We recommend to install with pip3, after cloning from github:
+```
+pip3 install GSLAM
+```
+
+After success installed, you can see the documentation with:
+```
+import gslam
+help(gslam)
+```
+
+as follows:
+```
+Help on module svar:
+
+NAME
+    svar - This is the python APIs for GSLAM 3.0.0(https://github.com/zdzhaoyong/GSLAM)
+
+CLASSES
+    builtins.object
+        svar_builtins.Camera
+        svar_builtins.Dataset
+        svar_builtins.FileResource
+        svar_builtins.FrameConnection
+        svar_builtins.GImage
+        svar_builtins.Map
+        svar_builtins.MapFrame
+        svar_builtins.MapPoint
+        svar_builtins.Messenger
+        svar_builtins.Point2d
+        svar_builtins.Point3d
+        svar_builtins.Point3ub
+        svar_builtins.Publisher
+        svar_builtins.SE3
+        svar_builtins.SIM3
+        svar_builtins.SO3
+        svar_builtins.Subscriber
+        svar_builtins.TicToc
+        svar_builtins.Undistorter
+        svar_builtins.Vocabulary
+
+    class Camera(builtins.object)
+     |  Methods defined here:
+     |
+     |  CameraType = Camera.CameraType(...) from builtins.PyCapsule
+     |      (GSLAM::Camera const*)->str
+     |
+     |  Project = Camera.Project(...) from builtins.PyCapsule
+     |      (GSLAM::Camera const*,GSLAM::Point3_<double>)->Point2d
+     |
+     |  UnProject = Camera.UnProject(...) from builtins.PyCapsule
+     |      (GSLAM::Camera const*,GSLAM::Point2_<double>)->Point3d
+
+```
+
+\section sUsage Import Other Svar Modules
+
+For a Svar module shared library 'libdemo.so", users can load it as a python module with 'gslam.load()':
+
+```
+// the libdemo.so source code
+#include <GSLAM/core/GSLAM.h>
+
+REGISTER_SVAR_MODULE(demo){
+  svar["sayHello"]=SvarFunction([](){LOG(INFO)<<"Hello world";});
+}
+```
+
+```
+import gslam
+
+demo=gslam.load('demo')
+
+demo.sayHello()
+```
 
 */

@@ -131,7 +131,8 @@ int main(int argc,char** argv)
         .construct<const std::string&>()
         .def("getName",&DemoClass::getName)
         .def("setName",&DemoClass::setName)
-        .def_static("create",&DemoClass::create);
+        .def_static("create",&DemoClass::create)
+        .def_readwrite("name",&DemoClass::_name);
 
     Svar inst2=cls("I am another instance");// construct a instance
     std::string name=inst2.call("getName").as<std::string>();
@@ -262,7 +263,8 @@ int main(int argc,char** argv)
         .inherit<BBase,BaseClass>() // use this to inherit
         .def_static("__init__",[](int age){return BaseClass(age);})// replace construct<int>()
         .def("getAge",&BaseClass::getAge)
-        .def("setAge",&BaseClass::setAge);
+        .def("setAge",&BaseClass::setAge)
+        .def_readwrite("age",&BaseClass::age_);
 
     Svar cls=SvarClass::instance<BaseClass>();
     Svar obj=cls(10);// ten years old?
