@@ -207,7 +207,6 @@ struct SvarPy: public PyObject{
                 PyObject* value_ =SvarPy::getPy(value);
                 if (!value_)
                 {
-                    delete value_;
                     return incref(Py_None);
                 }
                 PyTuple_SetItem(obj, (ssize_t) index++, value_); // steals a reference
@@ -276,7 +275,7 @@ struct SvarPy: public PyObject{
 
             try{
                 Svar svar_args=SvarPy::fromPy(args);
-                if(svarFunc.is_constructor)
+                if(svarFunc.is_constructor)// FIXME: constructor is different since first argument is self?
                 {
                     return SvarPy::getPy(svarFunc.Call({svar_args}));
                 }
@@ -304,7 +303,7 @@ struct SvarPy: public PyObject{
         return m_ptr;
     }
 
-    static PyTypeObject* getPyClass(Svar var){
+    static PyTypeObject* getPyClass(Svar var){// FIXME: segment fault when python cleaning
         SvarClass& cls=var.as<SvarClass>();
         if(cls._attr.exist("PyTypeObject"))
             return cls._attr["PyTypeObject"].castAs<PyTypeObject*>();
@@ -407,8 +406,7 @@ struct SvarPy: public PyObject{
 
         PyObject_SetAttrString((PyObject*)type,"svar_class",capsule);
 
-
-        return (PyTypeObject*)type;
+        return type_incref((PyTypeObject*)type);
     }
 
     static Svar fromPy(PyObject* obj)// this never fails

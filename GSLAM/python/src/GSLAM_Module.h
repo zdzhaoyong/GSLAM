@@ -1,112 +1,7 @@
 #include "SvarPy.h"
 using namespace std;
 
-// The old Python Thread Local Storage (TLS) API is deprecated in Python 3.7 in favor of the new
-// Thread Specific Storage (TSS) API.
-#if PY_VERSION_HEX >= 0x03070000
-#    define PYBIND11_TLS_KEY_INIT(var) Py_tss_t *var = nullptr
-#    define PYBIND11_TLS_GET_VALUE(key) PyThread_tss_get((key))
-#    define PYBIND11_TLS_REPLACE_VALUE(key, value) PyThread_tss_set((key), (tstate))
-#    define PYBIND11_TLS_DELETE_VALUE(key) PyThread_tss_set((key), nullptr)
-#else
-    // Usually an int but a long on Cygwin64 with Python 3.x
-#    define PYBIND11_TLS_KEY_INIT(var) decltype(PyThread_create_key()) var = 0
-#    define PYBIND11_TLS_GET_VALUE(key) PyThread_get_key_value((key))
-#    if PY_MAJOR_VERSION < 3
-#        define PYBIND11_TLS_DELETE_VALUE(key)                               \
-             PyThread_delete_key_value(key)
-#        define PYBIND11_TLS_REPLACE_VALUE(key, value)                       \
-             do {                                                            \
-                 PyThread_delete_key_value((key));                           \
-                 PyThread_set_key_value((key), (value));                     \
-             } while (false)
-#    else
-#        define PYBIND11_TLS_DELETE_VALUE(key)                               \
-             PyThread_set_key_value((key), nullptr)
-#        define PYBIND11_TLS_REPLACE_VALUE(key, value)                       \
-             PyThread_set_key_value((key), (value))
-#    endif
-#endif
-
 namespace GSLAM{
-
-
-//class gil_scoped_acquire {
-//public:
-
-//  inline PyThreadState *get_thread_state_unchecked() {
-//  #if defined(PYPY_VERSION)
-//      return PyThreadState_GET();
-//  #elif PY_VERSION_HEX < 0x03000000
-//      return _PyThreadState_Current;
-//  #elif PY_VERSION_HEX < 0x03050000
-//      return (PyThreadState*) _Py_atomic_load_relaxed(&_PyThreadState_Current);
-//  #elif PY_VERSION_HEX < 0x03050200
-//      return (PyThreadState*) _PyThreadState_Current.value;
-//  #else
-//      return _PyThreadState_UncheckedGet();
-//  #endif
-//  }
-
-//    gil_scoped_acquire() {
-//      static PYBIND11_TLS_KEY_INIT(tstate);
-//      static PyInterpreterState *istate = nullptr;
-//        tstate = (PyThreadState *) PYBIND11_TLS_GET_VALUE(tstate);
-
-//        if (!tstate) {
-//            tstate = PyThreadState_New(istate);
-//            #if !defined(NDEBUG)
-//                if (!tstate)
-//                    LOG(FATAL)<<("scoped_acquire: could not create thread state!");
-//            #endif
-//            tstate->gilstate_counter = 0;
-//            PYBIND11_TLS_REPLACE_VALUE(tstate, tstate);
-//        } else {
-//            release = get_thread_state_unchecked() != tstate;
-//        }
-
-//        if (release) {
-//            /* Work around an annoying assertion in PyThreadState_Swap */
-//            #if defined(Py_DEBUG)
-//                PyInterpreterState *interp = tstate->interp;
-//                tstate->interp = nullptr;
-//            #endif
-//            PyEval_AcquireThread(tstate);
-//            #if defined(Py_DEBUG)
-//                tstate->interp = interp;
-//            #endif
-//        }
-
-//        inc_ref();
-//    }
-
-//    void inc_ref() {
-//        ++tstate->gilstate_counter;
-//    }
-
-//    void dec_ref() {
-//        --tstate->gilstate_counter;
-//        if (tstate->gilstate_counter == 0) {
-//            #if !defined(NDEBUG)
-//                if (!release)
-//                    LOG(FATAL)<<("scoped_acquire::dec_ref(): internal error!");
-//            #endif
-//            PyThreadState_Clear(tstate);
-//            PyThreadState_DeleteCurrent();
-//            PYBIND11_TLS_DELETE_VALUE(detail::get_internals().tstate);
-//            release = false;
-//        }
-//    }
-
-//    ~gil_scoped_acquire() {
-//        dec_ref();
-//        if (release)
-//           PyEval_SaveThread();
-//    }
-//private:
-//    PyThreadState *tstate = nullptr;
-//    bool release = true;
-//};
 
 REGISTER_SVAR_MODULE(gslam_builtin) {
     svar["__doc__"]="This is the python APIs for GSLAM "+string(GSLAM_VERSION_STR)
@@ -424,11 +319,10 @@ REGISTER_SVAR_MODULE(gslam_builtin) {
             .def("getPublishers",&Messenger::getPublishers)
             .def("getSubscribers",&Messenger::getSubscribers)
             .def("introduction",&Messenger::introduction)
-            .def("advertise",[](Messenger msg, Svar py_class,
-                 const std::string& topic, int queue_size = 0){
+            .def("advertise",[](Messenger msg,const std::string& topic,int queue_size){
       return msg.advertise<Svar>(topic,queue_size);
     })
-    .def("subscribe",[](Messenger msger, Svar py_class,
+    .def("subscribe",[](Messenger msger,
          const std::string& topic, int queue_size,
          Svar callback){
       return msger.subscribe(topic,queue_size,[callback](Svar msg){callback(msg);});
@@ -441,13 +335,15 @@ REGISTER_SVAR_MODULE(gslam_builtin) {
             .def("getTopic",&Publisher::getTopic)
             .def("getTypeName",&Publisher::getTypeName)
             .def("getNumSubscribers",&Publisher::getNumSubscribers)
-            .def("publish",&Publisher::publish);
+            .def("publish",[](Publisher* pubptr,Svar msg){return pubptr->publish(msg);});
 
     Class<Subscriber>("Subscriber")
             .def("shutdown",&Subscriber::shutdown)
             .def("getTopic",&Subscriber::getTopic)
             .def("getTypeName",&Subscriber::getTypeName)
             .def("getNumPublishers",&Subscriber::getNumPublishers);
+
+    svar["messenger"]=Messenger::instance();
 
 }
 
