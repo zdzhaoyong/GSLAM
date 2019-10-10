@@ -387,11 +387,16 @@ TEST(Svar,Thread){
             GSLAM::Rate::sleep(1e-4);
         }
     };
-    std::vector<std::thread> threads;
-    for(int i=0;i<svar.GetInt("doubleThreads",4);i++) threads.push_back(std::thread(doubleThread));
-    for(int i=0;i<svar.GetInt("intThreads",4);i++) threads.push_back(std::thread(intThread));
+    try{
+        std::vector<std::thread> threads;
+        for(int i=0;i<svar.GetInt("doubleThreads",4);i++) threads.push_back(std::thread(doubleThread));
+        for(int i=0;i<svar.GetInt("intThreads",4);i++) threads.push_back(std::thread(intThread));
 
-    GSLAM::Rate::sleep(1);
-    svar.set("shouldstop",true);
-    for(auto& it:threads) it.join();
+        GSLAM::Rate::sleep(1);
+        svar.set("shouldstop",true);
+        for(auto& it:threads) it.join();
+    }
+    catch(std::system_error& e){
+
+    }
 }
