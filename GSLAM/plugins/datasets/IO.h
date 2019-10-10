@@ -78,7 +78,7 @@ inline GImage imread(const std::string& filepath,int flags=1)
 #define STB_IMAGE_IMPLEMENTATION
 #define STB_IMAGE_STATIC
 #define STB_IMAGE_INLINE
-#include <GSLAM/core/stb_image.h>
+#include "stb_image.h"
 
 
 namespace GSLAM {

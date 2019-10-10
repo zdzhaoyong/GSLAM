@@ -1,6 +1,6 @@
 #include <GSLAM/core/GSLAM.h>
 #include <GSLAM/core/GPS.h>
-#include <GSLAM/core/VecParament.h>
+#include "VecParament.h"
 #include "IO.h"
 #include "SvarLanguageSupport.cpp"
 

@@ -86,7 +86,7 @@ script:
   
 # Generate and deploy documentation
 after_success:
-  - cd $TRAVIS_BUILD_DIR/build/GSLAM/build
+  - cd $TRAVIS_BUILD_DIR/build
   - |
     if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
        bash ../doc/update_github_doc.sh
