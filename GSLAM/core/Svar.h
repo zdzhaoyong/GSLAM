@@ -2482,6 +2482,7 @@ inline bool Svar::parseFile(const std::string& file_path)
 {
     Svar var=loadFile(file_path);
     if(var.isUndefined()) return false;
+    if(isUndefined()) {*this=var;return true;}
     call("update",var);
     return true;
 }
