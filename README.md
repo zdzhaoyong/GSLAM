@@ -6,8 +6,26 @@
 
 ## 1. Introduction
 
-Wiki: https://github.com/zdzhaoyong/GSLAM/wiki
-API Documentation: https://zdzhaoyong.github.io/GSLAM/html
+If you use this code for your research, please cite our paper <a href="https://arxiv.org/abs/1902.07995">GSLAM: A General SLAM Framework and Benchmark</a>:
+
+```
+@inproceedings{gslamICCV2019,
+	title={GSLAM: A General SLAM Framework and Benchmark},
+	author={Yong Zhao, Shibiao Xu, Shuhui Bu, Hongkai Jiang, Pengcheng Han},
+	booktitle={Proceedings of the IEEE International Conference on Computer Vision},
+	year={2019},
+	organization={IEEE}
+}
+```
+
+```
+@article{gslam2019,
+	title={GSLAM: A General SLAM Framework and Benchmark},
+	author={Yong Zhao, Shibiao Xu, Shuhui Bu, Hongkai Jiang, Pengcheng Han},
+	journal={arXiv:1902.07995 },
+	year={2019}
+}
+```
 
 ### 1.1. What is GSLAM?
 GSLAM is aimed to provide a general open-source SLAM framework and benchmark with following features :
@@ -26,34 +44,34 @@ GSLAM is aimed to provide a general open-source SLAM framework and benchmark wit
 1. *For SLAM developers* : Everyone can develop their own SLAM implementation based on GSLAM and publish it as a plugin with open-source or not. 
 2. *For SLAM users* : Applications are able to use different SLAM plugins with the same API without recompilation and implementations are loaded at runtime.
 
-## 2. Compilation and Install
+## 2. Documentation
 
-### 2.1. Compile on linux (Tested in Ubuntu 14.04 and 16.04)
+Documentation: https://zdzhaoyong.github.io/GSLAM/
 
-#### 2.1.1 Install dependency
-
-**Qt** : REQUIRED, Used by the gslam GUI
-
-```
-sudo apt-get install libqt4-dev
-```
-
-**OpenCV** : Optional, Used by some dataset plugins and EstimatorOpenCV
-
-```
-sudo apt-get install libopencv-dev 
-```
-
-
-#### 2.1.2 Compile and insall GSLAM
-
-```
-mkdir build;cd build;
-cmake ..;make;sudo make install
-```
-
-### 2.2 Compile on windows
-Compile with CMake now is supported.
+- [Compile and Install](https://zdzhaoyong.github.io/GSLAM/compile.html)
+- **Begin with GSLAM Core**
+  - [Svar: A Tiny Modern C++ Header Brings Unified Interface for Different Languages](https://zdzhaoyong.github.io/GSLAM/svar.html)
+  - [Messenger: A Tiny Class Implemented ROS Like Pub/Sub Messaging.](https://zdzhaoyong.github.io/GSLAM/messenger.html)
+  - [3D Transformations: SO3, SE3, SIM3](https://zdzhaoyong.github.io/GSLAM/transform.html)
+  - [Camera Models in GSLAM](https://zdzhaoyong.github.io/GSLAM/camera.html)
+  - [GImage: Replace cv::Mat with A Tiny Header](https://zdzhaoyong.github.io/GSLAM/gimage.html)
+  - [SLAM Map Data Structure](https://zdzhaoyong.github.io/GSLAM/map.html)
+  - [Binary Built-in File Resource](https://zdzhaoyong.github.io/GSLAM/resource.html)
+  - [PICMake: A CMake Tool to Write More Elegent CMakeList.txt](https://zdzhaoyong.github.io/GSLAM/picmake.html)
+- **Plugins of GSLAM**
+  - [The Plugin Structure of GSLAM](https://zdzhaoyong.github.io/GSLAM/registry.html)
+  - [Application Plugin for GSLAM](https://zdzhaoyong.github.io/GSLAM/application.html)
+  - [Dataset Plugin for GSLAM](https://zdzhaoyong.github.io/GSLAM/dataset.html)
+  - [qviz Plugin for GSLAM](https://zdzhaoyong.github.io/GSLAM/qviz.html)
+- **Develop SLAM with GSLAM**
+  - [Porting ORBSLAM to GSLAM Application](https://zdzhaoyong.github.io/GSLAM/orbslam.html)
+  - [Tools for Developing a SLAM](https://zdzhaoyong.github.io/GSLAM/tools.html)
+  - [SLAM Plugins Implemented](https://zdzhaoyong.github.io/GSLAM/slams.html)
+- **Evaluate SLAM Plugins with GSLAM**
+  - [Evaluate a SLAM plugin](https://zdzhaoyong.github.io/GSLAM/evaluate.html)
+  - [A Dockerized SLAM BenchMark](https://zdzhaoyong.github.io/GSLAM/docker.html)
+- **Use GSLAM in Other Languages**
+  - [Use GSLAM in Python](https://zdzhaoyong.github.io/GSLAM/python.html)
 
 ## 3. Start with GSLAM
 
@@ -132,6 +150,8 @@ See more details of Svar at [PILBASE](https://github.com/zdzhaoyong/PIL2/blob/ma
 YongZhao: zd5945@126.com
 
 ShuhuiBu: bushuhui@nwpu.edu.cn
+
+ShibiaoXu: shibiao.xu@nlpr.ia.ac.cn
 
 ## 5. License
 
