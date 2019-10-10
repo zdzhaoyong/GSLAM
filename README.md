@@ -80,13 +80,13 @@ Documentation: https://zdzhaoyong.github.io/GSLAM/
 Test modules with google test:
 
 ```
-gslam Act=Tests --gtest_filter=*
+gslam tests --gtest_filter=*
 ```
 
 Run a slam system with datasets:
 
 ```
-gslam Dataset=(dataset file) SLAM=(the slam plugin)
+gslam qviz orbslam play -dataset dataset_path
 ```
 
 ## 3.2. Supported Datasets
@@ -95,29 +95,29 @@ GSLAM now implemented serveral plugins for public available datasets. It is very
 
 ```
 # Play kitti with monocular mode
-gslam Dataset=<dataset_path>/odomentry/color/00/mono.kitti
+gslam qviz play -dataset <dataset_path>/odomentry/color/00/mono.kitti
 
 # Play kitti with stereo mode
-gslam Dataset=<dataset_path>/odomentry/color/00/stereo.kitti
+gslam qviz play -dataset <dataset_path>/odomentry/color/00/stereo.kitti
 
 # Play TUM RGBD Dataset (associate.txt file prepared)
-gslam Dataset=<dataset_path>/rgbd_dataset_freiburg1_360/.tumrgbd
+gslam qviz play -dataset <dataset_path>/rgbd_dataset_freiburg1_360/.tumrgbd
 
 # Play TUM Monocular (images unziped)
-gslam Dataset=<dataset_path>/calib_narrowGamma_scene1/.tummono
+gslam qviz play -dataset <dataset_path>/calib_narrowGamma_scene1/.tummono
 
 # Play EuRoC Dataset with IMU frames
-gslam Dataset=<dataset_path>/EuRoC/MH_01_easy/mav0/.euroc
+gslam qviz play -dataset <dataset_path>/EuRoC/MH_01_easy/mav0/.euroc
 
 # Play NPU DroneMap Dataset
-gslam Dataset=<dataset_path>/DroneMap/phantom3-village/phantom3-village-kfs/.npudronemap
-gslam Dataset=<dataset_path>/DroneMap/phantom3-village/phantom3-village-unified/.npudronemap
+gslam qviz play -dataset <dataset_path>/DroneMap/phantom3-village/phantom3-village-kfs/.npudronemap
+gslam qviz play -dataset <dataset_path>/DroneMap/phantom3-village/phantom3-village-unified/.npudronemap
 ```
 
-The datasets are default to be played on realtime, and the play speed can be controled with "PlaySpeed":
+The datasets are default to be played on realtime, and the play speed can be controled with "playspeed":
 
 ```
-gslam Dataset=<dataset_path>/odomentry/color/00/mono.kitti PlaySpeed=2.
+gslam qviz play -dataset <dataset_path>/odomentry/color/00/mono.kitti -playspeed 2.
 ```
 
 The following dataset plugins are now implemented:
@@ -141,9 +141,7 @@ Users can also [implement dataset plugins by own](./doc/md/dataset.md).
 | [SVO](https://github.com/uzh-rpg/rpg_svo) |  <img src="./doc/images/gslam_svo.gif" width = "50%" />| [code](https://github.com/pi-gslam/GSLAM-SVO) |
 | [TheiaSfM](http://www.theia-sfm.org/) |  <img src="./doc/images/gslam_theiaSfM.png" width = "50%" />| [code](https://github.com/zdzhaoyong/GSLAM-TheiaSfM) |
 
-### 3.4. Configuration with Svar
-More parameters can be setted with Svar at file *.cfg.
-See more details of Svar at [PILBASE](https://github.com/zdzhaoyong/PIL2/blob/master/apps/SvarTest/README.md).
+
 
 ## 4. Contacts
 
