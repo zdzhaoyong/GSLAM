@@ -1,9 +1,7 @@
 #ifdef HAS_OPENCV
-#include "GSLAM/core/Dataset.h"
-#include "GSLAM/core/VideoFrame.h"
-#include "GSLAM/core/Svar.h"
-#include "GSLAM/core/VecParament.h"
-#include "GSLAM/core/Timer.h"
+#include "GSLAM/core/GSLAM.h"
+#include "VideoFrame.h"
+#include "VecParament.h"
 
 
 #include <opencv2/highgui/highgui.hpp>
