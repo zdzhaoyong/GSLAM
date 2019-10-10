@@ -2,13 +2,14 @@
 #include "gtest.h"
 
 using namespace GSLAM;
+using namespace std;
 
 TEST(Transform,SO3){
-    std::default_random_engine e;
+    default_random_engine e;
 
-    double pitch=std::uniform_real_distribution<double>(-M_PI/2,M_PI/2)(e);
-    double yaw  =std::uniform_real_distribution<double>(-M_PI,M_PI)(e);
-    double roll =std::uniform_real_distribution<double>(-M_PI/2,M_PI/2)(e);
+    double pitch=uniform_real_distribution<double>(-M_PI/2,M_PI/2)(e);
+    double yaw  =uniform_real_distribution<double>(-M_PI,M_PI)(e);
+    double roll =uniform_real_distribution<double>(-M_PI/2,M_PI/2)(e);
 
     SO3 q=SO3::fromPitchYawRoll(pitch,yaw,roll);
 
@@ -33,7 +34,7 @@ TEST(Transform,SO3){
     EXPECT_EQ(q,q1);
     EXPECT_EQ(SO3(),q.inverse()*q);
 
-    std::uniform_real_distribution<double> pt_gen(-1000,1000);
+    uniform_real_distribution<double> pt_gen(-1000,1000);
     Point3d xyz(pt_gen(e),pt_gen(e),pt_gen(e));
     Point3d p1=q.inverse()*q*xyz;
     EXPECT_NEAR((xyz-p1).norm(),0,1e-6);
@@ -41,12 +42,12 @@ TEST(Transform,SO3){
 
 
 TEST(Transform,SE3){
-    std::default_random_engine e;
+    default_random_engine e;
 
-    double pitch=std::uniform_real_distribution<double>(-M_PI/2,M_PI/2)(e);
-    double yaw  =std::uniform_real_distribution<double>(-M_PI,M_PI)(e);
-    double roll =std::uniform_real_distribution<double>(-M_PI/2,M_PI/2)(e);
-    std::uniform_real_distribution<double> pt_gen(-1000,1000);
+    double pitch=uniform_real_distribution<double>(-M_PI/2,M_PI/2)(e);
+    double yaw  =uniform_real_distribution<double>(-M_PI,M_PI)(e);
+    double roll =uniform_real_distribution<double>(-M_PI/2,M_PI/2)(e);
+    uniform_real_distribution<double> pt_gen(-1000,1000);
 
     SE3 T(SO3::fromPitchYawRoll(pitch,yaw,roll),
           Point3d(pt_gen(e),pt_gen(e),pt_gen(e)));
@@ -67,12 +68,12 @@ TEST(Transform,SE3){
 }
 
 TEST(Transform,SIM3){
-    std::default_random_engine e;
+    default_random_engine e;
 
-    double pitch=std::uniform_real_distribution<double>(-M_PI/2,M_PI/2)(e);
-    double yaw  =std::uniform_real_distribution<double>(-M_PI,M_PI)(e);
-    double roll =std::uniform_real_distribution<double>(-M_PI/2,M_PI/2)(e);
-    std::uniform_real_distribution<double> pt_gen(-1000,1000);
+    double pitch=uniform_real_distribution<double>(-M_PI/2,M_PI/2)(e);
+    double yaw  =uniform_real_distribution<double>(-M_PI,M_PI)(e);
+    double roll =uniform_real_distribution<double>(-M_PI/2,M_PI/2)(e);
+    uniform_real_distribution<double> pt_gen(-1000,1000);
 
     SIM3 S(SO3::fromPitchYawRoll(pitch,yaw,roll),
           Point3d(pt_gen(e),pt_gen(e),pt_gen(e)),
