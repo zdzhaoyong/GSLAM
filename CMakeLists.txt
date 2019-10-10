@@ -46,12 +46,12 @@ pi_add_target(qviz_display_map SHARED GSLAM/plugins/qviz/displays/mapviz REQUIRE
 
 pi_add_target(gslamDB_euroc SHARED GSLAM/plugins/datasets/DatasetEuroc.cpp REQUIRED OpenCV)
 pi_add_target(gslamDB_kitti SHARED GSLAM/plugins/datasets/DatasetKITTI.cpp REQUIRED OpenCV)
-#pi_add_target(gslamDB_npudronemap SHARED GSLAM/plugins/Datasets/DatasetNPUDroneMap.cpp)
-#pi_add_target(gslamDB_npurgbd SHARED GSLAM/plugins/Datasets/DatasetNPURGBD.cpp REQUIRED OpenCV)
-#pi_add_target(gslamDB_cvmono SHARED GSLAM/plugins/Datasets/DatasetOpenCVMono.cpp REQUIRED OpenCV)
-#pi_add_target(gslamDB_rtm SHARED GSLAM/plugins/Datasets/DatasetRTMapper.cpp REQUIRED Qt)
-#pi_add_target(gslamDB_tummono SHARED GSLAM/plugins/Datasets/DatasetTUMMono.cpp REQUIRED OpenCV)
-#pi_add_target(gslamDB_tumrgbd SHARED GSLAM/plugins/Datasets/DatasetTUMRGBD.cpp REQUIRED OpenCV)
+pi_add_target(gslamDB_npudronemap SHARED GSLAM/plugins/datasets/DatasetNPUDroneMap.cpp)
+pi_add_target(gslamDB_npurgbd SHARED GSLAM/plugins/datasets/DatasetNPURGBD.cpp REQUIRED OpenCV)
+pi_add_target(gslamDB_cvmono SHARED GSLAM/plugins/datasets/DatasetOpenCVMono.cpp REQUIRED OpenCV)
+#pi_add_target(gslamDB_rtm SHARED GSLAM/plugins/datasets/DatasetRTMapper.cpp REQUIRED Qt)
+pi_add_target(gslamDB_tummono SHARED GSLAM/plugins/datasets/DatasetTUMMono.cpp REQUIRED OpenCV)
+pi_add_target(gslamDB_tumrgbd SHARED GSLAM/plugins/datasets/DatasetTUMRGBD.cpp REQUIRED OpenCV)
 
 pi_add_target(gslam_evaluate BIN GSLAM/evaluation/evaluate_memory REQUIRED System)
 pi_add_target(gslam_metric_cpu SHARED GSLAM/evaluation/metric_cpu REQUIRED System)

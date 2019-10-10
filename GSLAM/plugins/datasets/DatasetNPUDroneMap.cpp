@@ -1,8 +1,8 @@
-#include <GSLAM/core/Dataset.h>
+#include <GSLAM/core/GSLAM.h>
 #include <GSLAM/core/GPS.h>
 #include <GSLAM/core/VecParament.h>
-#include <GSLAM/core/VideoFrame.h>
 #include "IO.h"
+#include "SvarLanguageSupport.cpp"
 
 using namespace std;
 
@@ -173,11 +173,12 @@ public:
 
     virtual bool        open(const std::string& dataset)
     {
-        string path=Svar::getFolderPath(dataset);
-        Svar var;
-        var.parseFile(path+"/config.cfg");
+        string path=getFolderPath(dataset);
+        Svar var=Svar::object();
+        if(!var.parseFile(path+"/config.cfg")) return false;
         plane=var.get<SE3d>("Plane",plane);
         origin=var.get("GPS.Origin",origin);
+        camParameters=var.get<VecParament<double> >("Camera.Paraments",VecParament<double>()).data;
         // Local to ECEF
         local2ECEF.get_translation()=GSLAM::GPS<>::GPS2XYZ(Point3d(origin.y,origin.x,origin.z));
         double D2R=3.1415925/180.;
@@ -191,7 +192,6 @@ public:
                      east.z, north.z, up.z};
         local2ECEF.get_rotation().fromMatrix(R);
 
-        camParameters=var.get<VecParament<double> >("Camera.Paraments",VecParament<double>()).data;
         camera=GSLAM::Camera(camParameters);
         if(!camera.isValid()) return false;
 
@@ -251,13 +251,13 @@ public:
 
     virtual bool open(const string &dataset)
     {
-        string folderPath=Svar::getFolderPath(dataset);
+        string folderPath=getFolderPath(dataset);
         Svar var;
         if(!var.parseFile(dataset)) var.parseFile(folderPath+"/config.cfg");
 
         _seqTop=var.GetString("DatasetPath",folderPath);
 
-        _name  =Svar::getBaseName(dataset);
+        _name  =getBaseName(dataset);
         _skip  =var.GetInt("Video.Skip",0);
         _video.open(var.GetString("Video.File",_seqTop+"/frames.txt"));
         if(!_video.is_open()) return false;
@@ -321,7 +321,10 @@ public:
 
         string imgFile=_seqTop+"/"+_nextImage[1];
         GImage img=imread(imgFile);
-        std::shared_ptr<GSLAM::MapFrame> frame(new GSLAM::FrameMono(_frameId++,imageTime,img,_camera,IMAGE_BGRA));
+        auto frameptr=new RTMapperFrame(_frameId++,imageTime);
+        frameptr->_image=img;
+        frameptr->_camera=_camera;
+        std::shared_ptr<GSLAM::MapFrame> frame(frameptr);
         prepareImageFrame();
         return frame;
     }
@@ -339,7 +342,7 @@ class DatasetNPUDroneMap : public Dataset
 {
 public:
     virtual bool open(const string &dataset){
-        std::string datasetFolder=Svar::getFolderPath(dataset);
+        std::string datasetFolder=getFolderPath(dataset);
         ifstream ifs(datasetFolder+"/trajectory.txt");
         if(ifs.is_open())
         {
@@ -355,7 +358,6 @@ public:
     }
 };
 
-
-REGISTER_DATASET(DatasetNPUDroneMap,npudronemap);
+GSLAM_REGISTER_DATASET(DatasetNPUDroneMap,npudronemap);
 
 }

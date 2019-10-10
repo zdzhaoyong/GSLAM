@@ -16,36 +16,6 @@ public:
         MONOCULAR_MODE,STEREO_MODE,MULTI_MODE
     };
 
-    static std::string getFolderPath(const std::string& path) {
-      auto idx = std::string::npos;
-      if ((idx = path.find_last_of('/')) == std::string::npos)
-        idx = path.find_last_of('\\');
-      if (idx != std::string::npos)
-        return path.substr(0, idx);
-      else
-        return "";
-    }
-
-    static std::string getBaseName(const std::string& path) {
-      std::string filename = getFileName(path);
-      auto idx = filename.find_last_of('.');
-      if (idx == std::string::npos)
-        return filename;
-      else
-        return filename.substr(0, idx);
-    }
-
-    static std::string getFileName(const std::string& path) {
-      auto idx = std::string::npos;
-      if ((idx = path.find_last_of('/')) == std::string::npos)
-        idx = path.find_last_of('\\');
-      if (idx != std::string::npos)
-        return path.substr(idx + 1);
-      else
-        return path;
-    }
-
-
     DatasetKITTI(){}
     virtual std::string type() const{return "DatasetKITTI";}
 
@@ -155,7 +125,9 @@ public:
 
         string line;
         for(int i=0;i<4&&getline(ifs,line);i++){
-            std::vector<double> p=Svar::json(line.substr(4)).castAs<std::vector<double>>();
+            std::vector<double> p(12);
+            stringstream sst(line.substr(4));
+            for(int i=0;i<12;i++) sst>>p[i];
             if(p.size()!=12) return false;
             double fx=p[0],fy=p[5],cx=p[2],cy=p[6],x=-p[3],y=-p[7],z=-p[11];
 
@@ -199,7 +171,9 @@ public:
 
         string line;
         while(getline(ifs,line)){
-            vector<double> vec=Svar::json(line).castAs<vector<double>>();
+            vector<double> vec(12);
+            stringstream sst(line);
+            for(int i=0;i<12;i++) sst>>vec[i];
             if(vec.size()!=12) return false;
             SE3 se3;
             se3.fromMatrix(vec.data());

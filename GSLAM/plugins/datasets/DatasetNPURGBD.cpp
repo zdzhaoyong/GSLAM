@@ -1,6 +1,7 @@
-#include <GSLAM/core/Dataset.h>
-#include <GSLAM/core/VecParament.h>
-#include <GSLAM/core/VideoFrame.h>
+#include <GSLAM/core/GSLAM.h>
+#include "VideoFrame.h"
+#include "VecParament.h"
+#include "IO.h"
 
 #ifdef HAS_OPENCV
 
@@ -42,7 +43,7 @@ public:
             LOG(ERROR)<<"Can't open file "<<var.GetString("VideoFile","");
             return false;
         }
-        video_top=var.getFolderPath(dataset);
+        video_top=getFolderPath(dataset);
         return true;
     }
 
@@ -73,5 +74,5 @@ public:
 };
 
 
-REGISTER_DATASET(DatasetNPURGBD,npurgbd);
+GSLAM_REGISTER_DATASET(DatasetNPURGBD,npurgbd);
 #endif

@@ -67,7 +67,7 @@ public:
     int              skip;
 };
 
-REGISTER_DATASET(DatasetOpenCVMono,cvmono)
+GSLAM_REGISTER_DATASET(DatasetOpenCVMono,cvmono)
 
 
 #endif // HAS_OPENCV

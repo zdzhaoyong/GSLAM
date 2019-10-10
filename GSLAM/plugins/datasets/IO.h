@@ -1,6 +1,35 @@
 #pragma once
 #include <GSLAM/core/GImage.h>
 
+inline std::string getFolderPath(const std::string& path) {
+  auto idx = std::string::npos;
+  if ((idx = path.find_last_of('/')) == std::string::npos)
+    idx = path.find_last_of('\\');
+  if (idx != std::string::npos)
+    return path.substr(0, idx);
+  else
+    return "";
+}
+
+inline std::string getFileName(const std::string& path) {
+  auto idx = std::string::npos;
+  if ((idx = path.find_last_of('/')) == std::string::npos)
+    idx = path.find_last_of('\\');
+  if (idx != std::string::npos)
+    return path.substr(idx + 1);
+  else
+    return path;
+}
+
+inline std::string getBaseName(const std::string& path) {
+  std::string filename = getFileName(path);
+  auto idx = filename.find_last_of('.');
+  if (idx == std::string::npos)
+    return filename;
+  else
+    return filename.substr(0, idx);
+}
+
 #if defined(HAS_OPENCV) && defined(USE_OPENCV_IO)
 #include <opencv2/highgui/highgui.hpp>
 

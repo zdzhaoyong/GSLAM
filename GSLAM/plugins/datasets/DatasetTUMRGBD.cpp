@@ -1,8 +1,8 @@
 #ifdef HAS_OPENCV
 
-#include <GSLAM/core/Dataset.h>
-#include <GSLAM/core/VecParament.h>
-#include <GSLAM/core/VideoFrame.h>
+#include <GSLAM/core/GSLAM.h>
+#include "VecParament.h"
+#include "VideoFrame.h"
 
 #include <opencv2/highgui/highgui.hpp>
 
@@ -137,6 +137,6 @@ public:
     int           imgSkip;
 };
 
-REGISTER_DATASET(DatasetTUMRGBD,tumrgbd);
+GSLAM_REGISTER_DATASET(DatasetTUMRGBD,tumrgbd);
 
 #endif

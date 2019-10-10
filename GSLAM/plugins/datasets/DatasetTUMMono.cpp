@@ -2,11 +2,9 @@
 #include <sstream>
 #include <fstream>
 
-#include "GSLAM/core/Dataset.h"
-#include "GSLAM/core/VecParament.h"
-#include "GSLAM/core/Undistorter.h"
+#include "GSLAM/core/GSLAM.h"
+#include "VecParament.h"
 #include "IO.h"
-#include "GSLAM/core/JSON.h"
 
 #ifdef HAS_OPENCV
 #include <opencv2/highgui/highgui.hpp>
@@ -75,7 +73,7 @@ public:
         Svar var;
         var.ParseFile(dataset);
 
-        datasetPath=var.GetString("SequenceFolder",Svar::getFolderPath(dataset));
+        datasetPath=var.GetString("SequenceFolder",getFolderPath(dataset));
         skip=var.GetInt("Video.Skip",0);
 
         // load camera
@@ -294,5 +292,5 @@ public:
     ifstream times;
 };
 
-REGISTER_DATASET(DatasetTUMMono,tummono);
+GSLAM_REGISTER_DATASET(DatasetTUMMono,tummono);
 

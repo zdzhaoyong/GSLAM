@@ -1,8 +1,6 @@
-#include "GSLAM/core/Dataset.h"
-#include "GSLAM/core/VideoFrame.h"
-#include "GSLAM/core/Svar.h"
-#include "GSLAM/core/VecParament.h"
-#include "GSLAM/core/Timer.h"
+#include "GSLAM/core/GSLAM.h"
+#include "VideoFrame.h"
+#include "VecParament.h"
 #include "GSLAM/core/XML.h"
 
 #include <list>
@@ -485,7 +483,7 @@ public:
     std::list<GSLAM::FramePtr> _preparedFrames;
 };
 
-REGISTER_DATASET(DatasetRTMapper,rtm)
+GSLAM_REGISTER_DATASET(DatasetRTMapper,rtm)
 
 
 #endif // end of HAS_QT
