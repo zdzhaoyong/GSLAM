@@ -1,4 +1,6 @@
 #include <GSLAM/core/GSLAM.h>
+#include <algorithm>
+#include <random>
 #include "gtest.h"
 
 using namespace GSLAM;

@@ -4,30 +4,174 @@ dist: trusty
 
 matrix:
   include:
-    - os: linux
-      env: CMAKE_OPTIONS="-DCMAKE_RUNTIME_OUTPUT_DIRECTORY=bin -DOPENGL_ENABLED=OFF -DCeres_DIR=${TRAVIS_BUILD_DIR}/deps/ceres-solver/install/lib/cmake/Ceres -DQt5Core_DIR=/opt/qt54/lib/cmake/Qt5Core -DQt5OpenGL_DIR=/opt/qt54/lib/cmake/Qt5OpenGL" QT_QPA_PLATFORM=offscreen
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - cmake
-            - build-essential
-            - libeigen3-dev
-            - libatlas-base-dev
-            - libsuitesparse-dev
-            - libfreeimage-dev
-            - libgoogle-glog-dev
-            - libgflags-dev
-            - libglew-dev
-    - os: osx
-      env: CMAKE_OPTIONS="-DIPO_ENABLED=OFF -DQt5_DIR=/usr/local/opt/qt5/lib/cmake/Qt5 -DQt5Core_DIR=/usr/local/opt/qt5/lib/cmake/Qt5Core -DQt5OpenGL_DIR=/usr/local/opt/qt5/lib/cmake/Qt5OpenGL"
+    # OSX / Clang
+
+  - os: osx
+    osx_image: xcode8.3
+
+  - os: osx
+    osx_image: xcode9
+
+  - os: osx
+    osx_image: xcode9.1
+
+  - os: osx
+    osx_image: xcode9.2
+
+  - os: osx
+    osx_image: xcode9.3
+
+  - os: osx
+    osx_image: xcode9.4
+
+  - os: osx
+    osx_image: xcode10
+
+  - os: osx
+    osx_image: xcode10.1
+
+- os: linux
+    compiler: gcc
+    env: compiler=g++-4.8
+    addons:
+      apt:
+        sources: ['ubuntu-toolchain-r-test']
+        packages: ['g++-4.8', 'ninja-build']
+
+  - os: linux
+    compiler: gcc
+    env: compiler=g++-4.9
+    addons:
+      apt:
+        sources: ['ubuntu-toolchain-r-test']
+        packages: ['g++-4.9', 'ninja-build']
+
+  - os: linux
+    compiler: gcc
+    env: COMPILER=g++-5  GSLAM_UPDATE_DOC=ON
+    addons:
+      apt:
+        sources: ['ubuntu-toolchain-r-test']
+        packages: ['g++-5', 'ninja-build']
+
+  - os: linux
+    compiler: gcc
+    env: COMPILER=g++-6
+    addons:
+      apt:
+        sources: ['ubuntu-toolchain-r-test']
+        packages: ['g++-6', 'ninja-build']
+
+  - os: linux
+    compiler: gcc
+    env: COMPILER=g++-7
+    addons:
+      apt:
+        sources: ['ubuntu-toolchain-r-test']
+        packages: ['g++-7', 'ninja-build']
+
+  - os: linux
+    compiler: gcc
+    env: COMPILER=g++-8
+    addons:
+      apt:
+        sources: ['ubuntu-toolchain-r-test']
+        packages: ['g++-8', 'ninja-build']
+
+  - os: linux
+    compiler: gcc
+    env:
+      - COMPILER=g++-8
+      - CXXFLAGS=-std=c++17
+    addons:
+      apt:
+        sources: ['ubuntu-toolchain-r-test']
+        packages: ['g++-8', 'ninja-build']
+
+  # Linux / Clang
+
+  - os: linux
+    compiler: clang
+    env: COMPILER=clang++-3.7
+    addons:
+      apt:
+        sources: ['ubuntu-toolchain-r-test', 'llvm-toolchain-precise-3.7']
+        packages: ['g++-6', 'clang-3.7', 'ninja-build']
+
+  - os: linux
+    compiler: clang
+    env: COMPILER=clang++-3.8
+    addons:
+      apt:
+        sources: ['ubuntu-toolchain-r-test']
+        packages: ['g++-6', 'clang-3.8', 'ninja-build']
+
+  - os: linux
+    compiler: clang
+    env: COMPILER=clang++-3.9
+    addons:
+      apt:
+        sources: ['ubuntu-toolchain-r-test']
+        packages: ['g++-6', 'clang-3.9', 'ninja-build']
+
+  - os: linux
+    compiler: clang
+    env: COMPILER=clang++-4.0
+    addons:
+      apt:
+        sources: ['ubuntu-toolchain-r-test', 'llvm-toolchain-trusty-4.0']
+        packages: ['g++-6', 'clang-4.0', 'ninja-build']
+
+  - os: linux
+    compiler: clang
+    env: COMPILER=clang++-5.0
+    addons:
+      apt:
+        sources: ['ubuntu-toolchain-r-test', 'llvm-toolchain-trusty-5.0']
+        packages: ['g++-6', 'clang-5.0', 'ninja-build']
+
+  - os: linux
+    compiler: clang
+    env: COMPILER=clang++-6.0
+    addons:
+      apt:
+        sources: ['ubuntu-toolchain-r-test', 'llvm-toolchain-trusty-6.0']
+        packages: ['g++-6', 'clang-6.0', 'ninja-build']
+
+  - os: linux
+    compiler: clang
+    env: COMPILER=clang++-7
+    addons:
+      apt:
+        sources: ['ubuntu-toolchain-r-test', 'llvm-toolchain-trusty-7']
+        packages: ['g++-6', 'clang-7', 'ninja-build']
+
+  - os: linux
+    compiler: clang
+    env:
+      - COMPILER=clang++-7
+      - CXXFLAGS=-std=c++1z
+    addons:
+      apt:
+        sources: ['ubuntu-toolchain-r-test', 'llvm-toolchain-trusty-7']
+        packages: ['g++-6', 'clang-7', 'ninja-build']
 
 cache:
   directories:
     - ${TRAVIS_BUILD_DIR}/deps
     - ${TRAVIS_BUILD_DIR}/build
 
+    - os: linux
+      env: QT_QPA_PLATFORM=offscreen 
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - 
+            - 
+            - 
+            - 
 before_script:
   - |
     if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
@@ -50,25 +194,7 @@ before_script:
 
       sudo add-apt-repository --yes ppa:beineri/opt-qt542-trusty
       sudo apt-get update -qq
-      sudo apt-get -y install qt54base
-      sudo apt-get -y install libopencv-dev  
-      sudo apt-get -y install doxygen doxygen-doc doxygen-latex doxygen-gui graphviz
-
-      cd ${TRAVIS_BUILD_DIR}/deps
-      if [[ -z "$(ls -A ceres-solver)" ]]; then
-        git clone https://ceres-solver.googlesource.com/ceres-solver
-      fi
-      cd ceres-solver
-      git pull
-      mkdir -p build install
-      cd build
-      cmake .. \
-        -DBUILD_TESTING=OFF \
-        -DBUILD_EXAMPLES=OFF 
-      make -j2
-      make install
-      cd ${TRAVIS_BUILD_DIR}
-    fi
+      sudo apt-get -y install qt54base libopencv-dev cmake build-essential libeigen3-dev libatlas-base-dev libsuitesparse-dev libfreeimage-dev libgoogle-glog-dev libgflags-dev libglew-dev
 
 script:  
   # make sure CXX is correctly set
@@ -88,6 +214,7 @@ script:
 after_success:
   - cd $TRAVIS_BUILD_DIR/build
   - |
-    if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
+    if [[ "$GSLAM_UPDATE_DOC" != "" ]]; then
+       sudo apt-get -y install doxygen doxygen-doc doxygen-latex doxygen-gui graphviz
        bash ../doc/update_github_doc.sh
     fi
