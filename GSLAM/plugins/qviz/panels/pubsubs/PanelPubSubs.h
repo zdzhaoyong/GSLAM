@@ -15,7 +15,9 @@ public:
         table=new QTableWidget(this);
         setWidget(table);
         table->setColumnCount(3);
-        table->setHorizontalHeaderLabels({"Name","Type","PayLoad"});
+        QStringList labels;
+        labels<<"Name"<<"Type"<<"PayLoad";
+        table->setHorizontalHeaderLabels(labels);
 
         QHeaderView *HorzHdr = table->horizontalHeader();
     #if QT_VERSION>=0x050000

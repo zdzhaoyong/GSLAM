@@ -173,9 +173,8 @@ cache:
 before_script:
   - |
     if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
-      brew update
       brew install \
-        cmake ninja \
+        cmake  \
         eigen \
         glog \
         gflags \
