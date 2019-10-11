@@ -161,17 +161,6 @@ cache:
     - ${TRAVIS_BUILD_DIR}/deps
     - ${TRAVIS_BUILD_DIR}/build
 
-    - os: linux
-      env: QT_QPA_PLATFORM=offscreen 
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - 
-            - 
-            - 
-            - 
 before_script:
   - |
     if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
