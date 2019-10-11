@@ -177,7 +177,7 @@ public:
         return TooN::SE3<Precision>(my_rotation,*(TooN::Vector<3,Precision>*)&my_translation);
     }
 
-    SE3<Precision>(const TooN::SE3<Precision>& tn)
+    SE3_<Precision>(const TooN::SE3<Precision>& tn)
     {
         my_rotation.fromMatrixUnsafe(tn.get_rotation());
         my_translation=*(Vec3*)&tn.get_translation();
@@ -195,7 +195,7 @@ public:
         return sophusSE3;
     }
 
-    SE3<Precision>(const Sophus::SE3Group<Precision>& sophus)
+    SE3_<Precision>(const Sophus::SE3Group<Precision>& sophus)
         : my_rotation(sophus.so3()),
           my_translation(*(Vec3*)&sophus.translation())
     {

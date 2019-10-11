@@ -4,7 +4,7 @@
 Porting ORBSLAM is quit easy,
 since we just need to subscribe the input frame and publish the tracked frame and map updated.
 
-The source code can be found at: https://github.com/zdzhaoyong/gslam_orbslam
+The source code can be found at: https://github.com/pi-gslam/GSLAM-ORBSLAM
 
 ```
 int run(Svar config){

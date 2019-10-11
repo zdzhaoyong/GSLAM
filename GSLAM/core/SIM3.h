@@ -270,7 +270,7 @@ public:
     }
 
 #ifdef SOPHUS_SIM3_HPP
-    SIM3(const Sophus::Sim3Group<Precision>& sim3)
+    SIM3_(const Sophus::Sim3Group<Precision>& sim3)
     {
         Eigen::Quaternion<Precision> quat(sim3.rxso3().quaternion().coeffs());
         quat.normalize();

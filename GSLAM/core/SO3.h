@@ -375,7 +375,7 @@ public:
 
 #ifdef HAS_TOON
     /// Matrix things
-    SO3(const TooN::Matrix<3,3,Precision>& m)
+    SO3_(const TooN::Matrix<3,3,Precision>& m)
     {
         fromMatrix(m);
     }
@@ -392,7 +392,7 @@ public:
     }
 
     //return the matrix
-    TooN::Matrix<3,3,Precision> getMatrix()const
+    TooN::Matrix<3,3,Precision> getMatrixTooN()const
     {
         Precision x2 = x * x;
         Precision y2 = y * y;
@@ -410,14 +410,13 @@ public:
 
     operator TooN::SO3<Precision>()
     {
-//        TooN::SO3<Precision> so3_toon;
-        return getMatrix();
+        return getMatrixTooN();
     }
 
 #endif
 
 #ifdef SOPHUS_SO3_HPP
-    SO3(const Sophus::SO3Group<Precision>& so3)
+    SO3_(const Sophus::SO3Group<Precision>& so3)
         : x(so3.unit_quaternion().coeffs()[0]),
           y(so3.unit_quaternion().coeffs()[1]),
           z(so3.unit_quaternion().coeffs()[2]),
@@ -426,7 +425,7 @@ public:
 
     operator Sophus::SO3Group<Precision>()
     {
-        return *(Sophus::SO3Group<Precision>*)&x;
+        return Sophus::SO3Group<Precision>(Eigen::Quaternion<Precision>(w,x,y,z));
     }
 #endif
 
