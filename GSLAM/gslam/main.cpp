@@ -19,6 +19,10 @@ int main(int argc,char** argv)
 
         if(!run.isFunction()){
             Svar app=Registry::load(appname);
+            if(app.isUndefined()){
+               LOG(FATAL) <<"Svar module \""<<appname<<"\" not found.";
+               return -1;
+            }
             run=app["gslam"]["apps"][appname];
             if(!run.isFunction()) {
                 LOG(WARNING)<<"Plugin "<<appname<<" does not have function \"run\".";

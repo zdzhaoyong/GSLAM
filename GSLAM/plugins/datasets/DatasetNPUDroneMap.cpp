@@ -355,6 +355,7 @@ public:
             _impl=DatasetPtr(new DatasetDroneMapUnified());
             return _impl->open(dataset);
         }
+        return false;
     }
 };
 
