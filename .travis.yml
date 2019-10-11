@@ -4,7 +4,7 @@ dist: trusty
 
 matrix:
   include:
-    # OSX / Clang
+  # OSX / Clang
 
   - os: osx
     osx_image: xcode8.3
