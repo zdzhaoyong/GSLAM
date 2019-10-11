@@ -30,7 +30,9 @@ matrix:
   - os: osx
     osx_image: xcode10.1
 
-- os: linux
+  # Linux / GCC
+
+  - os: linux
     compiler: gcc
     env: compiler=g++-4.8
     addons:
@@ -48,8 +50,8 @@ matrix:
 
   - os: linux
     compiler: gcc
-    env: 
-      - COMPILER=g++-5  
+    env:
+      - COMPILER=g++-5
       - GSLAM_UPDATE_DOC=ON
     addons:
       apt:
@@ -158,6 +160,7 @@ matrix:
         sources: ['ubuntu-toolchain-r-test', 'llvm-toolchain-trusty-7']
         packages: ['g++-6', 'clang-7', 'ninja-build']
 
+
 cache:
   directories:
     - ${TRAVIS_BUILD_DIR}/deps
@@ -185,7 +188,10 @@ before_script:
 
       sudo add-apt-repository --yes ppa:beineri/opt-qt542-trusty
       sudo apt-get update -qq
-      sudo apt-get -y install qt54base libopencv-dev cmake build-essential libeigen3-dev libatlas-base-dev libsuitesparse-dev libfreeimage-dev libgoogle-glog-dev libgflags-dev libglew-dev
+      sudo apt-get -y install \
+        qt54base libopencv-dev cmake build-essential libeigen3-dev libatlas-base-dev \
+        libsuitesparse-dev libfreeimage-dev libgoogle-glog-dev libgflags-dev libglew-dev
+    fi
 
 script:  
   # make sure CXX is correctly set
