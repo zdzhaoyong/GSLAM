@@ -120,7 +120,6 @@ void testGImageReadThreadSafe(int threadNumber=4,double seconds=1)
 
 TEST(GImageTest,GImageReadThreadSafe)
 {
-    return;
     try{
         testGImageReadThreadSafe(4,1);
     }

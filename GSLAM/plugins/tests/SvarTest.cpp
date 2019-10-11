@@ -387,7 +387,6 @@ TEST(Svar,Thread){
             GSLAM::Rate::sleep(1e-4);
         }
     };
-    return;
     try{
         std::vector<std::thread> threads;
         for(int i=0;i<svar.GetInt("doubleThreads",4);i++) threads.push_back(std::thread(doubleThread));
