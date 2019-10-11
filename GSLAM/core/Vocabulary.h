@@ -49,6 +49,11 @@
 #include <bitset>
 #include <memory>
 
+#ifdef __x86_64__
+#include <xmmintrin.h>
+#include <emmintrin.h>
+#endif
+
 #include "GSLAM/core/GImage.h"
 #include "GSLAM/core/Messenger.h"
 

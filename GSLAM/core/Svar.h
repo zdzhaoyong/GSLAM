@@ -1093,6 +1093,7 @@ public:
                             const Svar& fget,const Svar& fset=Svar(),
                             const std::string& doc=""){
         _methods[name]=SvarProperty(fget,fset,name,doc);
+        return *this;
     }
 
     template <typename C, typename D>
