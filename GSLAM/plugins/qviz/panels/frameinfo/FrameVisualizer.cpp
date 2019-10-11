@@ -205,7 +205,9 @@ public:
 InfomationViewer::InfomationViewer(QWidget* parent)
     :QTableWidget(parent){
     setColumnCount(2);
-    setHorizontalHeaderLabels({"name","value"});
+    QStringList labels;
+    labels<<"name"<<"value";
+    setHorizontalHeaderLabels(labels);
 
     QHeaderView *HorzHdr = horizontalHeader();
 #if QT_VERSION>=0x050000

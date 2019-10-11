@@ -91,9 +91,6 @@ void LogTextSink::saveLogFile(const QString &logFolder)
     QDir dir(logFolder);
     if( !dir.exists() )
         dir.mkdir(logFolder);
-
-    freopen( "d:/aaa.log", "a", stderr );
-    freopen( "d:/aaa.log", "a", stdout );
 }
 
 GSLAM_REGISTER_PANEL(log,LogTextSink);

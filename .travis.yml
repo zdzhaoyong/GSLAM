@@ -34,7 +34,9 @@ matrix:
 
   - os: linux
     compiler: gcc
-    env: compiler=g++-4.8
+    env:
+      - compiler=g++-4.8
+      - CXXFLAGS=-Wl,--no-as-needed
     addons:
       apt:
         sources: ['ubuntu-toolchain-r-test']
@@ -42,7 +44,9 @@ matrix:
 
   - os: linux
     compiler: gcc
-    env: compiler=g++-4.9
+    env:
+      - compiler=g++-4.9
+      - CXXFLAGS=-Wl,--no-as-needed
     addons:
       apt:
         sources: ['ubuntu-toolchain-r-test']
@@ -169,9 +173,9 @@ cache:
 before_script:
   - |
     if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
-      brew tap homebrew/science
+      brew update
       brew install \
-        cmake \
+        cmake ninja \
         eigen \
         glog \
         gflags \
@@ -179,6 +183,7 @@ before_script:
         ceres-solver \
         qt5 \
         glew || true
+      export CMAKE_OPTIONS="-DCMAKE_RUNTIME_OUTPUT_DIRECTORY=bin -DIPO_ENABLED=OFF -DQt5_DIR=/usr/local/opt/qt5/lib/cmake/Qt5 -DQt5Core_DIR=/usr/local/opt/qt5/lib/cmake/Qt5Core -DQt5OpenGL_DIR=/usr/local/opt/qt5/lib/cmake/Qt5OpenGL"
     fi
   - |
     if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then
@@ -200,6 +205,7 @@ script:
   # show OS/compiler version
   - uname -a
   - $CXX --version
+  - cmake --version
 
   # compile and execute unit tests
   - mkdir -p build && cd build
