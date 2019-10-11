@@ -1,3 +1,6 @@
+#include <QTabWidget>
+#include <QGridLayout>
+
 #if QT_VERSION>=0x050000
 #include <QtOpenGL/QGLFunctions>
 #include <QOpenGLFunctions_3_3_Core>
@@ -5,8 +8,6 @@
 #include <GL/glew.h>
 #endif
 
-#include <QTabWidget>
-#include <QGridLayout>
 
 #include <GSLAM/core/GSLAM.h>
 #include <GSLAM/core/Display.h>
@@ -38,7 +39,7 @@ public:
         return plugin;
     }
 
-    MapVisualizer():_vetexTrajBuffer(0),_mapUpdated(false),_curFrameUpdated(false){
+    MapVisualizer():_vetexTrajBuffer(0),_mapUpdated(false),_curFrameUpdated(false),_isGLInitialized(false){
         _curFrame.get_scale()=-1;
         _pubScenceOrigin=messenger.advertise<GSLAM::Point3d>("mapviz/gl_origin");
         _pubScenceRadius=messenger.advertise<double>("qviz/gl_radius");
@@ -81,6 +82,15 @@ public:
     {
         if(!_config.get("enable",true)) return;
 
+        if(!_isGLInitialized){
+#if QT_VERSION>=0x050000
+            initializeOpenGLFunctions();
+#else
+            glewInit();
+#endif
+            _isGLInitialized=true;
+        }
+
         GSLAM::ReadMutex lock(_mutex);
         glPushMatrix();
 //        glTranslated(_scenceOrigin.x,_scenceOrigin.y,_scenceOrigin.z);
@@ -97,7 +107,6 @@ public:
 
         if(!_vetexTrajBuffer)
         {
-            glewInit();
             glGenBuffers(7, &_vetexTrajBuffer);
         }
 
@@ -437,7 +446,7 @@ public:
     uint                    _vetexConnectionBuffer,_gpsErrorBuffer,_curConnectionBuffer;
     uint                    _pointCloudVertexBuffer;
     uint                    _pointCloudColorsBuffer;
-    bool                    _mapUpdated,_curFrameUpdated;
+    bool                    _mapUpdated,_curFrameUpdated,_isGLInitialized;
     GSLAM::Point3d          _scenceCenter,_scenceOrigin;
     double                  _scenceRadius;
     GSLAM::SE3              _viewPoint;

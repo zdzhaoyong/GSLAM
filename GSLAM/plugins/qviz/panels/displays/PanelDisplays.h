@@ -217,7 +217,10 @@ public:
     DisplayTree(QWidget* parent,std::string topic=""):
         QTreeWidget(parent){
 //        this->header()->setVisible(false);
+#if QT_VERSION>=0x050000
+#else
         header()->setResizeMode(QHeaderView::Interactive);
+#endif
         this->setColumnCount(2);
         setColumnWidth(0,150);
         subDisplay=messenger.subscribe(topic,[this](Svar display){
