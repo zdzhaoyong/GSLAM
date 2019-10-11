@@ -48,7 +48,9 @@ matrix:
 
   - os: linux
     compiler: gcc
-    env: COMPILER=g++-5  GSLAM_UPDATE_DOC=ON
+    env: 
+      - COMPILER=g++-5  
+      - GSLAM_UPDATE_DOC=ON
     addons:
       apt:
         sources: ['ubuntu-toolchain-r-test']
