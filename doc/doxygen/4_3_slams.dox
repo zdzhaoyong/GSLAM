@@ -21,6 +21,10 @@
 - origin source code: https://github.com/uzh-rpg/rpg_svo
 - plugin source code: https://github.com/pi-gslam/GSLAM-SVO
 
+\section sSVO2 SVO2
+\image html https://github.com/pi-gslam/gslam_svo2/raw/master/data/images/gslam_svo2.png
+- origin source code: https://github.com/uzh-rpg/rpg_svo_example
+- plugin source code: https://github.com/pi-gslam/gslam_svo2
 
 \section sTheiaSfM TheiaSfM
 \image html gslam_theiaSfM.png
