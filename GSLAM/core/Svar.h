@@ -840,7 +840,7 @@ public:
     Svar& getOrCreate(const std::string& name,bool parse_dot=false);// FIXME: Not thread safe
 
     template <typename T>
-    T& Arg(const std::string& name, T def, const std::string& help){return arg<T>(name,def,help);}
+    T Arg(const std::string& name, T def, const std::string& help){return arg<T>(name,def,help);}
 
     std::vector<std::string> ParseMain(int argc, char** argv){return parseMain(argc,argv);}
     bool ParseFile(const std::string& file_path){return parseFile(file_path);}

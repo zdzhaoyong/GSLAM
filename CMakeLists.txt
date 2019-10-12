@@ -49,7 +49,7 @@ pi_add_target(gslamDB_kitti SHARED GSLAM/plugins/datasets/DatasetKITTI.cpp REQUI
 pi_add_target(gslamDB_npudronemap SHARED GSLAM/plugins/datasets/DatasetNPUDroneMap.cpp)
 pi_add_target(gslamDB_npurgbd SHARED GSLAM/plugins/datasets/DatasetNPURGBD.cpp REQUIRED OpenCV)
 pi_add_target(gslamDB_cvmono SHARED GSLAM/plugins/datasets/DatasetOpenCVMono.cpp REQUIRED OpenCV)
-#pi_add_target(gslamDB_rtm SHARED GSLAM/plugins/datasets/DatasetRTMapper.cpp REQUIRED Qt)
+pi_add_target(gslamDB_rtm SHARED GSLAM/plugins/datasets/DatasetRTMapper.cpp REQUIRED Qt)
 pi_add_target(gslamDB_tummono SHARED GSLAM/plugins/datasets/DatasetTUMMono.cpp REQUIRED OpenCV)
 pi_add_target(gslamDB_tumrgbd SHARED GSLAM/plugins/datasets/DatasetTUMRGBD.cpp REQUIRED OpenCV)
 

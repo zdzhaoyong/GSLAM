@@ -1,7 +1,7 @@
 #include "GSLAM/core/GSLAM.h"
 #include "VideoFrame.h"
 #include "VecParament.h"
-#include "GSLAM/core/XML.h"
+#include "XML.h"
 
 #include <list>
 
@@ -160,6 +160,64 @@ public:
 class DatasetRTMapper : public Dataset
 {
 public:
+    class Event
+    {
+    public:
+        Event(bool autoReset = true):_auto(autoReset),_state(false){
+
+        }
+        ~Event(){}
+
+        void set(){notify_all();}
+
+        void wait(){
+            if(_auto)
+                _state = false;
+            if (!_state)
+            {
+                std::unique_lock<std::mutex> _lock(_mutex);
+                _cond.wait(_lock);
+            }
+        }
+
+        void notify_all()
+        {
+            _cond.notify_all();
+            _state = true;
+        }
+
+        void notify_once()
+        {
+            _cond.notify_one();
+            _state = true;
+        }
+
+        void reset(){
+            std::unique_lock<std::mutex> _lock(_mutex);
+            _state=false;
+        }
+
+    private:
+        Event(const Event&);
+        Event& operator = (const Event&);
+
+        bool            _auto;
+        std::atomic<bool> _state;
+        std::mutex      _mutex;
+        std::condition_variable _cond;
+    };
+
+
+    inline std::string getFolderPath(const std::string& path) {
+      auto idx = std::string::npos;
+      if ((idx = path.find_last_of('/')) == std::string::npos)
+        idx = path.find_last_of('\\');
+      if (idx != std::string::npos)
+        return path.substr(0, idx);
+      else
+        return "";
+    }
+
     DatasetRTMapper(const std::string& name="")
         :_frameId(0),
          _name(name)
@@ -168,8 +226,9 @@ public:
 
     ~DatasetRTMapper(){
         _shouldStop=true;
-        while(!_prepareThread.joinable()) GSLAM::Rate::sleep(0.01);
-        _prepareThread.join();
+        if(!_prepareThread) return;
+        while(!_prepareThread->joinable()) GSLAM::Rate::sleep(0.01);
+        _prepareThread->join();
     }
 
     std::string type() const {return "DatasetRTMapper";}
@@ -187,7 +246,7 @@ public:
             ret = var.ParseFile(dataset);
             if( !ret ) return false;
 
-            _seqTop = Svar::getFolderPath(dataset);
+            _seqTop = getFolderPath(dataset);
             if( var.exist("VideoReader.VideoFile") )
                 ret = openRTM_Svar(var,"VideoReader");
             else
@@ -197,7 +256,8 @@ public:
         // set local variables & reading thread
         _frameId = 0;
         _shouldStop = false;
-        _prepareThread = std::thread(&DatasetRTMapper::run, this);
+
+        LOG(INFO)<<"Loaded "<<_frames.size()<<" frames.";
 
         return ret;
     }
@@ -438,6 +498,8 @@ public:
 
     GSLAM::FramePtr grabFrame()
     {
+        if(!_prepareThread)
+            _prepareThread = std::make_shared<std::thread>(&DatasetRTMapper::run, this);
         if(_preparedFrames.size())
         {
             auto ret = _preparedFrames.front();
@@ -464,9 +526,13 @@ public:
             *nf = *frame;
             nf->_image = imread(nf->_imagePath.c_str());
 
+            LOG(INFO)<<"Prepared "<<nf->id()<<" "<<nf->_imagePath
+                    <<" "<<nf->_camera;
+
             return nf;
         }
 
+        LOG(INFO)<<"Reached end";
         return GSLAM::FramePtr(NULL);
     }
 
@@ -477,9 +543,9 @@ public:
 
     std::vector<std::shared_ptr<RTMapperFrame> >   _frames;
 
-    std::thread      _prepareThread;
+    std::shared_ptr<std::thread>      _prepareThread;
     bool             _shouldStop;
-    GSLAM::Event     _eventPrepared;
+    Event     _eventPrepared;
     std::list<GSLAM::FramePtr> _preparedFrames;
 };
 

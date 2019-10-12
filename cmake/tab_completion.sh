@@ -18,7 +18,7 @@ function_gslam_complete()
     local can=$(${COMP_WORDS[*]:0:COMP_CWORD} -help -complete_function_request)
     local reg="-.+"
     if [[ $com =~ $reg ]];then
-      COMPREPLY=($(compgen -df -W "$can" -- $cur))
+      COMPREPLY=($(compgen -f -W "$can" -- $cur))
     else
       COMPREPLY=($(compgen -W "$can" -- $cur))
     fi
