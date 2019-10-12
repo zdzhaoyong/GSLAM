@@ -818,6 +818,21 @@ public:
     template <typename T>
     static std::string toString(const T& v);
 
+    template <typename T>
+    static detail::enable_if_t<detail::has_loading_support<std::istream,T>::value,T> fromString(const std::string& str,const T& def)
+    {
+        T ret;
+        std::stringstream sst(str);
+        sst>>ret;
+        return ret;
+    }
+
+    template <typename T>
+    static detail::enable_if_t<!detail::has_loading_support<std::istream,T>::value,T> fromString(const std::string& str,const T& def)
+    {
+        return def;
+    }
+
     /// Return the raw holder
     const std::shared_ptr<SvarValue>& value()const{return _obj;}
 
@@ -2225,6 +2240,10 @@ T& Svar::get(const std::string& name,T def,bool parse_dot){
         if(casted.is<T>()){
             var=casted;
         }
+        else if(var.is<std::string>()){
+            var=Svar::create(fromString(var.as<std::string>(),def));
+        }
+        else var=Svar::create(def);
     }
     else
         var=Svar::create(def);
@@ -2274,7 +2293,7 @@ inline void Svar::set(const std::string& name,const T& def,bool parse_dot){
     }
     assert(isObject());
     Svar var=as<SvarObject>()[name];
-    if(var.is<T>())
+    if(!std::is_same<T,Svar>::value&&var.is<T>())
         var.as<T>()=def;
     else
         as<SvarObject>().set(name,Svar::create(def));

@@ -176,9 +176,14 @@ public:
         string path=getFolderPath(dataset);
         Svar var=Svar::object();
         if(!var.parseFile(path+"/config.cfg")) return false;
+
         plane=var.get<SE3d>("Plane",plane);
         origin=var.get("GPS.Origin",origin);
-        camParameters=var.get<VecParament<double> >("Camera.Paraments",VecParament<double>()).data;
+
+        VecParament<double> pp=var.get("Camera.Paraments",VecParament<double>());
+
+        camParameters=pp.data;
+
         // Local to ECEF
         local2ECEF.get_translation()=GSLAM::GPS<>::GPS2XYZ(Point3d(origin.y,origin.x,origin.z));
         double D2R=3.1415925/180.;
@@ -253,7 +258,7 @@ public:
     {
         string folderPath=getFolderPath(dataset);
         Svar var;
-        if(!var.parseFile(dataset)) var.parseFile(folderPath+"/config.cfg");
+        var.parseFile(folderPath+"/config.cfg");
 
         _seqTop=var.GetString("DatasetPath",folderPath);
 
