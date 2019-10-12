@@ -62,10 +62,11 @@ public:
         _config.arg("connections",true,"draw connections or not");
         _config.arg("frames",true,"draw frames or not");
         _config.arg("current_frame",true,"draw current frame or not");
+        _config.arg("map_updated_info",false,"show information when map updated");
 
         _config["__cbk__map_topic"]=SvarFunction([this](){
             Topic topic=_config.get("map_topic",Topic());
-            this->_config["subMap"]=messenger.subscribe(topic.name(),0,&MapVisualizer::update,this);
+            this->_config["subMap"]=messenger.subscribe(topic.name(),[this](MapPtr mp){this->update(mp);});
         });
         _config["__cbk__curframe_topic"]=SvarFunction([this](){
             Topic topic=_config.get("curframe_topic",Topic());
@@ -263,6 +264,7 @@ public:
 
     void update(const GSLAM::MapPtr& _map)
     {
+        this->_map=_map;
         // if _map is empty, then clear all data
         if(!_map)
         {
@@ -278,12 +280,11 @@ public:
 
             return;
         }
-        this->_map=_map;
 
         GSLAM::FrameArray mapFrames;
         GSLAM::PointArray mapPoints;
-        if(!_map->getFrames(mapFrames)) return;
-        if(!_map->getPoints(mapPoints)) return;
+        if(!_map->getFrames(mapFrames)) ;
+        if(!_map->getPoints(mapPoints)) ;
 
         std::sort(mapFrames.begin(),mapFrames.end(),[](GSLAM::FramePtr a,GSLAM::FramePtr b)
         {
@@ -398,10 +399,11 @@ public:
             _scenceOrigin=center;
             _pubScenceOrigin.publish(_scenceOrigin);
         }
+        if(_config.get("map_updated_info",false))
+            LOG(INFO)<<"Updated map with "<<_keyframes.size()<<"frames and "<<_pointCloudVertex.size()<<" points, radius:"<<_scenceRadius;
         _pubScenceRadius.publish(_scenceRadius);
         _pubScenceCenter.publish(_scenceCenter);
         _pubUpdateGL.publish(true);
-        //        LOG(INFO)<<"updated map."<<_keyframes.size()<<",points:"<<_pointCloudVertex.size()<<",radius:"<<_scenceRadius;
     }
 
     void updateCurrentFrame(const GSLAM::FramePtr& curFrame,GSLAM::MapPtr map=MapPtr())
