@@ -10,7 +10,7 @@ int run(Svar config){
     if(config.get("help",false)) {return config.help();}
 
     std::string pluginPath=config.get<std::string>("plugin","");
-    std::string key=config.get("key","");
+    std::string key=config.get<std::string>("key","");
 
     Svar inst=Registry::load(pluginPath);
     GSLAM::Svar var=key.empty()?(inst):inst.get(key,Svar(),true);
