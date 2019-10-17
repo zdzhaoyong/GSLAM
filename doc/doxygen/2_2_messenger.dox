@@ -32,4 +32,14 @@ int main(int argc,char** argv)
 @endcode
 
 @warning The Subscriber will auto shutdown, please hold the Subscriber instance until you want to unsubscribe.
+
+
+ \section sNetwork Inter-process Messaging through Network
+
+ The core Messenger only provides high performance intra messaging, extra work is needed to support inter-process communication.
+
+ GSLAM implemented some plugins to let Messenger support network messaging.
+ 
+ gslam_nsq: https://github.com/pi-gslam/gslam_nsq
+
  */
