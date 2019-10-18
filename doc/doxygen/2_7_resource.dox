@@ -7,10 +7,10 @@ GSLAM provides a tiny and efficient way to access such functional.
 - Firstly, generate the resource *.cpp file with command "gslam resource":
 
 @code
-gslam resource -map {\"inside_name.png\":\"folder/name.png\",\"hello.txt\":\"hello.txt\"} -cpp resource.cpp
+gslam resource -map '{"inside_name.png":"folder/name.png","hello.txt":"hello.txt"}' -cpp resource.cpp
 @endcode
 
-\warning '\' is essential to prevent '"' gone.
+\warning ' is essential to prevent '"' gone.
 
 This command will package file "folder/name.png" and "hello.txt" to the resource cpp file "resource.cpp".
 
