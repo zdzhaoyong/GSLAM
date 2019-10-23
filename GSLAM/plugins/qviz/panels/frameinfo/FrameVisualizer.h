@@ -41,6 +41,7 @@ public:
         });
         setObjectName("Frame Visualizer");
         setProperty("area","right");
+        setProperty("stay",true);
     }
     virtual ~FrameVisualizer(){
         LOG(INFO)<<"Frame Visualizer released.";

@@ -42,7 +42,8 @@ void PanelDisplays::collectPlugins(){
                                                      this->tree->addDisplay(create());
                                                  })}});
         if(!create.isFunction()) return;
-        tree->addDisplay(create());
+        if(plugin.second.exist("__stay__"))
+            tree->addDisplay(create());
     }
 }
 

@@ -39,6 +39,7 @@ pi_add_target(qviz_panel_pubsubs SHARED GSLAM/plugins/qviz/panels/pubsubs REQUIR
 pi_add_target(qviz_panel_logger SHARED GSLAM/plugins/qviz/panels/logger REQUIRED System Qt)
 
 pi_add_target(qviz_display_map SHARED GSLAM/plugins/qviz/displays/mapviz REQUIRED System Qt OpenGL GLEW)
+pi_add_target(qviz_display_traj SHARED GSLAM/plugins/qviz/displays/trajviz REQUIRED System Qt OpenGL GLEW)
 
 #pi_add_target(gslam_optimizer SHARED GSLAM/plugins/optimizer_ceres REQUIRED System Eigen3 Ceres GLOG)
 #pi_add_target(gslam_estimator SHARED GSLAM/plugins/estimator REQUIRED Eigen3)

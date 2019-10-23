@@ -4,6 +4,10 @@
 [![License](https://img.shields.io/badge/license-BSD--2--Clause-blue.svg)](./LICENSE)
 [![Version](https://img.shields.io/github/release/zdzhaoyong/GSLAM.svg)](https://github.com/zdzhaoyong/GSLAM/releases)
 
+
+
+[![](https://github.com/zdzhaoyong/GSLAM/raw/resource/gslam_iccv_poster.png)](https://github.com/zdzhaoyong/GSLAM/raw/resource/gslam_iccv_poster.png)
+
 ## 1. Introduction
 
 If you use this code for your research, please cite our paper <a href="https://arxiv.org/abs/1902.07995">GSLAM: A General SLAM Framework and Benchmark</a>:

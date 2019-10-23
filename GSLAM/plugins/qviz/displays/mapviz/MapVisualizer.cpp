@@ -36,6 +36,7 @@ public:
         plugin["__name__"]="Map Visualizer";
         plugin["__type__"]=SvarClass::instance<MapPtr>();
         plugin["__init__"]=create;
+        plugin["__stay__"]=true;
         return plugin;
     }
 
@@ -457,7 +458,7 @@ public:
     GSLAM::Publisher        _pubScenceOrigin,_pubUpdateGL,_pubScenceRadius,_pubScenceCenter;
 };
 
-REGISTER_SVAR_MODULE(){
+REGISTER_SVAR_MODULE(mapviz){
     GSLAM_REGISTER_GLOG_SINKS;
     GSLAM_REGISTER_MESSENGER;
     svar["gslam"]["displays"]["map"]=MapVisualizer::displayPlugin();
