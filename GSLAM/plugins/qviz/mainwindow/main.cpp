@@ -1,9 +1,12 @@
 #include <QApplication>
 #include <QDir>
+#include <QMetaType>
 #include "MainWindow.h"
 #include <GSLAM/core/GSLAM.h>
 
 using namespace GSLAM;
+
+Q_DECLARE_METATYPE(Svar);
 
 int run(Svar config){
     GSLAM::MainWindow* mainWindow=nullptr;
@@ -13,7 +16,9 @@ int run(Svar config){
     bool byMessenger=false;
     Subscriber subStop=messenger.subscribe("messenger/stop",0,[&](bool stop){
         byMessenger=true;
-
+//        messenger.publish("qviz/ui_thread_run",SvarFunction([]()->void{
+//            LOG(INFO)<<"Hello from ui";
+//        }));
         if(mainWindow)
             mainWindow->shutdown();
     });
@@ -59,6 +64,7 @@ int run(Svar config){
     QApplication app(config.GetInt("argc"),
                      config.get<char**>("argv",nullptr));
 
+    qRegisterMetaType<Svar>("Svar");
     mainWindow=new GSLAM::MainWindow(nullptr,config);
     mainWindow->show();
     messenger.publish("qviz/ready",true);

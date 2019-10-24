@@ -32,19 +32,6 @@ If you use this code for your research, please cite our paper <a href="https://a
 ```
 
 ### 1.1. What is GSLAM?
-GSLAM is aimed to provide a general open-source SLAM framework and benchmark with following features :
-
--> 1. Share the same API while maintain compatibility with different SLAM systems (such as feature based or direct methods).
-
--> 2. Support Monocular, Stereo, RGB-D or any custom input types (SAR, IMU, GPS and so on).
-
--> 3. Provide high efficient implementations of SLAM util classes like SO3, SE3, Camera, IMU, GPS, Bundle and so on.
-
--> 4. Support other features like coorperation SLAM to build a singular map.
-
--> 5. Provide benchmark tools for SLAM performance evaluation, make it easy to compare between SLAM systems.
-
-### 1.2. What we can do with GSLAM?
 1. *For SLAM developers* : Everyone can develop their own SLAM implementation based on GSLAM and publish it as a plugin with open-source or not. 
 2. *For SLAM users* : Applications are able to use different SLAM plugins with the same API without recompilation and implementations are loaded at runtime.
 
@@ -135,15 +122,15 @@ The following dataset plugins are now implemented:
 | [NPUDroneMap](http://zhaoyong.adv-ci.com/downloads/npu-dronemap-dataset/)| GPS,Monocular   ||
 | CVMono | Monocular           | Online camera or video dataset using opencv.|
 
-Users can also [implement dataset plugins by own](./doc/md/dataset.md).
+Users can also [implement dataset plugins by own](https://zdzhaoyong.github.io/GSLAM/dataset.html).
 
 ### 3.3. Implemented SLAM plugins
 | Name        |  ScreenShot  | Description  |
 | ------- |:------:|:-------------:|
-| [DSO](https://github.com/JakobEngel/dso)     |  <img src="./doc/images/gslam_dso.gif" width = "50%" /> | [code](https://github.com/pi-gslam/GSLAM-DSO) |
-| [ORBSLAM](https://github.com/raulmur/ORB_SLAM) |  <img src="./doc/images/gslam_orbslam.gif" width = "50%" />| [code](https://github.com/pi-gslam/GSLAM-ORBSLAM) |
-| [SVO](https://github.com/uzh-rpg/rpg_svo) |  <img src="./doc/images/gslam_svo.gif" width = "50%" />| [code](https://github.com/pi-gslam/GSLAM-SVO) |
-| [TheiaSfM](http://www.theia-sfm.org/) |  <img src="./doc/images/gslam_theiaSfM.png" width = "50%" />| [code](https://github.com/zdzhaoyong/GSLAM-TheiaSfM) |
+| [DSO](https://github.com/JakobEngel/dso)     |  <img src="./doc/images/gslam_dso.gif" width = "50%" /> | [code](https://github.com/pi-gslam/gslam_dso) |
+| [ORBSLAM](https://github.com/raulmur/ORB_SLAM) |  <img src="./doc/images/gslam_orbslam.gif" width = "50%" />| [code](https://github.com/pi-gslam/gslam_orbslam) |
+| [SVO](https://github.com/uzh-rpg/rpg_svo) |  <img src="./doc/images/gslam_svo.gif" width = "50%" />| [code](https://github.com/pi-gslam/gslam_svo) |
+| [TheiaSfM](http://www.theia-sfm.org/) |  <img src="./doc/images/gslam_theiaSfM.png" width = "50%" />| [code](https://github.com/zdzhaoyong/gslam_theia) |
 
 
 

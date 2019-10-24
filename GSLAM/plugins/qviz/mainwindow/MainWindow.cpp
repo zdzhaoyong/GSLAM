@@ -76,8 +76,8 @@ MainWindow::MainWindow(QWidget *parent,Svar config)
 
     connect(this,SIGNAL(signalDatasetStatusUpdated(int)),
             this,SLOT(slotDatasetStatusUpdated(int)));
-    connect(this,SIGNAL(signalUiRun(Svar*)),
-            this,SLOT(slotUiRun(Svar*)));
+    connect(this,SIGNAL(signalUiRun(Svar)),
+            this,SLOT(slotUiRun(Svar)));
     connect(this,SIGNAL(signalClose()),
             this,SLOT(close()));
 
@@ -152,7 +152,7 @@ void MainWindow::addMenu(Svar menuVar,QMenu* parent)
 
 void MainWindow::uiRun(Svar func)
 {
-    emit signalUiRun(new Svar(func));
+    emit signalUiRun(func);
 }
 
 void MainWindow::addTool(Svar tool)

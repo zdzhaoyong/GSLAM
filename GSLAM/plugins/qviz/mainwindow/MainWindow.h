@@ -69,15 +69,14 @@ public:
     }
 signals:
     void signalDatasetStatusUpdated(int);
-    void signalUiRun(Svar* run);
+    void signalUiRun(Svar run);
     void signalClose();
 
 public slots:
     void slotDatasetStatusUpdated(int status);
     void slotOpen(QString filePath);
-    void slotUiRun(Svar* run){
-        (*run)();
-        delete run;
+    void slotUiRun(Svar run){
+        run();
     }
 protected:
     void preparePanels();
