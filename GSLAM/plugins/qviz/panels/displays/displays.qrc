@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/">
+        <file>icon/nVisiable.png</file>
+        <file>icon/visiable.png</file>
+    </qresource>
+</RCC>

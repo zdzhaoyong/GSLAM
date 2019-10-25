@@ -47,5 +47,33 @@ void PanelDisplays::collectPlugins(){
     }
 }
 
+ObjectPropertyItem::ObjectPropertyItem(PropertyItem* parent,QTreeWidget* tree,QString name,Svar value,Svar updateFunc)
+    : PropertyItem(parent,tree,name,value,updateFunc){
+    if(_value.exist("__cbk__"))
+        _updateFunc=value["__cbk__"];
+    if(_value.exist("__name__"))
+        setText(0,_value["__name__"].castAs<std::string>().c_str());
+
+    for(auto child:_value.as<SvarObject>()._var){
+        const std::string& name=child.first;
+        if(name.empty()||name.front()=='_') continue;
+        if(name=="visible"&&_value["visible"].is<bool>()){
+            bool& visible=_value["visible"].as<bool>();
+            if(visible)
+                setIcon(1,QIcon(":/icon/visiable.png"));
+            else
+                setIcon(1,QIcon(":/icon/nVisiable.png"));
+            continue;
+        }
+        Svar display=child.second;
+        Svar callback=_value["__cbk__"+name];
+        if     (display.isObject()) new ObjectPropertyItem(this,tree,name.c_str(),display,callback);
+        else if(display.isArray())  new ArrayPropertyItem(this,tree,name.c_str(),display,callback);
+        else if(display.is<bool>())  new BoolPropertyItem(this,tree,name.c_str(),display,callback);
+        else if(display.is<Topic>())  new TopicPropertyItem(this,tree,name.c_str(),display,callback);
+        else if(display.is<Point3ub>()) new ColorPropertyItem(this,tree,name.c_str(),display,callback);
+        else  new JsonPropertyItem(this,tree,name.c_str(),display,callback);
+    }
+}
 }
 GSLAM_REGISTER_PANEL(displays,GSLAM::PanelDisplays);

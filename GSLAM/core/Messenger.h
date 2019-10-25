@@ -174,6 +174,20 @@ class Messenger;
 class Publisher;
 class PubSubSpace;
 
+/// Class Topic is used by display panel to choose a Messenger Topic
+class Topic{
+public:
+  Topic(const Svar& cls=SvarClass::instance<Svar>(),
+        const std::string& name=""):
+    _class(cls),_name(name) {}
+
+  std::string name()const{return _name;}
+  Svar        type()const{return _class;}
+
+  Svar _class;
+  std::string _name;
+};
+
 class Subscriber {
 public:
     Subscriber() {}

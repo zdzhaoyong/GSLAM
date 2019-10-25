@@ -1,31 +1,16 @@
-#include <QTabWidget>
-#include <QGridLayout>
-
-#if QT_VERSION>=0x050000
-#include <QtOpenGL/QGLFunctions>
-#include <QOpenGLFunctions_3_3_Core>
-#else
-#include <GL/glew.h>
-#endif
-
-
 #include <GSLAM/core/GSLAM.h>
-#include <GSLAM/core/Display.h>
 
 using namespace GSLAM;
 using namespace std;
 
-#if QT_VERSION>=0x050000
-class TrajectoryVisualizer : public QOpenGLFunctions
-        #else
-class TrajectoryVisualizer : public GSLAM::GObject
-        #endif
+class TrajectoryVisualizer
 {
 public:
     static Svar displayPlugin(){
         SvarFunction create=[]()->Svar{
             std::shared_ptr<TrajectoryVisualizer> vis(new TrajectoryVisualizer());
-            Svar display=vis->_config;
+            Svar display;
+            display["trajectory"]=vis->_config;
             display["__holder__"]=vis;
             display["__icon__"]=":/icon/trajviz.png";
             display["__name__"]="Trajectory Visualizer";
@@ -39,21 +24,9 @@ public:
         return plugin;
     }
 
-    TrajectoryVisualizer():_vetexTrajBuffer(0),_curFrameUpdated(false),_isGLInitialized(false){
-        _curFrame.get_scale()=-1;
-        _pubScenceRadius=messenger.advertise<double>("qviz/gl_radius");
-        _pubScenceCenter=messenger.advertise<Point3d>("qviz/gl_center");
-
-        _config["subDraw"]=messenger.subscribe("qviz/gl_draw",[this](Svar status){
-              this->draw();
-        });
-
-        _pubUpdateGL=messenger.advertise<bool>("qviz/gl_update");
+    TrajectoryVisualizer(){
 
         _config.arg("frame_topic",Topic(SvarClass::instance<FramePtr>()),"the frame topic");
-        _config.arg("enable",true,"draw this map or not");
-        _config.arg("trajectory_width",2.5,"the trajectory width");
-        _config.arg("current_rect",true,"draw current frame or not");
 
         _config["__cbk__frame_topic"]=SvarFunction([this](){
             Topic topic=_config.get("frame_topic",Topic());
@@ -63,71 +36,23 @@ public:
         });
     }
 
-    virtual void draw()
+    void updateCurrentFrame(GSLAM::FramePtr curFrame)
     {
-        if(!_config.get("enable",true)) return;
-
-        if(!_isGLInitialized){
-#if QT_VERSION>=0x050000
-            initializeOpenGLFunctions();
-#else
-            glewInit();
-#endif
-            _isGLInitialized=true;
-        }
-
-
-        GSLAM::ReadMutex lock(_mutex);
-        glPushMatrix();
-//        glTranslated(_scenceOrigin.x,_scenceOrigin.y,_scenceOrigin.z);
-
-        double trajectoryWidth=_config.get("trajectory_width",2.5);
-
-        GSLAM::Point3ub trajectoryColor     =_config.get("trajectory_color",Point3ub(255,255,0));
-        GSLAM::Point3ub curFrameColor       =_config.get("current_frame_color",Point3ub(255,0,0));
-
-        if(!_vetexTrajBuffer)
+        if(!curFrame) return;
+        std::string topic_name=_config.get("frame_topic",Topic()).name();
+        NodeGLPtr nodeTraj(new NodeGL(topic_name+"/trajectory"));
+        NodeGLPtr nodeCurrent(new NodeGL(topic_name+"/current"));
+        nodeTraj->displayMode=NodeGL::LINE_STRIP;
+        nodeCurrent->displayMode=NodeGL::LINES;
         {
-            glGenBuffers(1, &_vetexTrajBuffer);
-        }
+            GSLAM::WriteMutex lock(_mutex);
+            SIM3 pose=GSLAM::SIM3(curFrame->getPose(),curFrame->getMedianDepth()*0.1);
+            Camera _camera=curFrame->getCamera();
+            _vetexTraj.push_back(pose.get_translation());
 
-        if(_curFrameUpdated)
-        {
-            if(_vetexTraj.size())
-            {
-                glBindBuffer(GL_ARRAY_BUFFER,_vetexTrajBuffer);
-                glBufferData(GL_ARRAY_BUFFER,_vetexTraj.size()*sizeof(Point3f),_vetexTraj.data(), GL_STATIC_DRAW);
-            }
+            nodeTraj->vertices=_vetexTraj;
+            nodeTraj->colors.push_back(Point3ub(255,255,0));
 
-            _curFrameUpdated=false;
-        }
-
-        if(_config.get("trajectory",true))
-        {
-            glDisable(GL_LIGHTING);
-            glLineWidth(trajectoryWidth);
-            glColor3f(trajectoryColor.x,trajectoryColor.y,trajectoryColor.z);
-            glBindBuffer(GL_ARRAY_BUFFER,_vetexTrajBuffer);
-            glVertexPointer(3, GL_FLOAT, 0, 0);
-            glEnableClientState(GL_VERTEX_ARRAY);
-            glDrawArrays(GL_LINE_STRIP,0,_vetexTraj.size());
-            glDisableClientState(GL_VERTEX_ARRAY);
-        }
-
-        if(_config.get("current_frame",true))
-        {
-            drawRect(_curFrame,curFrameColor);
-        }
-        glPopMatrix();
-    }
-
-    void glVertex(const GSLAM::Point3f& p){glVertex3f(p.x,p.y,p.z);}
-    void glVertex(const GSLAM::Point3d& p){glVertex3d(p.x,p.y,p.z);}
-    void drawRect(GSLAM::SIM3 pose,GSLAM::ColorType color)
-    {
-        if(pose.get_scale()<=0) return;
-        if(!_camera.isValid()) _camera=GSLAM::Camera({640.,480.,500.,500.,320.,240.});
-        {
             Point3d t=pose.get_translation();
             Point3d tl=_camera.UnProject(Point2d(0,0));
             Point3d tr=_camera.UnProject(Point2d(_camera.width(),0));
@@ -139,43 +64,17 @@ public:
             GSLAM::Point3Type  W_bl=pose*(Point3d(bl.x,bl.y,1));
             GSLAM::Point3Type  W_br=pose*(Point3d(br.x,br.y,1));
 
-            glBegin(GL_LINES);
-            glLineWidth(2.5);
-            glColor3ub(color.x,color.y,color.z);
-            glVertex(t);        glVertex(W_tl);
-            glVertex(t);        glVertex(W_tr);
-            glVertex(t);        glVertex(W_bl);
-            glVertex(t);        glVertex(W_br);
-            glVertex(W_tl);     glVertex(W_tr);
-            glVertex(W_tr);     glVertex(W_br);
-            glVertex(W_br);     glVertex(W_bl);
-            glVertex(W_bl);     glVertex(W_tl);
-            glEnd();
+            nodeCurrent->vertices=std::vector<Point3f>({t,W_tl,t,W_tr,t,W_bl,t,W_br,W_tl,W_tr,W_tr,W_br,W_br,W_bl,W_bl,W_tl});
+            nodeCurrent->colors.push_back(Point3ub(255,0,0));
         }
-    }
-
-    void updateCurrentFrame(GSLAM::FramePtr curFrame)
-    {
-        if(!curFrame) return;
-        GSLAM::WriteMutex lock(_mutex);
-        _curFrame=GSLAM::SIM3(curFrame->getPose(),curFrame->getMedianDepth()*0.1);
-        _vetexTraj.push_back(_curFrame.get_translation());
-        _curFrameUpdated=true;
+        messenger.publish("qviz/gl_node",nodeTraj);
+        messenger.publish("qviz/gl_node",nodeCurrent);
     }
 
     Svar                    _config;
 
     GSLAM::MutexRW          _mutex;
     std::vector<GSLAM::Point3f>    _vetexTraj;
-    GSLAM::SIM3              _curFrame;
-    std::vector<GSLAM::Point3d>    _curConnection;
-    GSLAM::Camera           _camera;
-
-    uint                    _vetexTrajBuffer;
-    bool                    _curFrameUpdated,_isGLInitialized;
-    GSLAM::Point3d          _scenceCenter,_scenceOrigin;
-
-    GSLAM::Publisher        _pubScenceOrigin,_pubUpdateGL,_pubScenceRadius,_pubScenceCenter;
 };
 
 REGISTER_SVAR_MODULE(trajviz){

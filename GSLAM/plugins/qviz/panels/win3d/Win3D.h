@@ -1,4 +1,3 @@
-#pragma once
 #include <QAction>
 #include <QTreeWidget>
 #include <QTabWidget>
@@ -6,8 +5,10 @@
 
 #include "QGLViewer/qglviewer.h"
 #include <GSLAM/core/GSLAM.h>
+#include <GSLAM/core/NodeGL.h>
 
 namespace GSLAM{
+class VisNodeGL;
 
 class Win3D : public QGLViewer
 {
@@ -35,23 +36,30 @@ public:
                 this->camera()->setPosition(qglviewer::Vec(t.x,t.y,t.z));
                 this->camera()->setOrientation(qglviewer::Quaternion(r.w,r.z,-r.y,-r.x));
         });
+        _sub_node=messenger.subscribe("qviz/gl_node",[this](Svar node){
+            emit signalNode(node);
+        });
         connect(this,SIGNAL(signalUpdateGL()),
                 this,SLOT(updateGL()));
+        connect(this,SIGNAL(signalNode(Svar)),
+                this,SLOT(slotNode(Svar)));
     }
 signals:
     void signalSetSceneRadius(qreal);
     void signalUpdateGL();
     void signalSetSceneCenter(qglviewer::Vec);
-public:
+    void signalNode(Svar node);
 
-    virtual void draw()
-    {
-        _status["fastDraw"]=false;
-        _pub_draw.publish(_status);
-    }
+public slots:
+    void slotNode(Svar node);
+public:
+    void updateScenseCenterRadius();
+
+    virtual void draw();
 
     virtual void fastDraw()
     {
+        return draw();
         _status["fastDraw"]=true;
         _pub_draw.publish(_status);
     }
@@ -162,8 +170,10 @@ public:
     }
 
     Publisher   _pub_draw,_pub_selected;
-    Subscriber  _sub_update,_sub_radius,_sub_center,_sub_pose;
+    Subscriber  _sub_update,_sub_radius,_sub_center,_sub_pose,_sub_node;
     Svar        _status;
+
+    Svar  nodevis;
 };
 
 }

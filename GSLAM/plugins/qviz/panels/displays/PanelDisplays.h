@@ -7,11 +7,13 @@
 #include <QVBoxLayout>
 #include <QPainter>
 #include <QLineEdit>
+#include <QLabel>
 #include <QKeyEvent>
 #include <QTreeWidget>
 #include <QHeaderView>
 #include <QPushButton>
 #include <QMenu>
+#include <QColorDialog>
 #include <GSLAM/core/GSLAM.h>
 #include <GSLAM/core/Display.h>
 
@@ -81,12 +83,23 @@ class PropertyItem : public QObject,public QTreeWidgetItem
 {
     Q_OBJECT
 public:
-    PropertyItem(PropertyItem* parent,QString name,Svar value,Svar updateFunc=Svar())
+    PropertyItem(PropertyItem* parent,QTreeWidget* tree,QString name,Svar value,Svar updateFunc=Svar())
         : QObject(),QTreeWidgetItem(parent,QStringList() << name),
-          _parent(parent),_value(value),_updateFunc(updateFunc){
+          _parent(parent),_tree(tree),_value(value),_updateFunc(updateFunc){
         setObjectName(name);
+
         if(parent)
             parent->addChild(item());
+        else{
+            _tree->addTopLevelItem(this);
+        }
+
+        if(value.isObject()){
+            if(value.exist("__icon__"))
+                setIcon(0,QIcon(value["__icon__"].castAs<std::string>().c_str()));
+            if(value.exist("__doc__"))
+                setToolTip(0,value["__doc__"].castAs<std::string>().c_str());
+        }
     }
 
     virtual QWidget* widget(){return nullptr;}
@@ -109,7 +122,12 @@ public:
 
     virtual QTreeWidgetItem* item(){return dynamic_cast<QTreeWidgetItem*>(this);}
 
+    virtual void execMenu(){}
+
+    virtual void clicked(int col){}
+
     QTreeWidgetItem* _parent;
+    QTreeWidget*     _tree;
     Svar _value;
     Svar _updateFunc;
 };
@@ -118,11 +136,12 @@ class BoolPropertyItem : public PropertyItem
 {
     Q_OBJECT
 public:
-    BoolPropertyItem(PropertyItem* parent,QString name,Svar value,Svar updateFunc=Svar())
-        :PropertyItem(parent,name,value,updateFunc){
+    BoolPropertyItem(PropertyItem* parent,QTreeWidget* tree,QString name,Svar value,Svar updateFunc=Svar())
+        :PropertyItem(parent,tree,name,value,updateFunc){
         _widget=new QCheckBox();
         _widget->setChecked(value.as<bool>());
         connect(_widget,SIGNAL(toggled(bool)),this,SLOT(slotUpdated(bool)));
+        _tree->setItemWidget(this,1,widget());
     }
 public slots:
     void slotUpdated(bool value){
@@ -137,8 +156,8 @@ public:
 class JsonPropertyItem: public PropertyItem{
     Q_OBJECT
 public:
-    JsonPropertyItem(PropertyItem* parent,QString name,Svar value,Svar updateFunc=Svar())
-        :PropertyItem(parent,name,value,updateFunc){
+    JsonPropertyItem(PropertyItem* parent,QTreeWidget* tree,QString name,Svar value,Svar updateFunc=Svar())
+        :PropertyItem(parent,tree,name,value,updateFunc){
         _widget=new QLineEdit();
         std::stringstream sst;
         sst<<value;
@@ -146,6 +165,7 @@ public:
         if(value.is<int>()||value.is<double>()||value.is<std::string>());
         else _widget->setEnabled(false);
         connect(_widget,SIGNAL(editingFinished()),this,SLOT(slotUpdated()));
+        _tree->setItemWidget(this,1,widget());
     }
 public slots:
     void slotUpdated(){
@@ -173,8 +193,8 @@ public:
 class TopicPropertyItem: public PropertyItem{
     Q_OBJECT
 public:
-    TopicPropertyItem(PropertyItem* parent,QString name,Svar value,Svar updateFunc=Svar())
-        :PropertyItem(parent,name,value,updateFunc),_topic(value.as<Topic>()){
+    TopicPropertyItem(PropertyItem* parent,QTreeWidget* tree,QString name,Svar value,Svar updateFunc=Svar())
+        :PropertyItem(parent,tree,name,value,updateFunc),_topic(value.as<Topic>()){
         _widget=new QComboBox();
         _widget->setIconSize(QSize(1, 26));
         _widget->setEditable(true);
@@ -184,6 +204,7 @@ public:
         _sub=messenger.subscribe("messenger/newpub",[this](Publisher pub){
             this->updateTable("");
         });
+        _tree->setItemWidget(this,1,widget());
     }
 public slots:
     void updateTable(QString topic){
@@ -211,6 +232,101 @@ public:
     Subscriber _sub;
 };
 
+class ColorPropertyItem: public PropertyItem{
+    Q_OBJECT
+public:
+    ColorPropertyItem(PropertyItem* parent,QTreeWidget* tree,QString name,Svar value,Svar updateFunc=Svar())
+        :PropertyItem(parent,tree,name,value,updateFunc){
+        Point3ub color=value.as<Point3ub>();
+        _widget=new QPushButton();
+        QPalette palette = _widget->palette();
+        palette.setColor(QPalette::Button, QColor(color.x,color.y,color.z));
+        _widget->setPalette(palette);
+        _widget->setAutoFillBackground(true);
+        _widget->setFlat(true);
+
+        connect(_widget,SIGNAL(clicked(bool)),this,SLOT(slotUpdated(bool)));
+        _tree->setItemWidget(this,1,widget());
+    }
+public slots:
+    void slotUpdated(bool){
+        Point3ub color=_value.as<Point3ub>();
+        QColor   c = QColorDialog::getColor(QColor(color.x,color.y,color.z));
+        QPalette palette = _widget->palette();
+        palette.setColor(QPalette::Button, c);
+        _widget->setPalette(palette);
+        _value=Point3ub(c.red(),c.green(),c.blue());
+
+        update();
+    }
+public:
+    virtual QWidget* widget(){return _widget;}
+    QPushButton* _widget;
+};
+
+class ObjectPropertyItem: public PropertyItem{
+    Q_OBJECT
+public:
+    ObjectPropertyItem(PropertyItem* parent,QTreeWidget* tree,QString name,Svar value,Svar updateFunc=Svar());
+
+    void execMenu(){
+        Svar menuVar=_value["__menu__"];
+        QMenu menu(_tree);
+        if(menuVar.isObject())
+        for(std::pair<std::string,Svar> v:menuVar.as<SvarObject>()._var)
+        {
+            if(v.first=="Delete") continue;
+            menu.addAction(new MessengerAction(v.first.c_str(),nullptr,v.second));
+        }
+        SvarFunction deleteThis=[this](){
+            if(_value["__menu__"].exist("Delete")){
+                _value["__menu__"]["Delete"]();
+            }
+            auto objParent=dynamic_cast<ObjectPropertyItem*>(_parent);
+            if(objParent){
+                objParent->_value.erase(this->objectName().toStdString());
+            }
+            delete this;
+        };
+        menu.addAction(new MessengerAction("Delete",nullptr,deleteThis));
+
+        menu.exec(QCursor::pos());
+    }
+
+    virtual void clicked(int col){
+        if(col!=1) return;
+        if(!_value["visible"].is<bool>()) return;
+        bool& visible=_value["visible"].as<bool>();
+        visible=!visible;
+        if(visible)
+            setIcon(1,QIcon(":/icon/visiable.png"));
+        else
+            setIcon(1,QIcon(":/icon/nVisiable.png"));
+        Svar callback=_value["__cbk__visible"];
+        if(callback.isFunction()) callback();
+        else update();
+    }
+};
+
+class ArrayPropertyItem: public PropertyItem{
+    Q_OBJECT
+public:
+    ArrayPropertyItem(PropertyItem* parent,QTreeWidget* tree,QString name,Svar value,Svar updateFunc=Svar())
+        : PropertyItem(parent,tree,name,value,updateFunc){
+        std::vector<Svar> var=value.as<SvarArray>()._var;
+        for(int i=0;i<var.size();i++){
+            std::string name=std::to_string(i);
+            Svar display=var[i];
+            Svar callback=Svar();
+            if     (display.isObject()) new ObjectPropertyItem(this,tree,name.c_str(),display,callback);
+            else if(display.isArray())  new ArrayPropertyItem(this,tree,name.c_str(),display,callback);
+            else if(display.is<bool>())  new BoolPropertyItem(this,tree,name.c_str(),display,callback);
+            else if(display.is<Topic>())  new TopicPropertyItem(this,tree,name.c_str(),display,callback);
+            else if(display.is<Point3ub>()) new ColorPropertyItem(this,tree,name.c_str(),display,callback);
+            else  new JsonPropertyItem(this,tree,name.c_str(),display,callback);
+        }
+    }
+};
 class DisplayTree:public QTreeWidget{
     Q_OBJECT
 public:
@@ -224,91 +340,48 @@ public:
         this->setColumnCount(2);
         setColumnWidth(0,150);
         subDisplay=messenger.subscribe(topic,[this](Svar display){
-            this->addDisplay(display,"",nullptr,Svar());
+            emit signalInsertPlay(display);
         });
 
         this->setContextMenuPolicy(Qt::CustomContextMenu);
 
         connect(this, SIGNAL(customContextMenuRequested(const QPoint&)), this, SLOT(slotMenu(const QPoint&)));
-    }
-
-    PropertyItem* addObjectDisplay(Svar display,std::string name,PropertyItem* parent,Svar callback){
-//        LOG(INFO)<<display;
-        if(display.exist("__cbk__"))
-            callback=display["__cbk__"];
-        if(display.exist("__name__"))
-            name=display["__name__"].castAs<std::string>();
-//        LOG(INFO)<<callback;
-
-        PropertyItem* item=new PropertyItem(parent,name.c_str(),display,callback);
-        if(display.exist("__icon__"))
-            item->setIcon(0,QIcon(display["__icon__"].castAs<std::string>().c_str()));
-        if(display.exist("__doc__"))
-            item->setToolTip(0,display["__doc__"].castAs<std::string>().c_str());
-
-
-        for(auto child:display.as<SvarObject>()._var){
-            if(child.first.empty()||child.first.front()=='_') continue;
-            addDisplay(child.second,child.first,item,display["__cbk__"+child.first]);
-        }
-        if(parent)
-            parent->addChild(item);
-        else
-            addTopLevelItem(item);
-        return item;
-    }
-
-    PropertyItem* addVectorDisplay(Svar display,std::string name,PropertyItem* parent,Svar callback){
-        PropertyItem* item=new PropertyItem(parent,name.c_str(),display,callback);
-        item->setText(0,name.c_str());
-        std::vector<Svar> var=display.as<SvarArray>()._var;
-        for(int i=0;i<var.size();i++){
-            addDisplay(var[i],std::to_string(i),item);
-        }
-        if(parent)
-            parent->addChild(item);
-        else
-            addTopLevelItem(item);
-        return item;
+        connect(this,SIGNAL(signalInsertPlay(Svar)),this,SLOT(slotInsertPlay(Svar)));
+        connect(this, SIGNAL(itemClicked(QTreeWidgetItem*,int)),
+                this, SLOT(slotItemClicked(QTreeWidgetItem*,int)));
     }
 
     PropertyItem* addDisplay(Svar display,std::string name="",PropertyItem* parent=nullptr,Svar callback=Svar()){
-        if(display.isObject()) return addObjectDisplay(display,name,parent,callback);
-        if(display.isArray()) return addVectorDisplay(display,name,parent,callback);
-
-        PropertyItem* item=nullptr;
-        if(display.is<bool>())
-            item=new BoolPropertyItem(parent,name.c_str(),display,callback);
-        else if(display.is<Topic>())
-            item=new TopicPropertyItem(parent,name.c_str(),display,callback);
-        else //if(display.is<int>()||display.is<double>()||display.is<std::string>())
-            item=new JsonPropertyItem(parent,name.c_str(),display,callback);
-
-        if(item){
-            setItemWidget(item,1,item->widget());
-            addTopLevelItem(item);
-        }
-        return item;
+        if     (display.isObject()) return  new ObjectPropertyItem(parent,this,name.c_str(),display,callback);
+        else if(display.isArray()) return   new ArrayPropertyItem(parent,this,name.c_str(),display,callback);
+        else if(display.is<bool>()) return  new BoolPropertyItem(parent,this,name.c_str(),display,callback);
+        else if(display.is<Topic>()) return new TopicPropertyItem(parent,this,name.c_str(),display,callback);
+        else return new JsonPropertyItem(parent,this,name.c_str(),display,callback);
+    }
+signals:
+    void signalInsertPlay(Svar display);
+public slots:
+    void slotInsertPlay(Svar display){
+        auto it=displays.find(display.value()->ptr());
+        if(it!=displays.end())
+            delete it->second;
+        displays[display.value()->ptr()]=addDisplay(display);
     }
 
-public slots:
     void slotMenu(const QPoint& pos){
         PropertyItem *item = dynamic_cast<PropertyItem *>(this->itemAt(pos));
         if(!item) return;
-        Svar value=item->_value;
-        if(!value.isObject()) return;
-        Svar menuVar=value["__menu__"];
-        if(!menuVar.isObject()) return;
-        QMenu menu(this);
-        for(std::pair<std::string,Svar> v:menuVar.as<SvarObject>()._var)
-        {
-            menu.addAction(new MessengerAction(v.first.c_str(),nullptr,v.second));
-        }
-        menu.exec(QCursor::pos());
+        item->execMenu();
+    }
+
+    void slotItemClicked(QTreeWidgetItem* item,int col){
+        auto ptr=dynamic_cast<PropertyItem*>(item);
+        if(!ptr) return;
+        ptr->clicked(col);
     }
 public:
+    std::map<const void*,PropertyItem*> displays;
 
-    Svar displays;
     Subscriber subDisplay;
 };
 
