@@ -43,6 +43,7 @@ public:
                 this,SLOT(updateGL()));
         connect(this,SIGNAL(signalNode(Svar)),
                 this,SLOT(slotNode(Svar)));
+
     }
 signals:
     void signalSetSceneRadius(qreal);
@@ -60,12 +61,22 @@ public:
     virtual void fastDraw()
     {
         return draw();
-        _status["fastDraw"]=true;
         _pub_draw.publish(_status);
     }
 
     virtual void initializeGL(){
         QGLViewer::initializeGL();
+
+        Svar interact;
+        interact["__name__"]="Win3D";
+        QColor c=backgroundColor();
+        interact.arg("background",Point3ub(c.red(),c.green(),c.blue()),"Win3D background.");
+        interact["__cbk__background"]=SvarFunction([this](Point3ub background){
+            Point3ub c=background;
+            setBackgroundColor(QColor(c.x,c.y,c.z));
+        });
+        _interact=interact;
+        messenger.publish("qviz/display",_interact);
     }
 
     virtual bool setScenceRadius(float radius){
@@ -171,7 +182,7 @@ public:
 
     Publisher   _pub_draw,_pub_selected;
     Subscriber  _sub_update,_sub_radius,_sub_center,_sub_pose,_sub_node;
-    Svar        _status;
+    Svar        _status,_interact;
 
     Svar  nodevis;
 };

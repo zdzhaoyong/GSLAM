@@ -10,10 +10,14 @@ public:
         SvarFunction create=[]()->Svar{
             std::shared_ptr<MapVisualizer> vis(new MapVisualizer());
             Svar display;
-            display["map"]=vis->_config;
             display["__holder__"]=vis;
             display["__icon__"]=":/icon/mapviz.png";
             display["__name__"]="Map Visualizer";
+
+            display.arg("map_topic",Topic(SvarClass::instance<MapPtr>()),"the map to subscribe");
+            display["__cbk__map_topic"]=SvarFunction([vis](Topic topic){
+                vis->_subMap=messenger.subscribe(topic.name(),[vis](MapPtr mp){vis->update(mp);});
+            });
             return display;
         };
         Svar plugin;
@@ -28,22 +32,11 @@ public:
     MapVisualizer(){
 
         _pubNode=messenger.advertise<NodeGLPtr>("qviz/gl_node");
-        _config.arg("map_topic",Topic(SvarClass::instance<MapPtr>()),"the map to subscribe");
-        _config["__cbk__map_topic"]=SvarFunction([this](){
-            Topic topic=_config.get("map_topic",Topic());
-            this->_config["subMap"]=messenger.subscribe(topic.name(),[this](MapPtr mp){this->update(mp);});
-        });
-        _config["__cbk__curframe_topic"]=SvarFunction([this](){
-            Topic topic=_config.get("curframe_topic",Topic());
-            this->_config["_subCurFrame"]=messenger.subscribe(topic.name(),[this](FramePtr fr){
-//                    this->updateCurrentFrame(fr);
-            });
-        });
     }
 
     void update(const GSLAM::MapPtr& _map)
     {
-        std::string topicName=_config.get("map_topic",Topic()).name();
+        std::string topicName=_subMap.getTopic();
         NodeGLPtr keyframes(new NodeGL(topicName+"/keyframes"));
         NodeGLPtr slamTraj(new NodeGL(topicName+"/slam_traj"));
         NodeGLPtr gpsTrajNode(new NodeGL(topicName+"/gps_traj"));
@@ -204,6 +197,7 @@ public:
 
     GSLAM::MapPtr           _map;
     GSLAM::Publisher        _pubNode;
+    Subscriber              _subMap;
 };
 
 REGISTER_SVAR_MODULE(mapviz){

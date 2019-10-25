@@ -216,20 +216,20 @@ void Win3D::slotNode(Svar msg)
         config.arg<double>("line_width",2.,"The line width to draw");
         config.arg<Point3ub>("default_color",ptr->defColor,"the default color");
         config.arg<bool>("visible",ptr->visible,"Visiable or not");
-        config["__cbk__point_size"]=SvarFunction([ptr,this](){
-            ptr->pointSize=nodevis[ptr->_name].get<double>("point_size",2.5);
+        config["__cbk__point_size"]=SvarFunction([ptr,this](double pointSize){
+            ptr->pointSize=pointSize;
             updateGL();
         });
-        config["__cbk__line_width"]=SvarFunction([ptr,this](){
-            ptr->lineWidth=nodevis[ptr->_name].get<double>("line_width",2.);
+        config["__cbk__line_width"]=SvarFunction([ptr,this](double line_width){
+            ptr->lineWidth=line_width;
             updateGL();
         });
-        config["__cbk__default_color"]=SvarFunction([ptr,this](){
-            ptr->defColor=nodevis[ptr->_name].get<Point3ub>("default_color",Point3ub(255,0,0));
+        config["__cbk__default_color"]=SvarFunction([ptr,this](Point3ub default_color){
+            ptr->defColor=default_color;
             updateGL();
         });
-        config["__cbk__visible"]=SvarFunction([ptr,this](){
-            ptr->visible=nodevis[ptr->_name].get("visible",ptr->visible);
+        config["__cbk__visible"]=SvarFunction([ptr,this](bool visible){
+            ptr->visible=visible;
             updateGL();
         });
         config["__name__"]=ptr->_name;
@@ -286,7 +286,6 @@ void Win3D::updateScenseCenterRadius()
 
 void Win3D::draw()
 {
-    _status["fastDraw"]=false;
     _pub_draw.publish(_status);
     if(!nodevis.isObject()) return;
     for(auto it:nodevis.castAs<std::map<std::string,Svar>>()){

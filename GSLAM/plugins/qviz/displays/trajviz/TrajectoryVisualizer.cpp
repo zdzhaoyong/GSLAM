@@ -10,10 +10,16 @@ public:
         SvarFunction create=[]()->Svar{
             std::shared_ptr<TrajectoryVisualizer> vis(new TrajectoryVisualizer());
             Svar display;
-            display["trajectory"]=vis->_config;
             display["__holder__"]=vis;
             display["__icon__"]=":/icon/trajviz.png";
             display["__name__"]="Trajectory Visualizer";
+            display.arg("frame_topic",Topic(SvarClass::instance<FramePtr>()),"the frame topic");
+
+            display["__cbk__frame_topic"]=SvarFunction([vis](Topic topic){
+                vis->_subCurFrame=messenger.subscribe(topic.name(),[vis](FramePtr fr){
+                   vis->updateCurrentFrame(fr);
+                });
+            });
             return display;
         };
         Svar plugin;
@@ -26,20 +32,13 @@ public:
 
     TrajectoryVisualizer(){
 
-        _config.arg("frame_topic",Topic(SvarClass::instance<FramePtr>()),"the frame topic");
 
-        _config["__cbk__frame_topic"]=SvarFunction([this](){
-            Topic topic=_config.get("frame_topic",Topic());
-            this->_config["_subCurFrame"]=messenger.subscribe(topic.name(),[this](FramePtr fr){
-               this->updateCurrentFrame(fr);
-            });
-        });
     }
 
     void updateCurrentFrame(GSLAM::FramePtr curFrame)
     {
         if(!curFrame) return;
-        std::string topic_name=_config.get("frame_topic",Topic()).name();
+        std::string topic_name=_subCurFrame.getTopic();
         NodeGLPtr nodeTraj(new NodeGL(topic_name+"/trajectory"));
         NodeGLPtr nodeCurrent(new NodeGL(topic_name+"/current"));
         nodeTraj->displayMode=NodeGL::LINE_STRIP;
@@ -71,7 +70,7 @@ public:
         messenger.publish("qviz/gl_node",nodeCurrent);
     }
 
-    Svar                    _config;
+    Subscriber              _subCurFrame;
 
     GSLAM::MutexRW          _mutex;
     std::vector<GSLAM::Point3f>    _vetexTraj;

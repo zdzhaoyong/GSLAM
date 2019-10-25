@@ -108,7 +108,7 @@ public:
 //        LOG(INFO)<<"Enter "<<objectName().toStdString();
         if(_updateFunc.isFunction()) {
 //            LOG(INFO)<<"Update to "<<_value;
-            _updateFunc();return;
+            _updateFunc(_value);return;
         }
 //        else LOG(INFO)<<"No callback.";
         if(!_parent) return;
@@ -303,7 +303,7 @@ public:
         else
             setIcon(1,QIcon(":/icon/nVisiable.png"));
         Svar callback=_value["__cbk__visible"];
-        if(callback.isFunction()) callback();
+        if(callback.isFunction()) callback(visible);
         else update();
     }
 };
