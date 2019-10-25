@@ -1,3 +1,5 @@
+#include "Win3D.h"
+
 #if QT_VERSION>=0x050000
 #include <QtOpenGL/QGLFunctions>
 #include <QOpenGLFunctions_3_3_Core>
@@ -5,10 +7,8 @@
 #include <GL/glew.h>
 #endif
 
-#include "Win3D.h"
-
-
 namespace GSLAM {
+
 void glMultMatrix(const SIM3& pose)
 {
     const double A360byPI=114.59155902616439;
@@ -20,7 +20,11 @@ void glMultMatrix(const SIM3& pose)
     glScaled(pose.get_scale(),pose.get_scale(),pose.get_scale());
 }
 
+#if QT_VERSION>=0x050000
+class VisNodeGL: public QObject,public QOpenGLFunctions{
+#else
 class VisNodeGL: public QObject{
+#endif
 public:
     VisNodeGL(QGLViewer* parent,NodeGLPtr node)
         : QObject(parent),_vertexBuffer(0){
@@ -35,7 +39,11 @@ public:
 //        _node=node;
         _name=node->name;
         if(!_vertexBuffer){
+#if QT_VERSION>=0x050000
+            initializeOpenGLFunctions();
+#else
             glewInit();
+#endif
             glGenBuffers(4, &_vertexBuffer);
             if(node->colors.size())
                 defColor=node->colors.front();
