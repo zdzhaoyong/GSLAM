@@ -1,4 +1,4 @@
-#include "Win3D.h"
+#include <QLabel>
 
 #if QT_VERSION>=0x050000
 #include <QtOpenGL/QGLFunctions>
@@ -6,6 +6,8 @@
 #else
 #include <GL/glew.h>
 #endif
+
+#include "Win3D.h"
 
 namespace GSLAM {
 
