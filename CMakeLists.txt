@@ -34,7 +34,7 @@ pi_add_target(gslam_topic SHARED GSLAM/plugins/topic REQUIRED System LTO)
 
 pi_add_target(qviz_panel_win3d SHARED GSLAM/plugins/qviz/panels/win3d REQUIRED System Qt OpenGL GLEW)
 pi_add_target(qviz_panel_displays SHARED GSLAM/plugins/qviz/panels/displays REQUIRED System Qt)
-pi_add_target(qviz_panel_frameinfo SHARED GSLAM/plugins/qviz/panels/frameinfo REQUIRED System Qt)
+pi_add_target(qviz_panel_frameinfo SHARED GSLAM/plugins/qviz/panels/frameinfo REQUIRED System Qt OpenCV)
 pi_add_target(qviz_panel_pubsubs SHARED GSLAM/plugins/qviz/panels/pubsubs REQUIRED System Qt)
 pi_add_target(qviz_panel_logger SHARED GSLAM/plugins/qviz/panels/logger REQUIRED System Qt)
 

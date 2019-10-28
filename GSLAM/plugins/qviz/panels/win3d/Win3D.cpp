@@ -69,13 +69,13 @@ public:
 
         if(node->colors.size()){
             glBindBuffer(GL_ARRAY_BUFFER,_colorBuffer);
-            glBufferData(GL_ARRAY_BUFFER,node->colors.size()*3*sizeof(NodeGL::Color3b),
+            glBufferData(GL_ARRAY_BUFFER,node->colors.size()*sizeof(NodeGL::Color3b),
                          node->colors.data(), GL_STATIC_DRAW);
         }
 
         if(node->normals.size()){
             glBindBuffer(GL_ARRAY_BUFFER,_normalBuffer);
-            glBufferData(GL_ARRAY_BUFFER,node->normals.size()*3*sizeof(NodeGL::Vertex3f),
+            glBufferData(GL_ARRAY_BUFFER,node->normals.size()*sizeof(NodeGL::Vertex3f),
                          node->normals.data(), GL_STATIC_DRAW);
         }
 
@@ -209,9 +209,11 @@ void Win3D::slotNode(Svar msg)
 
 
     if(node->empty()) {
-        nodevis.erase(node->name);
-        messenger.publish("qviz/display",nodevis);
-        updateGL();
+        if(nodevis.exist(node->name)){
+            nodevis.erase(node->name);
+            messenger.publish("qviz/display",nodevis);
+            updateGL();
+        }
         return;
     }
 
@@ -274,7 +276,7 @@ void Win3D::updateScenseCenterRadius()
         if(vis->_transform.get_scale()>0){
             std::vector<Point3f> add;
             for(int i=0;i<8;i++)
-                add.push_back(Point3f(vertices[i&1].x,vertices[i&2].y,vertices[i&4].z));
+                add.push_back(Point3f(vertices[i&1].x,vertices[(i&2)>>1].y,vertices[(i&4)>>2].z));
             vertices=add;
         }
 
