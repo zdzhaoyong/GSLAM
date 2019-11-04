@@ -3,7 +3,7 @@
 [![Build Status](https://travis-ci.org/zdzhaoyong/GSLAM.svg?branch=master)](https://travis-ci.org/zdzhaoyong/GSLAM)
 [![License](https://img.shields.io/badge/license-BSD--2--Clause-blue.svg)](./LICENSE)
 [![Version](https://img.shields.io/github/release/zdzhaoyong/GSLAM.svg)](https://github.com/zdzhaoyong/GSLAM/releases)
-
+[![Doc](https://img.shields.io/badge/doc-doxygen-blue)](https://zdzhaoyong.github.io/GSLAM/)
 
 
 [![](https://github.com/zdzhaoyong/GSLAM/raw/resource/gslam_iccv_poster.png)](https://github.com/zdzhaoyong/GSLAM/raw/resource/gslam_iccv_poster.png)

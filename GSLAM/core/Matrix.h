@@ -30,13 +30,14 @@
 //
 // Matrix provide basic matrix computation like Eigen
 
-#ifndef GSLAM_MATRIX_H
-#define GSLAM_MATRIX_H
+#ifndef GSLAM_CORE_MATRIX_H
+#define GSLAM_CORE_MATRIX_H
 
-#include <iostream>
-#include <iomanip>
 #include <string.h>
 #include <math.h>
+#include <assert.h>
+#include <iostream>
+#include <iomanip>
 #include <array>
 #include <limits>
 
@@ -52,6 +53,15 @@ public:
 
     Matrix(const std::array<Scalar,Rows*Cols>& c){
         memcpy(_data, c.data(), sizeof(_data));
+    }
+
+    Matrix(const std::initializer_list<Scalar>& c)
+    {
+        assert(c.size()==Rows*Cols);
+        int i=0;
+        for(auto it=c.begin();it!=c.end();it++,i++){
+            data()[i]=*it;
+        }
     }
 
     Matrix(const Scalar data_[Rows*Cols])
@@ -505,6 +515,150 @@ public:
 
     int cols() const {return Cols;}
 
+    // Vector functions
+    inline Scalar operator()(size_t i) const
+    {
+        static_assert(Cols==1,"Cols is not one.");
+        return (*this)(i, 0);
+    }
+
+    inline Scalar &operator()(size_t i)
+    {
+        static_assert(Cols==1,"Cols is not one.");
+        return (*this)(i, 0);
+    }
+
+    inline Scalar operator[](size_t i) const
+    {
+        static_assert(Cols==1,"Cols is not one.");
+        return (*this)(i, 0);
+    }
+
+    inline Scalar &operator[](size_t i)
+    {
+        static_assert(Cols==1,"Cols is not one.");
+        return (*this)(i, 0);
+    }
+
+    Scalar dot(const Matrix & b) const {
+        static_assert(Cols==1,"Cols is not one.");
+        Scalar r = 0;
+        for (size_t i = 0; i<Rows; i++) {
+            r += (*this)(i)*b(i,0);
+        }
+        return r;
+    }
+
+    Scalar norm() const {
+        static_assert(Cols==1,"Cols must be one.");
+        const Matrix &a(*this);
+        return Scalar(sqrt(a.dot(a)));
+    }
+
+    Scalar norm_squared() const {
+        static_assert(Cols==1,"Cols must be one.");
+        const Matrix &a(*this);
+        return a.dot(a);
+    }
+
+    Scalar length() const {
+        static_assert(Cols==1,"Cols must be one.");
+        return norm();
+    }
+
+    inline void normalize() {
+        static_assert(Cols==1,"Cols must be one.");
+        (*this) /= norm();
+    }
+
+    Matrix unit() const {
+        static_assert(Cols==1,"Cols must be one.");
+        return (*this) / norm();
+    }
+
+    Matrix unit_or_zero(const Scalar eps = Scalar(1e-5)) {
+        static_assert(Cols==1,"Cols must be one.");
+        const Scalar n = norm();
+        if (n > eps) {
+            return (*this) / n;
+        }
+        return Matrix();
+    }
+
+    Matrix normalized() const {
+        return unit();
+    }
+
+    Matrix pow(Scalar v) const {
+        static_assert(Cols==1,"Cols must be one.");
+        Matrix r;
+        for (size_t i = 0; i<Rows; i++) {
+            r(i) = Scalar(::pow((*this)(i), v));
+        }
+        return r;
+    }
+
+    // Vector2
+
+    Matrix(Scalar x, Scalar y)
+    {
+        static_assert(Cols==1&&Rows==2,"Vector3d not corrected constructed");
+        Matrix &v(*this);
+        v(0) = x;
+        v(1) = y;
+    }
+
+    Scalar cross(const Matrix<Scalar,2,1> & b) const {
+        static_assert(Cols==1&&Rows==2,"Vector3d not corrected constructed");
+        const Matrix &a(*this);
+        return a(0)*b(1, 0) - a(1)*b(0, 0);
+    }
+
+    Scalar operator^(const Matrix<Scalar,2,1> & b) const {
+        static_assert(Cols==1&&Rows==2,"Vector3d not corrected constructed");
+        return (*this).cross(b);
+    }
+
+    // Vector3
+    Matrix(Scalar x, Scalar y, Scalar z) {
+        static_assert(Cols==1&&Rows==3,"Vector3d not corrected constructed");
+        Matrix &v(*this);
+        v(0) = x;
+        v(1) = y;
+        v(2) = z;
+    }
+
+    Matrix cross(const Matrix<Scalar, 3, 1> & b) const {
+        static_assert(Cols==1&&Rows==3,"Vector3d not corrected constructed");
+        const Matrix &a(*this);
+        Matrix c;
+        c(0) = a(1)*b(2,0) - a(2)*b(1,0);
+        c(1) = -a(0)*b(2,0) + a(2)*b(0,0);
+        c(2) = a(0)*b(1,0) - a(1)*b(0,0);
+        return c;
+    }
+
+    Matrix operator^(const Matrix<Scalar, 3, 1> & b) const {
+        static_assert(Cols==1&&Rows==3,"Vector3d not corrected constructed");
+        return (*this).cross(b);
+    }
+
+    Matrix<Scalar,3,3> hat() const {
+        static_assert(Cols==1&&Rows==3,"Vector3d not corrected constructed");
+        const Matrix &v(*this);
+        Matrix<Scalar,3,3> A;
+        A(0,0) = 0;
+        A(0,1) = -v(2);
+        A(0,2) = v(1);
+        A(1,0) = v(2);
+        A(1,1) = 0;
+        A(1,2) = -v(0);
+        A(2,0) = -v(1);
+        A(2,1) = v(0);
+        A(2,2) = 0;
+        return A;
+    }
+
 #ifdef EIGEN_MATRIX_H
     operator Eigen::Matrix<Scalar,Rows,Cols,Eigen::ColMajor>()
     {
@@ -544,255 +698,16 @@ Matrix<Scalar, Rows, Cols> operator*(Scalar scalar, const Matrix<Scalar, Rows, C
     return other * scalar;
 }
 
-template<typename Scalar, size_t Rows>
-class Vector : public Matrix<Scalar, Rows, 1>
-{
-public:
-    typedef Matrix<Scalar, Rows, 1> MatrixM1;
+template <typename Scalar,size_t Rows>
+using Vector=Matrix<Scalar,Rows,1>;
 
-    Vector() = default;
-
-    Vector(const MatrixM1 & other) :
-        MatrixM1(other)
-    {
-    }
-
-    Vector(const Scalar data_[Rows]) :
-        MatrixM1(data_)
-    {
-    }
-
-    inline Scalar operator()(size_t i) const
-    {
-        const MatrixM1 &v = *this;
-        return v(i, 0);
-    }
-
-    inline Scalar &operator()(size_t i)
-    {
-        MatrixM1 &v = *this;
-        return v(i, 0);
-    }
-
-    inline Scalar operator[](size_t i) const
-    {
-        const MatrixM1 &v = *this;
-        return v(i, 0);
-    }
-
-    inline Scalar &operator[](size_t i)
-    {
-        MatrixM1 &v = *this;
-        return v(i, 0);
-    }
-
-    Scalar dot(const MatrixM1 & b) const {
-        const Vector &a(*this);
-        Scalar r = 0;
-        for (size_t i = 0; i<Rows; i++) {
-            r += a(i)*b(i,0);
-        }
-        return r;
-    }
-
-    inline Scalar operator*(const MatrixM1 & b) const {
-        const Vector &a(*this);
-        return a.dot(b);
-    }
-
-    inline Vector operator*(Scalar b) const {
-        return Vector(MatrixM1::operator*(b));
-    }
-
-    Scalar norm() const {
-        const Vector &a(*this);
-        return Scalar(sqrt(a.dot(a)));
-    }
-
-    Scalar norm_squared() const {
-        const Vector &a(*this);
-        return a.dot(a);
-    }
-
-    inline Scalar length() const {
-        return norm();
-    }
-
-    inline void normalize() {
-        (*this) /= norm();
-    }
-
-    Vector unit() const {
-        return (*this) / norm();
-    }
-
-    Vector unit_or_zero(const Scalar eps = Scalar(1e-5)) {
-        const Scalar n = norm();
-        if (n > eps) {
-            return (*this) / n;
-        }
-        return Vector();
-    }
-
-    inline Vector normalized() const {
-        return unit();
-    }
-
-    Vector pow(Scalar v) const {
-        const Vector &a(*this);
-        Vector r;
-        for (size_t i = 0; i<Rows; i++) {
-            r(i) = Scalar(::pow(a(i), v));
-        }
-        return r;
-    }
-};
-
-template<typename Scalar>
-class Vector2 : public Vector<Scalar, 2>
-{
-public:
-
-    typedef Matrix<Scalar, 2, 1> Matrix21;
-    typedef Vector<Scalar, 3> Vector3;
-
-    Vector2() = default;
-
-    Vector2(const Matrix21 & other) :
-        Vector<Scalar, 2>(other)
-    {
-    }
-
-    Vector2(const Scalar data_[2]) :
-        Vector<Scalar, 2>(data_)
-    {
-    }
-
-    Vector2(Scalar x, Scalar y)
-    {
-        Vector2 &v(*this);
-        v(0) = x;
-        v(1) = y;
-    }
-
-    explicit Vector2(const Vector3 & other)
-    {
-        Vector2 &v(*this);
-        v(0) = other(0);
-        v(1) = other(1);
-    }
-
-    Scalar cross(const Matrix21 & b) const {
-        const Vector2 &a(*this);
-        return a(0)*b(1, 0) - a(1)*b(0, 0);
-    }
-
-    Scalar operator^(const Matrix21 & b) const {
-        return (*this).cross(b);
-    }
-
-};
-
-template<typename Scalar>
-class Vector3 : public Vector<Scalar, 3>
-{
-public:
-
-    typedef Matrix<Scalar, 3, 1> Matrix31;
-
-    Vector3() = default;
-
-    Vector3(const Matrix31 & other) :
-        Vector<Scalar, 3>(other)
-    {
-    }
-
-    Vector3(const Scalar data_[3]) :
-        Vector<Scalar, 3>(data_)
-    {
-    }
-
-    Vector3(Scalar x, Scalar y, Scalar z) {
-        Vector3 &v(*this);
-        v(0) = x;
-        v(1) = y;
-        v(2) = z;
-    }
-
-    Vector3 cross(const Matrix31 & b) const {
-        const Vector3 &a(*this);
-        Vector3 c;
-        c(0) = a(1)*b(2,0) - a(2)*b(1,0);
-        c(1) = -a(0)*b(2,0) + a(2)*b(0,0);
-        c(2) = a(0)*b(1,0) - a(1)*b(0,0);
-        return c;
-    }
-
-    inline Vector3 operator+(Vector3 other) const
-    {
-        return Matrix31::operator+(other);
-    }
-
-    inline Vector3 operator-(Vector3 other) const
-    {
-        return Matrix31::operator-(other);
-    }
-
-    inline Vector3 operator-() const
-    {
-        return Matrix31::operator-();
-    }
-
-    inline Vector3 operator*(Scalar scalar) const
-    {
-        return Matrix31::operator*(scalar);
-    }
-
-    inline Scalar operator*(Vector3 b) const
-    {
-        return Vector<Scalar, 3>::operator*(b);
-    }
-
-    inline Vector3 operator^(const Matrix31 & b) const {
-        return (*this).cross(b);
-    }
-
-    /**
-     * Override vector ops so Vector3 type is returned
-     */
-    inline Vector3 unit() const {
-        return Vector3(Vector<Scalar, 3>::unit());
-    }
-
-    inline Vector3 normalized() const {
-        return unit();
-    }
-
-
-    Matrix<Scalar,3,3> hat() const {
-        const Vector3 &v(*this);
-        Matrix<Scalar,3,3> A;
-        A(0,0) = 0;
-        A(0,1) = -v(2);
-        A(0,2) = v(1);
-        A(1,0) = v(2);
-        A(1,1) = 0;
-        A(1,2) = -v(0);
-        A(2,0) = -v(1);
-        A(2,1) = v(0);
-        A(2,2) = 0;
-        return A;
-    }
-
-};
-
-typedef Vector2<float> Vector2f;
-typedef Vector2<float> Vector3f;
+typedef Vector<float,2> Vector2f;
+typedef Vector<float,3> Vector3f;
 typedef Vector<float,4> Vector4f;
 typedef Vector<float,5> Vector5f;
 typedef Vector<float,6> Vector6f;
-typedef Vector2<double> Vector2d;
-typedef Vector3<double> Vector3d;
+typedef Vector<double,2> Vector2d;
+typedef Vector<double,3> Vector3d;
 typedef Vector<double,4> Vector4d;
 typedef Vector<double,5> Vector5d;
 typedef Vector<double,6> Vector6d;

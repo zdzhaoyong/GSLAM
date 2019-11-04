@@ -224,8 +224,8 @@ public:
             A_inv = 2./l.w - 2.*(1.0-squared_w)/(l.w*squared_w);
             Point3_<Precision> r(l.x*A_inv,l.y*A_inv,l.z*A_inv);
             Point3_<Precision> p=t-0.5*r.cross(t)+static_cast<Precision>(1. / 12.)*r.cross(r.cross(t));
-            result.set(Vector3<Precision>(p.x,p.y,p.z),0,0);
-            result.set(Vector3<Precision>(r.x,r.y,r.z),3,0);
+            result.set(Vector<Precision,3>(p.x,p.y,p.z),0,0);
+            result.set(Vector<Precision,3>(r.x,r.y,r.z),3,0);
         }
         else
         {
@@ -248,8 +248,8 @@ public:
             Point3_<Precision> r(l.x*A_inv,l.y*A_inv,l.z*A_inv);
             Point3_<Precision> a=r/theta;
             Point3_<Precision> p=t-0.5*r.cross(t)+(1-theta/(2*tan(0.5*theta)))*a.cross(a.cross(t));
-            result.set(Vector3<Precision>(p.x,p.y,p.z),0,0);
-            result.set(Vector3<Precision>(r.x,r.y,r.z),3,0);
+            result.set(Vector<Precision,3>(p.x,p.y,p.z),0,0);
+            result.set(Vector<Precision,3>(r.x,r.y,r.z),3,0);
         }
         return result;
     }

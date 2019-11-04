@@ -263,8 +263,8 @@ public:
 
         auto rcrosst=r.cross(t);
         Point3_<Precision> p=a*rcrosst+b*r.cross(rcrosst)+c*t;
-        result.set(Vector3<Precision>(p.x,p.y,p.z),0,0);
-        result.set(Vector3<Precision>(r.x,r.y,r.z),3,0);
+        result.set(Vector<Precision,3>(p.x,p.y,p.z),0,0);
+        result.set(Vector<Precision,3>(r.x,r.y,r.z),3,0);
         result[6]=sigma;
         return result;
     }
