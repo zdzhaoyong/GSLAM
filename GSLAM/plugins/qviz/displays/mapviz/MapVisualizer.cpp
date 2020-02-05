@@ -88,7 +88,7 @@ public:
             vetexTraj.push_back(t);
 
             Point3d ecef;
-            if(fr->getGPSECEF(ecef))
+            if(fr->getGPSECEF(ecef)&&fr->getPose().get_translation().norm()>1e5)
             {
                 ecef=ecef-center;
                 gpsTraj.push_back(ecef);
