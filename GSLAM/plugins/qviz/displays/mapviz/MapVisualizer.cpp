@@ -145,7 +145,7 @@ public:
 
 
         for(GSLAM::FramePtr& curFrame:mapFrames){
-            SIM3 pose=GSLAM::SIM3(curFrame->getPose(),curFrame->getMedianDepth()*0.1);
+            SIM3 pose=GSLAM::SIM3(curFrame->getPose(),fabs(curFrame->getMedianDepth()*0.1));
             Camera _camera=curFrame->getCamera();
 
             Point3d t=pose.get_translation();
